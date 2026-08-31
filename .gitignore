@@ -4,3 +4,9 @@ ai-analysis/models/
 ai-analysis/turns_*/
 *.mp4
 *.mov
+
+backend/.venv/
+backend/.env
+**/__pycache__/
+*.pyc
+*.db
