@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Ski Passport - {{ user.name }}{% endblock %}
+{% block header %}Ski Passport{% endblock %}
+{% block content %}
+
+<h2>{{ user.name }}</h2>
+<ul>
+  <li>Email: {{ user.email }}</li>
+  <li>Nivel: {{ user.ski_level }}</li>
+  <li>Años esquiando: {{ user.years_skiing }}</li>
+  <li>Usuario desde: {{ user.created_at.strftime("%Y-%m-%d") }}</li>
+</ul>
+
+<h3>Historial de viajes</h3>
+{% if trips %}
+<table>
+  <thead><tr><th>Destino</th><th>Fecha</th><th>Estado</th></tr></thead>
+  <tbody>
+  {% for t in trips %}
+  <tr>
+    <td>{{ t.destination }}</td>
+    <td>{{ t.start_date }}</td>
+    <td><span class="badge {{ 'badge-processed' if t.status == 'completed' else 'badge-pending' }}">{{ t.status }}</span></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Todavía no cargaste ningún viaje.</p>
+{% endif %}
+
+<h3>Ski Card</h3>
+{% if ratings %}
+<table>
+  <thead><tr><th>Disciplina</th><th>Rating</th><th>Confidence score</th><th>Verificado por coach</th></tr></thead>
+  <tbody>
+  {% for r in ratings %}
+  <tr>
+    <td>{{ r.discipline }}</td>
+    <td>{{ r.score }}</td>
+    <td>{{ r.confidence_score }}</td>
+    <td>{{ "Sí" if r.coach_verified else "No" }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Todavía no tenés ningún rating cargado.</p>
+{% endif %}
+
+<h3>Planes de entrenamiento</h3>
+{% if training_plans %}
+<ul>
+{% for plan in training_plans %}
+  <li>
+    <strong>{{ plan.trip.destination if plan.trip else "Sin viaje asociado" }}</strong>
+    ({{ plan.created_at.strftime("%Y-%m-%d") }})
+    <br>{{ plan.content }}
+  </li>
+{% endfor %}
+</ul>
+{% else %}
+<p>Todavía no tenés ningún plan de entrenamiento cargado.</p>
+{% endif %}
+
+{% endblock %}

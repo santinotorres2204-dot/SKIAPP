@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.database import engine
-from app.routers import admin, ski_ratings, trips, users, video_uploads
+from app.routers import admin, passport, ski_ratings, trips, users, video_uploads
 from app.storage import MEDIA_ROOT
 
 app = FastAPI(title="Ski App API", version="0.1.0")
@@ -16,6 +16,7 @@ app.include_router(trips.router)
 app.include_router(video_uploads.router)
 app.include_router(ski_ratings.router)
 app.include_router(admin.router)
+app.include_router(passport.router)
 
 
 @app.get("/health")
