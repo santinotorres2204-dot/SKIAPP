@@ -7,6 +7,7 @@ ai-analysis/turns_*/
 
 backend/.venv/
 backend/.env
+backend/media/
 **/__pycache__/
 *.pyc
 *.db
