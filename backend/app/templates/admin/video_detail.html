@@ -57,6 +57,33 @@
   <p><em>Todavía no hay resultado de análisis para este video (estado: {{ video.analysis_status }}).</em></p>
 {% endif %}
 
+{% if prompt %}
+<h3>Generar prompt para rutina</h3>
+<p>
+  Copialo y pegalo en una conversación con una IA (por ejemplo, Claude) para pedirle una
+  propuesta de rutina de entrenamiento física. No dispara ninguna llamada a una IA desde acá.
+</p>
+<textarea id="training-prompt" readonly rows="16"
+  style="width:100%; font-family: ui-monospace, monospace; font-size:0.85rem;">{{ prompt }}</textarea>
+<br><br>
+<button type="button" onclick="copyTrainingPrompt()">Copiar prompt</button>
+<span id="copy-feedback"></span>
+
+<script>
+function copyTrainingPrompt() {
+  var el = document.getElementById("training-prompt");
+  var feedback = document.getElementById("copy-feedback");
+  navigator.clipboard.writeText(el.value).then(function () {
+    feedback.textContent = " ¡Copiado!";
+    setTimeout(function () { feedback.textContent = ""; }, 2000);
+  }, function () {
+    el.select();
+    feedback.textContent = " No se pudo copiar automáticamente, seleccioná el texto a mano.";
+  });
+}
+</script>
+{% endif %}
+
 <h3>Training plans cargados</h3>
 {% if video.analysis_result and video.analysis_result.training_plans %}
   <ul>

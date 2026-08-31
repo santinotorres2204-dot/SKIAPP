@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.models import AnalysisResult, TrainingPlan, Trip, VideoUpload
+from app.prompt_builder import build_training_prompt
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -41,6 +42,7 @@ def video_detail(request: Request, video_id: int, db: Session = Depends(get_db))
         db.query(VideoUpload)
         .options(
             joinedload(VideoUpload.user),
+            joinedload(VideoUpload.trip),
             joinedload(VideoUpload.analysis_result).joinedload(AnalysisResult.training_plans),
         )
         .filter(VideoUpload.id == video_id)
@@ -51,7 +53,11 @@ def video_detail(request: Request, video_id: int, db: Session = Depends(get_db))
 
     trips = db.query(Trip).filter(Trip.user_id == video.user_id).order_by(Trip.created_at.desc()).all()
 
-    return templates.TemplateResponse(request, "admin/video_detail.html", {"video": video, "trips": trips})
+    prompt = build_training_prompt(video, video.analysis_result) if video.analysis_result else None
+
+    return templates.TemplateResponse(
+        request, "admin/video_detail.html", {"video": video, "trips": trips, "prompt": prompt}
+    )
 
 
 @router.post("/videos/{video_id}/training-plan")
