@@ -206,6 +206,13 @@ def _wrap_180(angle: float) -> float:
     return (angle + 180.0) % 360.0 - 180.0
 
 
+def format_ts(seconds: float) -> str:
+    """Formatea un offset en segundos como MM:SS.ss (usado tambien por debug_turns.py)."""
+    m = int(seconds // 60)
+    s = seconds - m * 60
+    return f"{m:02d}:{s:05.2f}"
+
+
 @dataclass
 class FrameMetrics:
     t: float
@@ -348,6 +355,20 @@ def segment_turns(metrics: list[FrameMetrics], effective_fps: float) -> list[Tur
     return turns
 
 
+def _turn_occurrence(turn: Turn, metrics: list[FrameMetrics]) -> dict:
+    """Ubica un giro en el timeline del video (inicio/pico/fin), con la misma
+    logica que usa debug_turns.py para nombrar sus capturas de calibracion.
+    """
+    segment_leans = [abs(metrics[j].trunk_lean) for j in range(turn.start_idx, turn.end_idx + 1)]
+    peak_idx = turn.start_idx + int(np.argmax(segment_leans))
+    return {
+        "direction": turn.direction,
+        "t_start": format_ts(metrics[turn.start_idx].t),
+        "t_peak": format_ts(metrics[peak_idx].t),
+        "t_end": format_ts(metrics[turn.end_idx].t),
+    }
+
+
 # ---------------------------------------------------------------------------
 # Deteccion de patrones
 # ---------------------------------------------------------------------------
@@ -362,7 +383,7 @@ def _severity_from_thresholds(value: float, thresholds: dict) -> Optional[str]:
     return None
 
 
-def detect_asymmetry(turns: list[Turn]) -> Optional[dict]:
+def detect_asymmetry(turns: list[Turn], metrics: list[FrameMetrics]) -> Optional[dict]:
     left = [t for t in turns if t.direction == "izquierda"]
     right = [t for t in turns if t.direction == "derecha"]
 
@@ -387,10 +408,11 @@ def detect_asymmetry(turns: list[Turn]) -> Optional[dict]:
         "pattern": "asimetria_izq_der",
         "severity": severity,
         "sample_size": len(turns),
+        "occurrences": [_turn_occurrence(t, metrics) for t in turns],
     }
 
 
-def detect_rotation_excessive(metrics: list[FrameMetrics], n_turns: int) -> Optional[dict]:
+def detect_rotation_excessive(metrics: list[FrameMetrics], turns: list[Turn]) -> Optional[dict]:
     if not metrics:
         return None
 
@@ -402,11 +424,14 @@ def detect_rotation_excessive(metrics: list[FrameMetrics], n_turns: int) -> Opti
     return {
         "pattern": "rotacion_excesiva_tren_superior",
         "severity": severity,
-        "sample_size": n_turns if n_turns > 0 else len(metrics),
+        "sample_size": len(turns) if turns else len(metrics),
+        # Es un promedio de toda la secuencia (no un chequeo por giro), pero se
+        # listan los giros como referencia temporal de donde se midio.
+        "occurrences": [_turn_occurrence(t, metrics) for t in turns],
     }
 
 
-def detect_inconsistency(turns: list[Turn]) -> Optional[dict]:
+def detect_inconsistency(turns: list[Turn], metrics: list[FrameMetrics]) -> Optional[dict]:
     if len(turns) < MIN_TURNS_FOR_INCONSISTENCY:
         return None
 
@@ -424,6 +449,7 @@ def detect_inconsistency(turns: list[Turn]) -> Optional[dict]:
         "pattern": "inconsistencia_entre_giros",
         "severity": severity,
         "sample_size": len(turns),
+        "occurrences": [_turn_occurrence(t, metrics) for t in turns],
     }
 
 
@@ -443,17 +469,23 @@ def detect_balance_loss(metrics: list[FrameMetrics], n_turns: int) -> Optional[d
     std_d = float(np.std(normalized))
     threshold = max(mean_d + 2.5 * std_d, 0.12)  # piso absoluto para videos casi estaticos
 
-    flagged = int(np.sum(normalized > threshold))
-    proportion = flagged / len(normalized)
+    flagged_idx = np.where(normalized > threshold)[0]
+    proportion = len(flagged_idx) / len(normalized)
 
     severity = _severity_from_thresholds(proportion, BALANCE_LOSS_PROPORTION_THRESHOLDS)
     if severity is None:
         return None
 
+    # A diferencia de los demas patrones, este es por-frame, no por-giro:
+    # normalized[i] es el salto entre metrics[i] y metrics[i+1], se reporta
+    # el timestamp del frame de "llegada" de ese salto.
+    occurrences = [{"t": format_ts(metrics[i + 1].t)} for i in flagged_idx]
+
     return {
         "pattern": "perdida_de_balance",
         "severity": severity,
         "sample_size": n_turns if n_turns > 0 else len(metrics),
+        "occurrences": occurrences,
     }
 
 
@@ -477,6 +509,54 @@ def compute_confidence_score(valid_frames: int, sampled_frames: int, n_turns: in
 
 
 # ---------------------------------------------------------------------------
+# Resumen en lenguaje simple
+# ---------------------------------------------------------------------------
+
+# Frases en lenguaje llano; se combinan en build_summary(). Redactadas como
+# deteccion de patron/screening, nunca como causa fisica afirmada (spec
+# seccion 6: "nunca como causa fisica afirmada").
+PATTERN_DESCRIPTIONS = {
+    "asimetria_izq_der": "una asimetria entre los giros hacia la izquierda y hacia la derecha",
+    "perdida_de_balance": "perdida de balance en algunos momentos del video",
+    "rotacion_excesiva_tren_superior": "una rotacion marcada del tren superior respecto al tren inferior",
+    "inconsistencia_entre_giros": "inconsistencia en la tecnica entre giros consecutivos",
+}
+
+
+def build_summary(detected_patterns: list[dict], confidence_score: int, n_turns: int) -> str:
+    """Resumen de 2-3 oraciones en lenguaje simple, pensado para el panel de
+    administrador (screening, no diagnostico -- ver spec seccion 6).
+    """
+    if not detected_patterns:
+        if confidence_score < 30:
+            return (
+                f"El analisis se corrio sobre {n_turns} giro(s) detectado(s), con un nivel de "
+                f"confianza bajo ({confidence_score}/100). No hay datos suficientes para senalar "
+                "ningun patron con certeza; conviene repetir el analisis con un video mas largo o "
+                "con mejor visibilidad del esquiador."
+            )
+        return (
+            f"Se analizaron {n_turns} giros con un nivel de confianza de {confidence_score}/100 y "
+            "no se detecto ningun patron destacable en este screening. Es una senal preliminar de "
+            "tecnica consistente, no un diagnostico certero."
+        )
+
+    descriptions = [
+        f"{PATTERN_DESCRIPTIONS.get(p['pattern'], p['pattern'])} (severidad {p['severity']})"
+        for p in detected_patterns
+    ]
+    patterns_text = descriptions[0] if len(descriptions) == 1 else (
+        ", ".join(descriptions[:-1]) + " y " + descriptions[-1]
+    )
+
+    return (
+        f"El screening detecto {patterns_text}, sobre {n_turns} giro(s) analizados. "
+        f"El nivel de confianza es de {confidence_score}/100, asi que esto debe tomarse como una "
+        "senal preliminar para revisar en video, no como un diagnostico biomecanico certero."
+    )
+
+
+# ---------------------------------------------------------------------------
 # Orquestacion
 # ---------------------------------------------------------------------------
 
@@ -495,6 +575,11 @@ def analyze_video(
             "video": video_path,
             "detected_patterns": [],
             "confidence_score": 0,
+            "summary": (
+                "No se pudo detectar la pose del esquiador en ningun frame muestreado del video, "
+                "por lo que no fue posible generar ningun analisis. Conviene probar con un video "
+                "donde el cuerpo del esquiador se vea con mayor claridad."
+            ),
             "meta": {
                 "frames_sampled": sampled_count,
                 "frames_with_valid_pose": 0,
@@ -507,19 +592,21 @@ def analyze_video(
     turns = segment_turns(metrics, effective_fps)
 
     detections = [
-        detect_asymmetry(turns),
+        detect_asymmetry(turns, metrics),
         detect_balance_loss(metrics, len(turns)),
-        detect_rotation_excessive(metrics, len(turns)),
-        detect_inconsistency(turns),
+        detect_rotation_excessive(metrics, turns),
+        detect_inconsistency(turns, metrics),
     ]
     detected_patterns = [d for d in detections if d is not None]
 
     confidence_score = compute_confidence_score(len(frames), sampled_count, len(turns))
+    summary = build_summary(detected_patterns, confidence_score, len(turns))
 
     return {
         "video": video_path,
         "detected_patterns": detected_patterns,
         "confidence_score": confidence_score,
+        "summary": summary,
         "meta": {
             "frames_sampled": sampled_count,
             "frames_with_valid_pose": len(frames),

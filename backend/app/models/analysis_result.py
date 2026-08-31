@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import JSON, CheckConstraint, DateTime, ForeignKey, Integer, func
+from sqlalchemy import JSON, CheckConstraint, DateTime, ForeignKey, Integer, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -20,6 +20,8 @@ class AnalysisResult(Base):
     detected_patterns: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     confidence_score: Mapped[int] = mapped_column(Integer, nullable=False)
     raw_pose_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # Resumen en lenguaje simple para el panel de administrador (spec seccion 6/9).
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     video = relationship("VideoUpload", back_populates="analysis_result")

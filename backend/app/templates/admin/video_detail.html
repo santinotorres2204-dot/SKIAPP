@@ -15,12 +15,36 @@
 <h3>Resultado de análisis (MediaPipe)</h3>
 {% if video.analysis_result %}
   <p>Confidence score: <strong>{{ video.analysis_result.confidence_score }}</strong></p>
+  {% if video.analysis_result.summary %}
+  <p class="summary-box">{{ video.analysis_result.summary }}</p>
+  {% endif %}
   {% if video.analysis_result.detected_patterns %}
   <table>
-    <thead><tr><th>Patrón</th><th>Severidad</th><th>Sample size</th></tr></thead>
+    <thead><tr><th>Patrón</th><th>Severidad</th><th>Sample size</th><th>Ocurrencias (timestamps)</th></tr></thead>
     <tbody>
     {% for p in video.analysis_result.detected_patterns %}
-    <tr><td>{{ p.pattern }}</td><td>{{ p.severity }}</td><td>{{ p.sample_size }}</td></tr>
+    <tr>
+      <td>{{ p.pattern }}</td>
+      <td>{{ p.severity }}</td>
+      <td>{{ p.sample_size }}</td>
+      <td>
+        {% if p.occurrences %}
+        <ul>
+        {% for occ in p.occurrences %}
+          <li>
+          {% if occ.direction is defined %}
+            {{ occ.direction }}: {{ occ.t_start }}–{{ occ.t_end }} (pico {{ occ.t_peak }})
+          {% else %}
+            {{ occ.t }}
+          {% endif %}
+          </li>
+        {% endfor %}
+        </ul>
+        {% else %}
+        -
+        {% endif %}
+      </td>
+    </tr>
     {% endfor %}
     </tbody>
   </table>

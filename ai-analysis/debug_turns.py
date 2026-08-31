@@ -27,6 +27,7 @@ from analyze_ski_video import (
     SAMPLE_FPS_DEFAULT,
     compute_frame_metrics,
     extract_pose_sequence,
+    format_ts,
     segment_turns,
 )
 
@@ -49,12 +50,6 @@ def draw_skeleton(frame: np.ndarray, points: dict, w: int, h: int) -> np.ndarray
     for pt in px.values():
         cv2.circle(frame, pt, 5, (0, 0, 255), -1)
     return frame
-
-
-def format_ts(seconds: float) -> str:
-    m = int(seconds // 60)
-    s = seconds - m * 60
-    return f"{m:02d}:{s:05.2f}"
 
 
 def main() -> None:

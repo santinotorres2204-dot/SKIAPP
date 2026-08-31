@@ -63,6 +63,7 @@ def run_analysis_job(video_id: int, video_path: Path) -> None:
             # detectados), no keypoints crudos frame a frame -- analyze_video()
             # no los retiene. Se guarda igual aca para trazabilidad/auditoria.
             raw_pose_data=result.get("meta"),
+            summary=result.get("summary"),
         )
         db.add(analysis)
         video.analysis_status = AnalysisStatus.PROCESSED.value
