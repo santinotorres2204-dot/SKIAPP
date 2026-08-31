@@ -25,6 +25,9 @@ Uso:
 Este script es deliberadamente aislado de la app (sin DB, sin backend):
 la idea es poder probar y calibrar la logica de deteccion antes de
 integrarla al pipeline async de la Etapa 1.
+
+Ver NOTES.md (mismo directorio) para recomendaciones de encuadre y
+limitaciones conocidas (park, terrain_tag, ski vs snowboard).
 """
 
 from __future__ import annotations
