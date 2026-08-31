@@ -8,7 +8,8 @@ from app.config import settings
 MEDIA_ROOT = (Path(__file__).resolve().parent.parent / settings.video_upload_dir).resolve()
 
 
-def save_video(user_id: int, upload: UploadFile) -> str:
+def save_video(user_id: int, upload: UploadFile) -> tuple[str, Path]:
+    """Guarda el archivo subido y devuelve (file_url, path_en_disco)."""
     user_dir = MEDIA_ROOT / str(user_id)
     user_dir.mkdir(parents=True, exist_ok=True)
 
@@ -20,4 +21,4 @@ def save_video(user_id: int, upload: UploadFile) -> str:
         while chunk := upload.file.read(1024 * 1024):
             out.write(chunk)
 
-    return f"/media/videos/{user_id}/{filename}"
+    return f"/media/videos/{user_id}/{filename}", dest

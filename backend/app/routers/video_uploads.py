@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
+from app.analysis_job import run_analysis_job
 from app.database import get_db
 from app.models import VideoUpload
 from app.models.enums import Discipline
@@ -15,6 +16,7 @@ router = APIRouter(tags=["video-uploads"])
 @router.post("/users/{user_id}/videos", response_model=VideoUploadRead, status_code=status.HTTP_201_CREATED)
 def upload_video(
     user_id: int,
+    background_tasks: BackgroundTasks,
     discipline_tag: Discipline = Form(...),
     trip_id: int | None = Form(default=None),
     file: UploadFile = File(...),
@@ -26,7 +28,7 @@ def upload_video(
         if trip.user_id != user_id:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="El viaje no pertenece a este usuario")
 
-    file_url = save_video(user_id, file)
+    file_url, video_path = save_video(user_id, file)
 
     video = VideoUpload(
         user_id=user_id,
@@ -37,6 +39,8 @@ def upload_video(
     db.add(video)
     db.commit()
     db.refresh(video)
+
+    background_tasks.add_task(run_analysis_job, video.id, video_path)
     return video
 
 
