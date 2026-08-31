@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import SkiRating, TrainingPlan, Trip
+from app.models import SeasonReview, SkiRating, TrainingPlan, Trip
 from app.routers.users import get_user_or_404
 
 router = APIRouter(tags=["passport"])
@@ -31,9 +31,22 @@ def passport(request: Request, user_id: int, db: Session = Depends(get_db)):
         .order_by(TrainingPlan.created_at.desc())
         .all()
     )
+    season_reviews = (
+        db.query(SeasonReview)
+        .options(joinedload(SeasonReview.trip))
+        .filter(SeasonReview.user_id == user_id)
+        .order_by(SeasonReview.created_at.desc())
+        .all()
+    )
 
     return templates.TemplateResponse(
         request,
         "passport.html",
-        {"user": user, "trips": trips, "ratings": ratings, "training_plans": training_plans},
+        {
+            "user": user,
+            "trips": trips,
+            "ratings": ratings,
+            "training_plans": training_plans,
+            "season_reviews": season_reviews,
+        },
     )

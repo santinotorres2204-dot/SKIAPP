@@ -4,12 +4,15 @@ from sqlalchemy import text
 
 from app.database import engine
 from app.routers import admin, passport, ski_ratings, trips, users, video_uploads
-from app.storage import MEDIA_ROOT
+from app.storage import MEDIA_ROOT, SEASON_REVIEWS_ROOT
 
 app = FastAPI(title="Ski App API", version="0.1.0")
 
 MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 app.mount("/media/videos", StaticFiles(directory=MEDIA_ROOT), name="media")
+
+SEASON_REVIEWS_ROOT.mkdir(parents=True, exist_ok=True)
+app.mount("/media/season_reviews", StaticFiles(directory=SEASON_REVIEWS_ROOT), name="media_season_reviews")
 
 app.include_router(users.router)
 app.include_router(trips.router)

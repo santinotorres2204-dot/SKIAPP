@@ -63,4 +63,33 @@
 <p>Todavía no tenés ningún plan de entrenamiento cargado.</p>
 {% endif %}
 
+<h3>Season Review</h3>
+{% if season_reviews %}
+{% for sr in season_reviews %}
+<fieldset>
+  <legend>{{ sr.trip.destination if sr.trip else "Viaje" }} — {{ sr.created_at.strftime("%Y-%m-%d") }}</legend>
+  <p>Video comparativo: <a href="{{ sr.comparison_video_url }}">{{ sr.comparison_video_url }}</a></p>
+  <table>
+    <thead><tr><th></th><th>Disciplina</th><th>Score</th><th>Confidence</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Antes</td>
+        <td>{{ sr.rating_before.discipline }}</td>
+        <td>{{ sr.rating_before.score if sr.rating_before.score is not none else "-" }}</td>
+        <td>{{ sr.rating_before.confidence_score if sr.rating_before.confidence_score is not none else "-" }}</td>
+      </tr>
+      <tr>
+        <td>Después</td>
+        <td>{{ sr.rating_after.discipline }}</td>
+        <td>{{ sr.rating_after.score }}</td>
+        <td>{{ sr.rating_after.confidence_score }}</td>
+      </tr>
+    </tbody>
+  </table>
+</fieldset>
+{% endfor %}
+{% else %}
+<p>Todavía no tenés ningún Season Review.</p>
+{% endif %}
+
 {% endblock %}

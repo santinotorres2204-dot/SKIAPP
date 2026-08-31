@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Trip
+from app.models.enums import TripStatus
 from app.routers.users import get_user_or_404
 from app.schemas.trip import TripCreate, TripRead, TripUpdate
 
@@ -42,6 +43,19 @@ def update_trip(trip_id: int, payload: TripUpdate, db: Session = Depends(get_db)
     trip = get_trip_or_404(db, trip_id)
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(trip, field, getattr(value, "value", value))
+    db.commit()
+    db.refresh(trip)
+    return trip
+
+
+@router.post("/trips/{trip_id}/complete", response_model=TripRead)
+def complete_trip(trip_id: int, db: Session = Depends(get_db)) -> Trip:
+    """Marca un viaje como completado (spec seccion 5, paso 8). Equivalente a
+    PATCH /trips/{trip_id} con {"status": "completed"}, expuesto aparte
+    porque es la accion puntual que dispara el flujo de Season Review.
+    """
+    trip = get_trip_or_404(db, trip_id)
+    trip.status = TripStatus.COMPLETED.value
     db.commit()
     db.refresh(trip)
     return trip

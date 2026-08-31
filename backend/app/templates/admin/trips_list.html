@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Viajes{% endblock %}
+{% block content %}
+<p>
+  <a href="/admin/videos">Videos</a> |
+  <a href="/admin/trips?estado=pendientes">Viajes pendientes de season review</a> |
+  <a href="/admin/trips?estado=todos">Todos los viajes</a>
+</p>
+
+{% if not rows %}
+<p>No hay viajes{{ " pendientes de season review" if estado != "todos" else "" }}.</p>
+{% else %}
+<table>
+<thead>
+<tr>
+  <th>ID</th><th>Usuario</th><th>Destino</th><th>Fecha</th><th>Estado viaje</th><th>Season review</th><th></th>
+</tr>
+</thead>
+<tbody>
+{% for row in rows %}
+{% set t = row.trip %}
+<tr>
+  <td>{{ t.id }}</td>
+  <td>{{ t.user.name }} ({{ t.user.email }})</td>
+  <td>{{ t.destination }}</td>
+  <td>{{ t.start_date }}</td>
+  <td><span class="badge {{ 'badge-processed' if t.status == 'completed' else 'badge-pending' }}">{{ t.status }}</span></td>
+  <td>{{ "Sí" if row.reviewed else "No" }}</td>
+  <td><a href="/admin/trips/{{ t.id }}/season-review">Ver / cargar</a></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+{% endblock %}

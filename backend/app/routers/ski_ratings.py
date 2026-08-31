@@ -10,6 +10,34 @@ from app.schemas.ski_rating import SkiRatingRead, SkiRatingUpsert
 router = APIRouter(tags=["ski-ratings"])
 
 
+def upsert_ski_rating_row(
+    db: Session,
+    user_id: int,
+    discipline: str,
+    score: int,
+    confidence_score: int,
+    coach_verified: bool = False,
+) -> SkiRating:
+    """Crea o actualiza el SkiRating de un usuario para una disciplina
+    (unique constraint user_id+discipline). No commitea -- lo maneja el
+    caller, para poder combinarlo en la misma transaccion que otros cambios
+    (ej. el builder de Season Review del panel admin).
+    """
+    rating = (
+        db.query(SkiRating)
+        .filter(SkiRating.user_id == user_id, SkiRating.discipline == discipline)
+        .one_or_none()
+    )
+    if rating is None:
+        rating = SkiRating(user_id=user_id, discipline=discipline)
+        db.add(rating)
+
+    rating.score = score
+    rating.confidence_score = confidence_score
+    rating.coach_verified = coach_verified
+    return rating
+
+
 @router.put("/users/{user_id}/ski-ratings/{discipline}", response_model=SkiRatingRead)
 def upsert_ski_rating(
     user_id: int,
@@ -18,20 +46,9 @@ def upsert_ski_rating(
     db: Session = Depends(get_db),
 ) -> SkiRating:
     get_user_or_404(db, user_id)
-
-    rating = (
-        db.query(SkiRating)
-        .filter(SkiRating.user_id == user_id, SkiRating.discipline == discipline.value)
-        .one_or_none()
+    rating = upsert_ski_rating_row(
+        db, user_id, discipline.value, payload.score, payload.confidence_score, payload.coach_verified
     )
-    if rating is None:
-        rating = SkiRating(user_id=user_id, discipline=discipline.value)
-        db.add(rating)
-
-    rating.score = payload.score
-    rating.confidence_score = payload.confidence_score
-    rating.coach_verified = payload.coach_verified
-
     db.commit()
     db.refresh(rating)
     return rating
