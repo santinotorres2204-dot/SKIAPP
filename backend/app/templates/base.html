@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>{% block title %}Panel admin{% endblock %} - Ski App</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 2rem; color: #111; }
+  table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+  th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; font-size: 0.9rem; vertical-align: top; }
+  th { background: #f0f0f0; }
+  a { color: #0645ad; }
+  .badge { padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.8rem; }
+  .badge-pending { background: #fff3cd; }
+  .badge-processed { background: #d1e7dd; }
+  .badge-failed { background: #f8d7da; }
+  form.plan-form textarea { width: 100%; min-height: 8rem; font-family: inherit; }
+  fieldset { margin-top: 1.5rem; }
+  pre { background: #f5f5f5; padding: 0.5rem; overflow-x: auto; }
+</style>
+</head>
+<body>
+<h1><a href="/admin/videos">Panel de administrador</a></h1>
+{% block content %}{% endblock %}
+</body>
+</html>

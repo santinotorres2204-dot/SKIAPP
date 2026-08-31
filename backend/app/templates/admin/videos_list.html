@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Videos{% endblock %}
+{% block content %}
+<p>
+  <a href="/admin/videos?estado=pendientes">Pendientes de revisión</a> |
+  <a href="/admin/videos?estado=todos">Todos</a>
+</p>
+
+{% if not rows %}
+<p>No hay videos{{ " pendientes de revisión" if estado != "todos" else "" }}.</p>
+{% else %}
+<table>
+<thead>
+<tr>
+  <th>ID</th><th>Usuario</th><th>Disciplina</th><th>Subido</th><th>Estado análisis</th><th>Confidence</th><th>Revisado</th><th></th>
+</tr>
+</thead>
+<tbody>
+{% for row in rows %}
+{% set v = row.video %}
+<tr>
+  <td>{{ v.id }}</td>
+  <td>{{ v.user.name }} ({{ v.user.email }})</td>
+  <td>{{ v.discipline_tag }}</td>
+  <td>{{ v.uploaded_at.strftime("%Y-%m-%d %H:%M") }}</td>
+  <td><span class="badge badge-{{ v.analysis_status }}">{{ v.analysis_status }}</span></td>
+  <td>{{ v.analysis_result.confidence_score if v.analysis_result else "-" }}</td>
+  <td>{{ "Sí" if row.reviewed else "No" }}</td>
+  <td><a href="/admin/videos/{{ v.id }}">Ver detalle</a></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+{% endblock %}
