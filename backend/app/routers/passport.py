@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import SeasonReview, SkiRating, TrainingPlan, Trip
+from app.models import SeasonReview, SkiRating, TrainingPlan, Trip, VideoUpload
 from app.models.enums import Discipline, SkiLevel
 from app.routers.trips import create_trip
 from app.routers.users import create_user, get_user_or_404
@@ -31,6 +31,13 @@ def passport(request: Request, user_id: int, db: Session = Depends(get_db)):
     user = get_user_or_404(db, user_id)
 
     trips = db.query(Trip).filter(Trip.user_id == user_id).order_by(Trip.start_date.desc()).all()
+    videos = (
+        db.query(VideoUpload)
+        .options(joinedload(VideoUpload.trip), joinedload(VideoUpload.analysis_result))
+        .filter(VideoUpload.user_id == user_id)
+        .order_by(VideoUpload.uploaded_at.desc())
+        .all()
+    )
     ratings = db.query(SkiRating).filter(SkiRating.user_id == user_id).order_by(SkiRating.discipline).all()
     training_plans = (
         db.query(TrainingPlan)
@@ -53,6 +60,7 @@ def passport(request: Request, user_id: int, db: Session = Depends(get_db)):
         {
             "user": user,
             "trips": trips,
+            "videos": videos,
             "ratings": ratings,
             "training_plans": training_plans,
             "season_reviews": season_reviews,

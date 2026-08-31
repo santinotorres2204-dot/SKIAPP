@@ -33,6 +33,35 @@
 <p>Todavía no cargaste ningún viaje.</p>
 {% endif %}
 
+<h3>Mis videos</h3>
+{% if videos %}
+<table>
+  <thead><tr><th>Fecha</th><th>Disciplina</th><th>Viaje</th><th>Estado</th><th>Resumen del análisis</th></tr></thead>
+  <tbody>
+  {% for v in videos %}
+  <tr>
+    <td>{{ v.uploaded_at.strftime("%Y-%m-%d %H:%M") }}</td>
+    <td>{{ v.discipline_tag }}</td>
+    <td>{{ v.trip.destination if v.trip else "-" }}</td>
+    <td><span class="badge badge-{{ v.analysis_status }}">{{ v.analysis_status }}</span></td>
+    <td>
+      {% if v.analysis_status == "processed" and v.analysis_result %}
+        Confidence: {{ v.analysis_result.confidence_score }}/100
+        {% if v.analysis_result.summary %}<br>{{ v.analysis_result.summary }}{% endif %}
+      {% elif v.analysis_status == "failed" %}
+        El análisis no se pudo completar.
+      {% else %}
+        Análisis en curso — actualizá la página en un rato.
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Todavía no subiste ningún video.</p>
+{% endif %}
+
 <h3>Ski Card</h3>
 {% if ratings %}
 <table>
