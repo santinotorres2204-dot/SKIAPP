@@ -1,0 +1,6 @@
+ai-analysis/.venv/
+ai-analysis/__pycache__/
+ai-analysis/models/
+ai-analysis/turns_*/
+*.mp4
+*.mov

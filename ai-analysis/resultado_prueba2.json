@@ -1,0 +1,29 @@
+{
+  "video": "../prueba2.mp4",
+  "detected_patterns": [
+    {
+      "pattern": "asimetria_izq_der",
+      "severity": "alta",
+      "sample_size": 5
+    },
+    {
+      "pattern": "perdida_de_balance",
+      "severity": "media",
+      "sample_size": 5
+    },
+    {
+      "pattern": "inconsistencia_entre_giros",
+      "severity": "baja",
+      "sample_size": 5
+    }
+  ],
+  "confidence_score": 38,
+  "meta": {
+    "frames_sampled": 84,
+    "frames_with_valid_pose": 37,
+    "effective_fps": 7.52,
+    "turns_detected": 5,
+    "turns_izquierda": 2,
+    "turns_derecha": 3
+  }
+}

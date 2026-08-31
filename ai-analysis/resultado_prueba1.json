@@ -1,0 +1,13 @@
+{
+  "video": "../prueba1.mp4",
+  "detected_patterns": [],
+  "confidence_score": 22,
+  "meta": {
+    "frames_sampled": 40,
+    "frames_with_valid_pose": 14,
+    "effective_fps": 7.5,
+    "turns_detected": 2,
+    "turns_izquierda": 1,
+    "turns_derecha": 1
+  }
+}
