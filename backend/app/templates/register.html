@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Registro{% endblock %}
+{% block header %}Ski App{% endblock %}
+{% block content %}
+<h2>Registro</h2>
+<p>Completá tus datos básicos. Todavía no hay login — al registrarte te llevamos directo a tu perfil.</p>
+
+{% if error %}
+<p class="summary-box" style="border-left-color:#a33; background:#fee;">{{ error }}</p>
+{% endif %}
+
+<form method="post" action="/register">
+  <label>Nombre:<br>
+    <input type="text" name="name" required>
+  </label>
+  <br><br>
+  <label>Email:<br>
+    <input type="email" name="email" required>
+  </label>
+  <br><br>
+  <label>Nivel:
+    <select name="ski_level">
+    {% for lvl in ski_levels %}
+      <option value="{{ lvl.value }}">{{ lvl.value }}</option>
+    {% endfor %}
+    </select>
+  </label>
+  <br><br>
+  <label>Años esquiando: <input type="number" name="years_skiing" min="0" required></label>
+  <br><br>
+  <button type="submit">Registrarme</button>
+</form>
+{% endblock %}

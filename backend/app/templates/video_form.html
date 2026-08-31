@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Subir video{% endblock %}
+{% block header %}Ski App{% endblock %}
+{% block content %}
+<p><a href="/passport/{{ user.id }}">&larr; Volver a mi perfil</a></p>
+
+<h2>Subir video</h2>
+<p>Usuario: {{ user.name }}</p>
+<p>
+  El análisis (MediaPipe) se corre en segundo plano después de subir el video —
+  no hace falta esperar en esta página. Podés ver el resultado más tarde en tu perfil.
+</p>
+
+<form method="post" action="/passport/{{ user.id }}/videos" enctype="multipart/form-data">
+  <label>Disciplina:
+    <select name="discipline_tag">
+    {% for d in disciplines %}
+      <option value="{{ d.value }}">{{ d.value }}</option>
+    {% endfor %}
+    </select>
+  </label>
+  <br><br>
+  <label>Viaje (opcional):
+    <select name="trip_id">
+      <option value="">Sin viaje asociado</option>
+    {% for t in trips %}
+      <option value="{{ t.id }}">{{ t.destination }} ({{ t.start_date }})</option>
+    {% endfor %}
+    </select>
+  </label>
+  <br><br>
+  <label>Video:<br>
+    <input type="file" name="file" accept="video/*" required>
+  </label>
+  <br><br>
+  <button type="submit">Subir video</button>
+</form>
+{% endblock %}
