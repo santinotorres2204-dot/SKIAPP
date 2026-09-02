@@ -1,0 +1,305 @@
+{% extends "base_user.html" %}
+{% block title %}Physical Assessment - {{ user.name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .assess-card { border: 1px solid var(--line); background: var(--white); padding: 1.5rem; margin-bottom: 1.5rem; }
+  .assess-card-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.03em;
+    color: var(--shadow);
+    margin: 0;
+  }
+  .assess-card-desc { color: var(--mist); font-size: 0.9rem; margin: 0.6rem 0 0.3rem; max-width: 58ch; }
+  .assess-card-measures { font-size: 0.82rem; color: var(--flare-dark); font-style: italic; margin: 0 0 1.1rem; }
+  .assess-field-row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
+  .assess-field { flex: 1 1 160px; }
+  .assess-field label {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--mist);
+    margin-bottom: 0.45rem;
+  }
+  .assess-field input[type="number"] {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    padding: 0.55rem 0.1rem;
+    font-size: 1.05rem;
+    font-family: 'Inter', sans-serif;
+    background: transparent;
+  }
+  .assess-field input[type="number"]:focus { outline: none; border-color: var(--shadow-2); }
+  .assess-timer-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    border: 1px solid var(--flare);
+    color: var(--flare-dark);
+    background: transparent;
+    padding: 0.55rem 1.1rem;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.05em;
+    font-size: 0.95rem;
+    cursor: pointer;
+    white-space: nowrap;
+    height: 2.6rem;
+  }
+  .assess-timer-btn.is-running { background: var(--flare); color: var(--white); }
+  .assess-timer-display { font-variant-numeric: tabular-nums; min-width: 3rem; text-align: center; }
+
+  .assess-submit { width: 100%; text-align: center; margin-top: 0.5rem; }
+
+  .asymmetry-alert {
+    border-left: 3px solid var(--flare);
+    background: rgba(255, 68, 25, 0.08);
+    color: var(--flare-dark);
+    padding: 0.85rem 1.1rem;
+    font-size: 0.92rem;
+    margin: 0 0 1.8rem;
+  }
+
+  .progress-row { padding: 1.25rem 0; border-bottom: 1px solid var(--line); }
+  .progress-row:last-child { border-bottom: none; }
+  .progress-values {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    color: var(--shadow);
+    margin: 0.4rem 0 0.7rem;
+  }
+  .progress-unit { font-family: 'Inter', sans-serif; font-size: 0.7rem; color: var(--mist); margin-left: 0.15rem; }
+  .progress-arrow { font-size: 1.1rem; }
+  .progress-arrow.up { color: #1a9c53; }
+  .progress-arrow.down { color: var(--flare-dark); }
+  .progress-arrow.same { color: var(--mist); }
+  .progress-bar-track {
+    position: relative;
+    height: 10px;
+    background: var(--snow-dim);
+    border-radius: 999px;
+  }
+  .progress-bar-after {
+    position: absolute;
+    inset: 0;
+    width: 0;
+    background: var(--flare);
+    border-radius: 999px;
+    transition: width 0.6s ease;
+  }
+  .progress-bar-marker {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 2px;
+    background: var(--shadow);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<header class="page-header">
+  <div class="container-wide">
+    <p class="eyebrow">{{ user.name }}</p>
+    <h1 class="page-title">Physical Assessment</h1>
+    <p class="lede">Completá los 5 tests y registrá tus resultados. Repetí cada 2 semanas para trackear tu progreso.</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container-wide" style="max-width: 720px;">
+    <form id="assessment-form" data-user-id="{{ user.id }}">
+
+      <div class="assess-card">
+        <p class="assess-card-name">Wall Sit</p>
+        <p class="assess-card-desc">Espalda contra la pared, rodillas a 90°. Aguantá lo máximo posible.</p>
+        <p class="assess-card-measures">Qué mide: resistencia isométrica de cuádriceps — el músculo más crítico en ski.</p>
+        <div class="assess-field-row">
+          <div class="assess-field">
+            <label for="wall_sit_seconds">Segundos</label>
+            <input type="number" min="0" id="wall_sit_seconds" name="wall_sit_seconds" required>
+          </div>
+          <button type="button" class="assess-timer-btn" data-timer-for="wall_sit_seconds">
+            <span class="assess-timer-display">00:00</span>
+            <span class="assess-timer-label">Iniciar</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="assess-card">
+        <p class="assess-card-name">Single Leg Squat</p>
+        <p class="assess-card-desc">De pie en una pierna, bajá controlado hasta donde puedas. Contá repeticiones.</p>
+        <p class="assess-card-measures">Qué mide: fuerza unilateral y asimetría entre piernas.</p>
+        <div class="assess-field-row">
+          <div class="assess-field">
+            <label for="single_leg_squat_left">Pierna izquierda (reps)</label>
+            <input type="number" min="0" id="single_leg_squat_left" name="single_leg_squat_left" required>
+          </div>
+          <div class="assess-field">
+            <label for="single_leg_squat_right">Pierna derecha (reps)</label>
+            <input type="number" min="0" id="single_leg_squat_right" name="single_leg_squat_right" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="assess-card">
+        <p class="assess-card-name">Jump Squat</p>
+        <p class="assess-card-desc">Sentadilla completa, salto explosivo al subir. Contá repeticiones en 30 segundos.</p>
+        <p class="assess-card-measures">Qué mide: potencia explosiva del tren inferior.</p>
+        <div class="assess-field-row">
+          <div class="assess-field">
+            <label for="jump_squat_reps">Repeticiones</label>
+            <input type="number" min="0" id="jump_squat_reps" name="jump_squat_reps" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="assess-card">
+        <p class="assess-card-name">Plank</p>
+        <p class="assess-card-desc">Posición de plancha en codos, cuerpo recto. Aguantá lo máximo posible.</p>
+        <p class="assess-card-measures">Qué mide: estabilidad del core — clave para absorber terreno irregular.</p>
+        <div class="assess-field-row">
+          <div class="assess-field">
+            <label for="plank_seconds">Segundos</label>
+            <input type="number" min="0" id="plank_seconds" name="plank_seconds" required>
+          </div>
+          <button type="button" class="assess-timer-btn" data-timer-for="plank_seconds">
+            <span class="assess-timer-display">00:00</span>
+            <span class="assess-timer-label">Iniciar</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="assess-card">
+        <p class="assess-card-name">Lateral Bound</p>
+        <p class="assess-card-desc">Saltá lateralmente de pie en pie, lo más lejos posible. Contá repeticiones en 30 segundos.</p>
+        <p class="assess-card-measures">Qué mide: potencia y control lateral — el patrón de movimiento más parecido al carving.</p>
+        <div class="assess-field-row">
+          <div class="assess-field">
+            <label for="lateral_bound_reps">Repeticiones</label>
+            <input type="number" min="0" id="lateral_bound_reps" name="lateral_bound_reps" required>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-flare assess-submit">Guardar Assessment</button>
+    </form>
+  </div>
+</section>
+
+{% if assessment_count >= 2 %}
+<section class="section">
+  <div class="container-wide" style="max-width: 720px;">
+    <h2>Tu progreso</h2>
+
+    {% if asymmetry_warning %}
+    <p class="asymmetry-alert">⚠️ Asimetría detectada — trabajá la pierna izquierda/derecha con más volumen.</p>
+    {% endif %}
+
+    {% for row in progress %}
+    <div class="progress-row">
+      <p class="assess-card-name" style="font-size: 1.05rem;">{{ row.label }}</p>
+      <div class="progress-values">
+        <span>{{ row.before }}<span class="progress-unit">{{ row.unit }}</span></span>
+        <span class="progress-arrow {{ row.direction }}">
+          {% if row.direction == 'up' %}↑{% elif row.direction == 'down' %}↓{% else %}→{% endif %}
+        </span>
+        <span>{{ row.after }}<span class="progress-unit">{{ row.unit }}</span></span>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-after" style="width: {{ row.after_pct }}%;"></div>
+        <div class="progress-bar-marker" style="left: {{ row.before_pct }}%;"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% elif assessment_count == 1 %}
+<section class="section">
+  <div class="container-wide" style="max-width: 720px;">
+    <p class="empty">Completá tu próximo assessment en 2 semanas para ver tu progreso.</p>
+  </div>
+</section>
+{% endif %}
+
+<script>
+(function () {
+  var form = document.getElementById('assessment-form');
+  var userId = Number(form.dataset.userId);
+
+  document.querySelectorAll('.assess-timer-btn').forEach(function (btn) {
+    var targetId = btn.dataset.timerFor;
+    var input = document.getElementById(targetId);
+    var display = btn.querySelector('.assess-timer-display');
+    var label = btn.querySelector('.assess-timer-label');
+    var running = false;
+    var startedAt = null;
+    var intervalId = null;
+
+    function format(totalSeconds) {
+      var mm = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+      var ss = String(totalSeconds % 60).padStart(2, '0');
+      return mm + ':' + ss;
+    }
+
+    btn.addEventListener('click', function () {
+      if (!running) {
+        running = true;
+        startedAt = Date.now();
+        btn.classList.add('is-running');
+        label.textContent = 'Detener';
+        intervalId = setInterval(function () {
+          display.textContent = format(Math.floor((Date.now() - startedAt) / 1000));
+        }, 250);
+      } else {
+        running = false;
+        clearInterval(intervalId);
+        var elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
+        display.textContent = format(elapsedSeconds);
+        input.value = elapsedSeconds;
+        btn.classList.remove('is-running');
+        label.textContent = 'Reiniciar';
+      }
+    });
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var submitBtn = form.querySelector('.assess-submit');
+    submitBtn.disabled = true;
+
+    var payload = {
+      wall_sit_seconds: Number(document.getElementById('wall_sit_seconds').value || 0),
+      single_leg_squat_left: Number(document.getElementById('single_leg_squat_left').value || 0),
+      single_leg_squat_right: Number(document.getElementById('single_leg_squat_right').value || 0),
+      jump_squat_reps: Number(document.getElementById('jump_squat_reps').value || 0),
+      plank_seconds: Number(document.getElementById('plank_seconds').value || 0),
+      lateral_bound_reps: Number(document.getElementById('lateral_bound_reps').value || 0),
+    };
+
+    fetch('/api/assessment/submit?user_id=' + userId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error('submit failed');
+        return res.json();
+      })
+      .then(function () {
+        window.location.reload();
+      })
+      .catch(function () {
+        alert('No se pudo guardar el assessment. Probá de nuevo.');
+        submitBtn.disabled = false;
+      });
+  });
+})();
+</script>
+{% endblock %}

@@ -8,6 +8,7 @@ from app.database import engine
 from app.routers import (
     achievements,
     admin,
+    assessment,
     chat,
     coach,
     day_logs,
@@ -44,6 +45,8 @@ app.include_router(runs.router)
 app.include_router(ride.router)
 app.include_router(chat.router)
 app.include_router(coach.router)
+app.include_router(assessment.router)
+app.include_router(assessment.page_router)
 
 
 @app.get("/health")

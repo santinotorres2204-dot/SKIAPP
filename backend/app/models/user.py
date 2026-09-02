@@ -29,3 +29,4 @@ class User(Base):
     joined_trip_links = relationship("TripParticipant", back_populates="user", cascade="all, delete-orphan")
     runs = relationship("Run", back_populates="user", cascade="all, delete-orphan")
     chat_messages = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")
+    assessment_results = relationship("AssessmentResult", back_populates="user", cascade="all, delete-orphan")

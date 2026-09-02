@@ -187,6 +187,35 @@
       </details>
 
       <details class="acc reveal">
+        <summary>Physical Assessment</summary>
+        <div class="acc-body">
+          {% if latest_assessment %}
+          <p class="eyebrow">Último test — {{ latest_assessment.completed_at.strftime("%Y-%m-%d") }}</p>
+          <table>
+            <thead><tr><th>Wall Sit</th><th>Single Leg Squat</th><th>Jump Squat</th><th>Plank</th><th>Lateral Bound</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>{{ latest_assessment.wall_sit_seconds }} s</td>
+                <td>{{ latest_assessment.single_leg_squat_left }} / {{ latest_assessment.single_leg_squat_right }} reps (izq/der)</td>
+                <td>{{ latest_assessment.jump_squat_reps }} reps</td>
+                <td>{{ latest_assessment.plank_seconds }} s</td>
+                <td>{{ latest_assessment.lateral_bound_reps }} reps</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="cta-row">
+            <a class="btn btn-quiet" href="/assessment?user_id={{ user.id }}">Nuevo assessment</a>
+          </div>
+          {% else %}
+          <p class="empty">
+            Aún no completaste ningún Physical Assessment.
+            <a href="/assessment?user_id={{ user.id }}">&rarr; Hacer mi primer test</a>
+          </p>
+          {% endif %}
+        </div>
+      </details>
+
+      <details class="acc reveal">
         <summary>Season Review</summary>
         <div class="acc-body">
           {% if season_reviews %}

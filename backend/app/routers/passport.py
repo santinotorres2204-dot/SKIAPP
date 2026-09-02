@@ -9,7 +9,17 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.achievements import compute_achievements
 from app.database import get_db
-from app.models import AnalysisResult, DayLog, SeasonReview, SkiRating, TrainingPlan, Trip, User, VideoUpload
+from app.models import (
+    AnalysisResult,
+    AssessmentResult,
+    DayLog,
+    SeasonReview,
+    SkiRating,
+    TrainingPlan,
+    Trip,
+    User,
+    VideoUpload,
+)
 from app.models.enums import Discipline, SkiLevel
 from app.routers.day_logs import create_day_log
 from app.routers.trips import create_trip, get_or_create_join_code, get_trip_or_404, get_trip_ranking, join_trip
@@ -90,6 +100,12 @@ def passport(request: Request, user_id: int, db: Session = Depends(get_db)):
     )
     day_logs = db.query(DayLog).filter(DayLog.user_id == user_id).all()
     achievements = compute_achievements(day_logs)
+    latest_assessment = (
+        db.query(AssessmentResult)
+        .filter(AssessmentResult.user_id == user_id)
+        .order_by(AssessmentResult.completed_at.desc())
+        .first()
+    )
     training_plans_view = [
         {"plan": plan, "blocks": parse_training_plan_blocks(plan.content)} for plan in training_plans
     ]
@@ -127,6 +143,7 @@ def passport(request: Request, user_id: int, db: Session = Depends(get_db)):
             "season_reviews": season_reviews_view,
             "achievements": achievements,
             "earned_achievements": earned_achievements,
+            "latest_assessment": latest_assessment,
         },
     )
 

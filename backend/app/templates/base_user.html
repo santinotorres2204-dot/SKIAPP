@@ -440,14 +440,14 @@
   }
   .site-nav .site-mark { padding: 0; }
   .nav-links { display: flex; align-items: center; gap: 1.5rem; }
-  .nav-ride, .nav-coach {
+  .nav-ride, .nav-coach, .nav-assessment {
     font-family: 'Bebas Neue', sans-serif;
     letter-spacing: 0.12em;
     font-size: 0.78rem;
     color: var(--flare-dark);
     border-bottom: none;
   }
-  .nav-ride:hover, .nav-coach:hover { color: var(--flare); }
+  .nav-ride:hover, .nav-coach:hover, .nav-assessment:hover { color: var(--flare); }
 </style>
 {% block extra_head %}{% endblock %}
 </head>
@@ -456,6 +456,7 @@
   <a class="site-mark" href="/">Ski App</a>
   {% if user is defined %}
   <div class="nav-links">
+    <a class="nav-assessment" href="/assessment?user_id={{ user.id }}">Assessment</a>
     <a class="nav-coach" href="/coach?user_id={{ user.id }}">AI Coach</a>
     <a class="nav-ride" href="/ride?user_id={{ user.id }}">Ride Mode</a>
   </div>
