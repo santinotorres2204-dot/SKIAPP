@@ -1,5 +1,6 @@
 from app.models.analysis_result import AnalysisResult
 from app.models.day_log import DayLog
+from app.models.run import Run
 from app.models.season_review import SeasonReview
 from app.models.ski_rating import SkiRating
 from app.models.training_plan import TrainingPlan
@@ -18,4 +19,5 @@ __all__ = [
     "TrainingPlan",
     "SeasonReview",
     "DayLog",
+    "Run",
 ]

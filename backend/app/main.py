@@ -5,7 +5,7 @@ from sqlalchemy import text
 from pathlib import Path
 
 from app.database import engine
-from app.routers import achievements, admin, day_logs, passport, ski_ratings, trips, users, video_uploads
+from app.routers import achievements, admin, day_logs, passport, ride, runs, ski_ratings, trips, users, video_uploads
 from app.storage import MEDIA_ROOT, SEASON_REVIEWS_ROOT
 
 app = FastAPI(title="Ski App API", version="0.1.0")
@@ -27,6 +27,8 @@ app.include_router(achievements.router)
 app.include_router(ski_ratings.router)
 app.include_router(admin.router)
 app.include_router(passport.router)
+app.include_router(runs.router)
+app.include_router(ride.router)
 
 
 @app.get("/health")

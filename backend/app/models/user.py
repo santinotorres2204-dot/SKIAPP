@@ -27,3 +27,4 @@ class User(Base):
     season_reviews = relationship("SeasonReview", back_populates="user", cascade="all, delete-orphan")
     day_logs = relationship("DayLog", back_populates="user", cascade="all, delete-orphan")
     joined_trip_links = relationship("TripParticipant", back_populates="user", cascade="all, delete-orphan")
+    runs = relationship("Run", back_populates="user", cascade="all, delete-orphan")

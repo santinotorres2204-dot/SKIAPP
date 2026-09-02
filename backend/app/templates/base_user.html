@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>document.documentElement.classList.remove('no-js'); document.documentElement.classList.add('js');</script>
 <title>{% block title %}Ski App{% endblock %}</title>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#0d0d0d">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -428,10 +431,32 @@
   fieldset { border: none; padding: 0; margin: 0 0 2.5rem; }
   fieldset:not(:first-of-type) { padding-top: 2rem; border-top: 1px solid var(--line); }
   legend { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 0.95rem; color: var(--shadow); padding: 0; margin-bottom: 1rem; }
+
+  .site-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.6rem clamp(1.25rem, 4vw, 3rem) 0;
+  }
+  .site-nav .site-mark { padding: 0; }
+  .nav-ride {
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.12em;
+    font-size: 0.78rem;
+    color: var(--flare-dark);
+    border-bottom: none;
+  }
+  .nav-ride:hover { color: var(--flare); }
 </style>
+{% block extra_head %}{% endblock %}
 </head>
 <body>
-<a class="site-mark" href="/">Ski App</a>
+<nav class="site-nav">
+  <a class="site-mark" href="/">Ski App</a>
+  {% if user is defined %}
+  <a class="nav-ride" href="/ride?user_id={{ user.id }}">Ride Mode</a>
+  {% endif %}
+</nav>
 {% block content %}{% endblock %}
 <script>
   function toggleClamp(btn) {

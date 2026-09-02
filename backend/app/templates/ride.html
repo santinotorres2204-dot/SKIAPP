@@ -1,0 +1,449 @@
+{% extends "base_user.html" %}
+{% block title %}Ride Mode - {{ user.name }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  /* Ride Mode es una pantalla full-bleed propia (PWA en modo fullscreen):
+     se superpone a todo lo demas de base_user.html, incluida la nav. */
+  #ride-root {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: #0d0d0d;
+    color: #fff;
+    font-family: 'Inter', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+  }
+  /* [hidden] es un estilo de UA (baja prioridad de origen); sin este
+     override, nuestro propio display:flex de abajo le gana en cascada y el
+     atributo hidden deja de ocultar el elemento. */
+  .ride-screen[hidden] { display: none; }
+  .ride-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    gap: 1.5rem;
+  }
+  .ride-gps-indicator {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .ride-gps-indicator.is-ready { color: #3ddc84; }
+  .ride-btn-start {
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 1.6rem;
+    padding: 1.6rem 3rem;
+    border-radius: 999px;
+    border: none;
+    background: var(--flare);
+    color: #fff;
+    cursor: pointer;
+  }
+  .ride-btn-start:disabled { background: #333; color: rgba(255, 255, 255, 0.4); cursor: not-allowed; }
+  .ride-error {
+    color: #ff9a73;
+    font-size: 0.88rem;
+    max-width: 32ch;
+    line-height: 1.5;
+  }
+  .ride-wake-warning {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.78rem;
+    padding: 0.6rem 1.25rem 0;
+    text-align: center;
+  }
+
+  #ride-tracking { justify-content: flex-start; padding: 0; gap: 0; }
+  .ride-banner {
+    background: #b23a1a;
+    color: #fff;
+    text-align: center;
+    padding: 0.6rem 1rem;
+    font-size: 0.82rem;
+    letter-spacing: 0.03em;
+  }
+  .ride-stats { padding: 1.5rem 1.25rem 1rem; text-align: center; }
+  .ride-stat-main { line-height: 1; margin-bottom: 1.1rem; }
+  .ride-stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(4rem, 20vw, 6rem);
+    color: var(--flare);
+  }
+  .ride-stat-unit { font-size: 1.1rem; color: rgba(255, 255, 255, 0.5); margin-left: 0.4rem; }
+  .ride-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.15rem;
+  }
+  .ride-stats-grid div { display: flex; flex-direction: column; gap: 0.25rem; }
+  .ride-stat-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.45);
+  }
+  #ride-map { flex: 1; min-height: 220px; }
+  .leaflet-container { background: #1a1a1a; }
+  .ride-btn-end {
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 1.15rem;
+    padding: 1.15rem;
+    border: none;
+    background: var(--flare);
+    color: #fff;
+    cursor: pointer;
+    width: 100%;
+  }
+  .ride-btn-end:disabled { background: #333; color: rgba(255, 255, 255, 0.4); cursor: not-allowed; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="ride-root" data-user-id="{{ user.id }}">
+
+  <section id="ride-idle" class="ride-screen">
+    <p class="ride-gps-indicator" id="gps-indicator">Buscando señal GPS…</p>
+    <button type="button" id="btn-start" class="ride-btn-start" disabled>Iniciar bajada</button>
+    <p class="ride-error" id="ride-idle-error" hidden></p>
+  </section>
+
+  <section id="ride-tracking" class="ride-screen" hidden>
+    <div class="ride-banner" id="ride-gps-lost" hidden>Señal GPS perdida — tracking en pausa…</div>
+    <div class="ride-stats">
+      <div class="ride-stat-main">
+        <span class="ride-stat-value" id="stat-speed">0</span><span class="ride-stat-unit">km/h</span>
+      </div>
+      <div class="ride-stats-grid">
+        <div><span class="ride-stat-label">Máxima</span><span><span id="stat-max-speed">0</span> km/h</span></div>
+        <div><span class="ride-stat-label">Distancia</span><span><span id="stat-distance">0.00</span> km</span></div>
+        <div><span class="ride-stat-label">Altitud</span><span><span id="stat-altitude">—</span> m</span></div>
+        <div><span class="ride-stat-label">Tiempo</span><span id="stat-timer">00:00</span></div>
+      </div>
+    </div>
+    <div id="ride-map"></div>
+    <button type="button" id="btn-end" class="ride-btn-end">Terminar bajada</button>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  var root = document.getElementById('ride-root');
+  var userId = Number(root.dataset.userId);
+
+  var rideIdle = document.getElementById('ride-idle');
+  var rideTracking = document.getElementById('ride-tracking');
+  var gpsIndicator = document.getElementById('gps-indicator');
+  var rideIdleError = document.getElementById('ride-idle-error');
+  var gpsLostBanner = document.getElementById('ride-gps-lost');
+  var btnStart = document.getElementById('btn-start');
+  var btnEnd = document.getElementById('btn-end');
+  var statSpeed = document.getElementById('stat-speed');
+  var statMaxSpeed = document.getElementById('stat-max-speed');
+  var statDistance = document.getElementById('stat-distance');
+  var statAltitude = document.getElementById('stat-altitude');
+  var statTimer = document.getElementById('stat-timer');
+
+  var runId = null;
+  var isTracking = false;
+  var isPaused = false;
+  var latestPosition = null;
+  var points = [];
+  var recentSpeeds = [];
+  var maxSpeedKmh = 0;
+  var totalDistanceKm = 0;
+  var elevationGain = 0;
+  var elevationLoss = 0;
+  var startTimestamp = null;
+  var timerInterval = null;
+  var wakeLock = null;
+  var map = null;
+  var polyline = null;
+
+  // --- Haversine: distancia en km entre dos puntos GPS ---
+  function haversineKm(lat1, lng1, lat2, lng2) {
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLng = (lng2 - lng1) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  function describeGeoError(err) {
+    switch (err.code) {
+      case err.PERMISSION_DENIED:
+        return 'Necesitamos permiso de ubicación para trackear tu bajada. Habilitalo en la configuración del navegador.';
+      case err.POSITION_UNAVAILABLE:
+        return 'No pudimos obtener tu posición GPS.';
+      case err.TIMEOUT:
+        return 'La búsqueda de señal GPS tardó demasiado — probá en un lugar más despejado.';
+      default:
+        return 'No se pudo acceder al GPS en este dispositivo.';
+    }
+  }
+
+  // --- Mapa (Leaflet) ---
+  function initMap(lat, lng) {
+    map = L.map('ride-map', { zoomControl: false, attributionControl: true }).setView([lat, lng], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(map);
+    polyline = L.polyline([], { color: '#ff4419', weight: 4 }).addTo(map);
+  }
+
+  function updateMap(lat, lng) {
+    if (!map) { initMap(lat, lng); return; }
+    polyline.addLatLng([lat, lng]);
+    map.panTo([lat, lng]);
+  }
+
+  // --- Cronometro ---
+  function updateTimerDisplay() {
+    var elapsed = Math.floor((Date.now() - startTimestamp) / 1000);
+    var mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+    var ss = String(elapsed % 60).padStart(2, '0');
+    statTimer.textContent = mm + ':' + ss;
+  }
+  function startTimer() {
+    updateTimerDisplay();
+    timerInterval = setInterval(updateTimerDisplay, 1000);
+  }
+
+  // --- Wake Lock ---
+  function showWakeLockWarning() {
+    if (document.querySelector('.ride-wake-warning')) return;
+    var p = document.createElement('p');
+    p.className = 'ride-wake-warning';
+    p.textContent = 'Este dispositivo no soporta mantener la pantalla encendida automáticamente — no la bloquees manualmente durante la bajada.';
+    rideTracking.insertBefore(p, rideTracking.firstChild);
+  }
+  function requestWakeLock() {
+    if (!('wakeLock' in navigator)) {
+      showWakeLockWarning();
+      return Promise.resolve();
+    }
+    return navigator.wakeLock.request('screen').then(function (lock) {
+      wakeLock = lock;
+      wakeLock.addEventListener('release', function () { wakeLock = null; });
+    }).catch(function () {
+      showWakeLockWarning();
+    });
+  }
+  function releaseWakeLock() {
+    if (!wakeLock) return Promise.resolve();
+    var lock = wakeLock;
+    wakeLock = null;
+    return lock.release().catch(function () {});
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (isTracking && !wakeLock && document.visibilityState === 'visible' && 'wakeLock' in navigator) {
+      // el navegador libera el wake lock solo cuando la pestaña pierde foco
+      requestWakeLock();
+    }
+  });
+
+  // --- Registro de puntos GPS ---
+  function recordPoint(pos, skipDelta) {
+    var lat = pos.coords.latitude;
+    var lng = pos.coords.longitude;
+    var altitude = pos.coords.altitude;
+    var timestamp = pos.timestamp;
+    var point = { lat: lat, lng: lng, alt: altitude, speed: 0, timestamp: timestamp };
+
+    var prev = points.length ? points[points.length - 1] : null;
+    if (prev && !skipDelta) {
+      var distKm = haversineKm(prev.lat, prev.lng, lat, lng);
+      var dtHours = (timestamp - prev.timestamp) / 1000 / 3600;
+      var instSpeed = dtHours > 0 ? distKm / dtHours : 0;
+      if (!isFinite(instSpeed) || instSpeed > 200) {
+        instSpeed = recentSpeeds.length ? recentSpeeds[recentSpeeds.length - 1] : 0;
+      }
+
+      recentSpeeds.push(instSpeed);
+      if (recentSpeeds.length > 3) recentSpeeds.shift();
+      var smoothedSpeed = recentSpeeds.reduce(function (a, b) { return a + b; }, 0) / recentSpeeds.length;
+
+      point.speed = smoothedSpeed;
+      totalDistanceKm += distKm;
+      if (smoothedSpeed > maxSpeedKmh) maxSpeedKmh = smoothedSpeed;
+
+      if (altitude != null && prev.alt != null) {
+        var diff = altitude - prev.alt;
+        if (diff > 0) { elevationGain += diff; } else { elevationLoss += -diff; }
+      }
+
+      statSpeed.textContent = smoothedSpeed.toFixed(0);
+      statMaxSpeed.textContent = maxSpeedKmh.toFixed(0);
+      statDistance.textContent = totalDistanceKm.toFixed(2);
+    }
+
+    statAltitude.textContent = altitude != null ? Math.round(altitude) : '—';
+    points.push(point);
+    updateMap(lat, lng);
+  }
+
+  function showGpsLostBanner() { gpsLostBanner.hidden = false; }
+  function hideGpsLostBanner() { gpsLostBanner.hidden = true; }
+
+  // --- Geolocalizacion: un unico watch corre desde que carga la pagina.
+  // Antes de arrancar solo alimenta el indicador "GPS listo"; durante el
+  // tracking, cada posicion nueva se registra como punto de la bajada.
+  //
+  // watchPosition puede disparar un error aislado (ej. POSITION_UNAVAILABLE)
+  // justo antes de un fix bueno -- pasa seguido tanto en dispositivos reales
+  // (reacquisicion de satelites) como en este mismo test con GPS simulado.
+  // Tratar cada error suelto como "señal perdida" arruinaria la distancia/
+  // velocidad de la bajada constantemente, asi que solo consideramos que la
+  // señal se perdio de verdad si pasan GPS_LOST_THRESHOLD_MS sin ni un fix
+  // exitoso de por medio. ---
+  var GPS_LOST_THRESHOLD_MS = 5000;
+  var gpsLostTimer = null;
+
+  function handlePositionUpdate(pos) {
+    if (gpsLostTimer) { clearTimeout(gpsLostTimer); gpsLostTimer = null; }
+
+    latestPosition = pos;
+    gpsIndicator.textContent = 'GPS listo';
+    gpsIndicator.classList.add('is-ready');
+    btnStart.disabled = false;
+    rideIdleError.hidden = true;
+
+    if (isTracking) {
+      var wasPaused = isPaused;
+      isPaused = false;
+      hideGpsLostBanner();
+      recordPoint(pos, wasPaused);
+    }
+  }
+
+  function handlePositionError(err) {
+    if (gpsLostTimer) return; // ya hay un timer de gracia corriendo, no reiniciarlo por cada error suelto
+    gpsLostTimer = setTimeout(function () {
+      gpsLostTimer = null;
+      if (isTracking) {
+        isPaused = true;
+        showGpsLostBanner();
+      } else if (!latestPosition) {
+        // recien ahora, tras GPS_LOST_THRESHOLD_MS sin ningun fix, mostramos el error duro en idle
+        gpsIndicator.textContent = 'Señal GPS no disponible';
+        gpsIndicator.classList.remove('is-ready');
+        rideIdleError.hidden = false;
+        rideIdleError.textContent = describeGeoError(err);
+        btnStart.disabled = true;
+      }
+    }, GPS_LOST_THRESHOLD_MS);
+  }
+
+  if (!('geolocation' in navigator)) {
+    gpsIndicator.textContent = 'Tu navegador no soporta geolocalización';
+    rideIdleError.hidden = false;
+    rideIdleError.textContent = 'No vamos a poder trackear tu bajada en este dispositivo.';
+    btnStart.disabled = true;
+  } else {
+    navigator.geolocation.watchPosition(handlePositionUpdate, handlePositionError, {
+      enableHighAccuracy: true,
+      maximumAge: 5000,
+      timeout: 15000,
+    });
+  }
+
+  // --- Iniciar bajada ---
+  btnStart.addEventListener('click', function () {
+    btnStart.disabled = true;
+    rideIdleError.hidden = true;
+
+    fetch('/api/runs/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId }),
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error('start failed');
+        return res.json();
+      })
+      .then(function (data) {
+        runId = data.run_id;
+
+        points = [];
+        recentSpeeds = [];
+        maxSpeedKmh = 0;
+        totalDistanceKm = 0;
+        elevationGain = 0;
+        elevationLoss = 0;
+        startTimestamp = Date.now();
+        isTracking = true;
+        isPaused = false;
+
+        rideIdle.hidden = true;
+        rideTracking.hidden = false;
+        btnEnd.disabled = false;
+
+        requestWakeLock();
+        startTimer();
+        if (latestPosition) recordPoint(latestPosition, true);
+      })
+      .catch(function () {
+        rideIdleError.hidden = false;
+        rideIdleError.textContent = 'No se pudo conectar con el servidor. Probá de nuevo.';
+        btnStart.disabled = false;
+      });
+  });
+
+  // --- Terminar bajada ---
+  btnEnd.addEventListener('click', function () {
+    btnEnd.disabled = true;
+    isTracking = false;
+    clearInterval(timerInterval);
+    releaseWakeLock();
+
+    var elapsedHours = startTimestamp ? (Date.now() - startTimestamp) / 1000 / 3600 : 0;
+    var avgSpeedKmh = totalDistanceKm > 0 && elapsedHours > 0 ? totalDistanceKm / elapsedHours : 0;
+
+    var payload = {
+      gps_track: points,
+      max_speed_kmh: Number(maxSpeedKmh.toFixed(2)),
+      avg_speed_kmh: Number(avgSpeedKmh.toFixed(2)),
+      distance_km: Number(totalDistanceKm.toFixed(3)),
+      elevation_gain_m: Math.round(elevationGain),
+      elevation_loss_m: Math.round(elevationLoss),
+    };
+
+    fetch('/api/runs/' + runId + '/end', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error('end failed');
+        window.location.href = '/passport/' + userId;
+      })
+      .catch(function () {
+        alert('No se pudo guardar la bajada. Revisá tu conexión y tocá "Terminar bajada" de nuevo.');
+        btnEnd.disabled = false;
+        isTracking = true;
+      });
+  });
+})();
+</script>
+{% endblock %}
