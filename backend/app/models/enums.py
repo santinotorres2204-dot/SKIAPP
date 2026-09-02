@@ -37,3 +37,8 @@ class AnalysisStatus(str, enum.Enum):
     PENDING = "pending"
     PROCESSED = "processed"
     FAILED = "failed"
+
+
+class ChatRole(str, enum.Enum):
+    USER = "user"
+    ASSISTANT = "assistant"

@@ -1,0 +1,309 @@
+{% extends "base_user.html" %}
+{% block title %}AI Ski Coach - {{ user.name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Chat full-bleed (mismo patron que /ride): se superpone a todo lo demas
+     de base_user.html, incluida la nav. */
+  #coach-root {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: #0d0d0d;
+    color: #fff;
+    font-family: 'Inter', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+  }
+  .coach-header {
+    flex-shrink: 0;
+    padding: 1.4rem 1.25rem 1.1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .coach-back {
+    display: inline-block;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 0.7rem;
+    border-bottom: none;
+  }
+  .coach-back:hover { color: rgba(255, 255, 255, 0.8); }
+  .coach-title {
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.05em;
+    font-size: 1.9rem;
+    color: #fff;
+  }
+  .coach-subtitle {
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.45);
+    margin-top: 0.25rem;
+  }
+
+  .coach-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+  .msg-row { display: flex; align-items: flex-end; gap: 0.55rem; max-width: 84%; }
+  .msg-row.user { align-self: flex-end; }
+  .msg-row.assistant { align-self: flex-start; }
+  .msg-avatar {
+    flex-shrink: 0;
+    width: 1.9rem;
+    height: 1.9rem;
+    border-radius: 50%;
+    background: var(--flare);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+  }
+  .msg-bubble {
+    padding: 0.75rem 1rem;
+    border-radius: 1.15rem;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .msg-row.user .msg-bubble { background: #e8420a; color: #fff; border-bottom-right-radius: 0.3rem; }
+  .msg-row.assistant .msg-bubble {
+    background: #1a1a1a;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom-left-radius: 0.3rem;
+  }
+
+  .typing-dots { display: flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.1rem; }
+  .typing-dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    animation: typing-pulse 1.2s infinite ease-in-out;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing-pulse {
+    0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-3px); }
+  }
+
+  .coach-input-bar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.6rem;
+    padding: 0.9rem 1rem;
+    padding-bottom: calc(0.9rem + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: #0d0d0d;
+  }
+  .coach-input {
+    flex: 1;
+    resize: none;
+    max-height: 6.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 1.4rem;
+    background: #151515;
+    color: #fff;
+    padding: 0.65rem 1.1rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.92rem;
+    line-height: 1.4;
+  }
+  .coach-input:focus { outline: none; border-color: var(--flare); }
+  .coach-input:disabled { opacity: 0.5; }
+  .coach-send {
+    flex-shrink: 0;
+    width: 2.7rem;
+    height: 2.7rem;
+    border-radius: 50%;
+    border: none;
+    background: var(--flare);
+    color: #fff;
+    cursor: pointer;
+    font-size: 1.05rem;
+    line-height: 1;
+  }
+  .coach-send:disabled { background: #333; color: rgba(255, 255, 255, 0.4); cursor: not-allowed; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="coach-root" data-user-id="{{ user.id }}" data-user-name="{{ user.name }}">
+  <header class="coach-header">
+    <a class="coach-back" href="/passport/{{ user.id }}">&larr; Volver a mi perfil</a>
+    <p class="coach-title">SKI COACH</p>
+    <p class="coach-subtitle">powered by AI · respuestas en segundos</p>
+  </header>
+
+  <div class="coach-messages" id="coach-messages"></div>
+
+  <form class="coach-input-bar" id="coach-form">
+    <textarea
+      id="coach-input"
+      class="coach-input"
+      rows="1"
+      maxlength="4000"
+      placeholder="Escribile a tu coach…"
+    ></textarea>
+    <button type="submit" class="coach-send" id="coach-send" aria-label="Enviar">➤</button>
+  </form>
+</div>
+
+<script>
+(function () {
+  var root = document.getElementById('coach-root');
+  var userId = Number(root.dataset.userId);
+  var userName = root.dataset.userName;
+
+  var messagesEl = document.getElementById('coach-messages');
+  var form = document.getElementById('coach-form');
+  var input = document.getElementById('coach-input');
+  var sendBtn = document.getElementById('coach-send');
+
+  function scrollToBottom() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function renderMessage(role, content) {
+    var row = document.createElement('div');
+    row.className = 'msg-row ' + role;
+
+    if (role === 'assistant') {
+      var avatar = document.createElement('div');
+      avatar.className = 'msg-avatar';
+      avatar.textContent = 'SC';
+      row.appendChild(avatar);
+    }
+
+    var bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.textContent = content;
+    row.appendChild(bubble);
+
+    messagesEl.appendChild(row);
+    scrollToBottom();
+    return row;
+  }
+
+  function showTyping() {
+    var row = document.createElement('div');
+    row.className = 'msg-row assistant';
+    row.id = 'typing-row';
+
+    var avatar = document.createElement('div');
+    avatar.className = 'msg-avatar';
+    avatar.textContent = 'SC';
+
+    var bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    var dots = document.createElement('div');
+    dots.className = 'typing-dots';
+    dots.innerHTML = '<span></span><span></span><span></span>';
+    bubble.appendChild(dots);
+
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    messagesEl.appendChild(row);
+    scrollToBottom();
+  }
+
+  function hideTyping() {
+    var row = document.getElementById('typing-row');
+    if (row) row.remove();
+  }
+
+  function renderWelcome() {
+    renderMessage(
+      'assistant',
+      '¡Hola ' + userName + '! Soy tu AI Ski Coach. Preguntame lo que necesites — calentamiento, ' +
+      'técnica, cómo manejar el miedo en las pendientes, tu plan de entrenamiento — y te respondo con ' +
+      'algo específico para vos.'
+    );
+  }
+
+  function loadHistory() {
+    fetch('/api/chat/history?user_id=' + userId)
+      .then(function (res) {
+        if (!res.ok) throw new Error('history failed');
+        return res.json();
+      })
+      .then(function (messages) {
+        if (!messages.length) {
+          renderWelcome();
+          return;
+        }
+        messages.forEach(function (m) { renderMessage(m.role, m.content); });
+      })
+      .catch(function () {
+        renderWelcome();
+      });
+  }
+
+  function autoGrow() {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 104) + 'px';
+  }
+  input.addEventListener('input', autoGrow);
+
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      form.requestSubmit();
+    }
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var text = input.value.trim();
+    if (!text || input.disabled) return;
+
+    renderMessage('user', text);
+    input.value = '';
+    autoGrow();
+    input.disabled = true;
+    sendBtn.disabled = true;
+    showTyping();
+
+    fetch('/api/chat/message?user_id=' + userId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text }),
+    })
+      .then(function (res) {
+        if (!res.ok) throw new Error('chat failed');
+        return res.json();
+      })
+      .then(function (data) {
+        setTimeout(function () {
+          hideTyping();
+          renderMessage('assistant', data.response);
+          input.disabled = false;
+          sendBtn.disabled = false;
+          input.focus();
+        }, 1500);
+      })
+      .catch(function () {
+        setTimeout(function () {
+          hideTyping();
+          renderMessage('assistant', 'Uy, tuve un problema para responder. Probá de nuevo en un momento.');
+          input.disabled = false;
+          sendBtn.disabled = false;
+        }, 1500);
+      });
+  });
+
+  loadHistory();
+})();
+</script>
+{% endblock %}

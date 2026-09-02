@@ -28,3 +28,4 @@ class User(Base):
     day_logs = relationship("DayLog", back_populates="user", cascade="all, delete-orphan")
     joined_trip_links = relationship("TripParticipant", back_populates="user", cascade="all, delete-orphan")
     runs = relationship("Run", back_populates="user", cascade="all, delete-orphan")
+    chat_messages = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")

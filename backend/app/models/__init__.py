@@ -1,4 +1,5 @@
 from app.models.analysis_result import AnalysisResult
+from app.models.chat_message import ChatMessage
 from app.models.day_log import DayLog
 from app.models.run import Run
 from app.models.season_review import SeasonReview
@@ -20,4 +21,5 @@ __all__ = [
     "SeasonReview",
     "DayLog",
     "Run",
+    "ChatMessage",
 ]
