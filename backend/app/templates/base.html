@@ -2,22 +2,61 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}Panel admin{% endblock %} - Ski App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  body { font-family: system-ui, sans-serif; margin: 2rem; color: #111; }
+  :root {
+    --snow: #f4f7fa;
+    --snow-dim: #e9eef2;
+    --ink: #10202f;
+    --mist: #5b6f81;
+    --shadow: #12233a;
+    --shadow-2: #1c3350;
+    --line: #d7e0e6;
+    --flare: #ff4419;
+    --flare-dark: #d9330f;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', system-ui, sans-serif; margin: 0; padding: 2rem clamp(1.25rem, 4vw, 3rem) 4rem; background: var(--snow); color: var(--ink); line-height: 1.5; }
+  h1 { font-family: 'Bebas Neue', sans-serif; font-weight: 400; letter-spacing: 0.05em; text-transform: uppercase; font-size: 1.6rem; margin: 0 0 1.75rem; padding-bottom: 0.9rem; border-bottom: 1px solid var(--line); color: var(--shadow); }
+  h1 a { color: inherit; border-bottom: none; }
+  h2, h3 { font-family: 'Bebas Neue', sans-serif; font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase; color: var(--shadow); }
+  h2 { font-size: 1.3rem; margin: 2rem 0 1rem; }
+  h3 { font-size: 1.1rem; margin: 1.75rem 0 0.9rem; }
+  a { color: var(--shadow-2); text-decoration: none; border-bottom: 1px solid transparent; }
+  a:hover { border-bottom-color: currentColor; }
   table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
-  th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; font-size: 0.9rem; vertical-align: top; }
-  th { background: #f0f0f0; }
-  a { color: #0645ad; }
-  .badge { padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.8rem; }
-  .badge-pending { background: #fff3cd; }
-  .badge-processed { background: #d1e7dd; }
-  .badge-failed { background: #f8d7da; }
-  form.plan-form textarea { width: 100%; min-height: 8rem; font-family: inherit; }
-  fieldset { margin-top: 1.5rem; }
-  pre { background: #f5f5f5; padding: 0.5rem; overflow-x: auto; }
-  .summary-box { background: #eef2ff; border-left: 4px solid #445; padding: 0.6rem 0.9rem; margin: 0.6rem 0 1rem; }
+  th, td { border: none; border-bottom: 1px solid var(--line); padding: 0.55rem 0.6rem; text-align: left; font-size: 0.88rem; vertical-align: top; }
+  th { font-weight: 600; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--mist); border-bottom: 1px solid var(--ink); background: none; }
+  .badge { display: inline-block; padding: 0.12rem 0.55rem; font-size: 0.78rem; border: 1px solid var(--line); color: var(--mist); white-space: nowrap; }
+  .badge-pending { border-color: var(--line); color: var(--mist); background: none; }
+  .badge-processed { border-color: var(--shadow-2); color: var(--shadow-2); background: none; }
+  .badge-failed { border-color: var(--flare); color: var(--flare); background: rgba(255, 68, 25, 0.08); }
+  form.plan-form textarea { width: 100%; min-height: 8rem; font-family: inherit; border: 1px solid var(--line); padding: 0.6rem; }
+  fieldset { margin-top: 1.75rem; border: none; padding: 1.5rem 0 0; border-top: 1px solid var(--line); }
+  legend { font-family: 'Bebas Neue', sans-serif; font-weight: 400; letter-spacing: 0.03em; text-transform: uppercase; font-size: 1.05rem; color: var(--shadow); padding: 0; }
+  pre { background: var(--snow-dim); padding: 0.75rem; overflow-x: auto; font-size: 0.82rem; }
+  .summary-box { background: var(--snow-dim); border-left: 3px solid var(--shadow-2); padding: 0.7rem 1rem; margin: 0.75rem 0 1.25rem; }
   td ul { margin: 0; padding-left: 1.1rem; }
+  input[type="text"], input[type="number"], input[type="date"], select {
+    font-family: 'Inter', sans-serif; border: none; border-bottom: 1px solid var(--line); padding: 0.4rem 0.1rem; background: transparent;
+  }
+  button, .btn-flare, .btn-quiet {
+    display: inline-block; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.06em; text-transform: uppercase;
+    font-size: 0.95rem; border: 1px solid transparent; padding: 0.65rem 1.4rem; cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  button, .btn-flare {
+    background: var(--flare); color: #fff; border-color: var(--flare);
+  }
+  button:hover, .btn-flare:hover { background: var(--flare-dark); border-color: var(--flare-dark); }
+  .btn-quiet {
+    background: transparent; color: var(--shadow); border-color: var(--line); font-size: 0.85rem; padding: 0.5rem 1.1rem;
+  }
+  .btn-quiet:hover { border-color: var(--shadow-2); }
 </style>
 </head>
 <body>

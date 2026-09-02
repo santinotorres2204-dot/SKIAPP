@@ -1,128 +1,261 @@
-{% extends "base.html" %}
+{% extends "base_user.html" %}
 {% block title %}Ski Passport - {{ user.name }}{% endblock %}
-{% block header %}Ski Passport{% endblock %}
 {% block content %}
+{% set next_trip = trips | selectattr("status", "equalto", "preparing") | list | first %}
 
-<h2>{{ user.name }}</h2>
-<ul>
-  <li>Email: {{ user.email }}</li>
-  <li>Nivel: {{ user.ski_level }}</li>
-  <li>Años esquiando: {{ user.years_skiing }}</li>
-  <li>Usuario desde: {{ user.created_at.strftime("%Y-%m-%d") }}</li>
-</ul>
-<p>
-  <a href="/passport/{{ user.id }}/trips/new">+ Crear viaje</a> |
-  <a href="/passport/{{ user.id }}/videos/new">+ Subir video</a>
-</p>
+<header class="hero">
+  <div class="container-wide">
+    <p class="eyebrow eyebrow-light">Ski Passport</p>
+    <h1 class="page-title">{{ user.name }}</h1>
+    <div class="hero-meta">
+      <span><strong>{{ user.ski_level }}</strong> nivel</span>
+      <span><strong>{{ user.years_skiing }}</strong> años esquiando</span>
+      <span>{{ user.email }}</span>
+      <span>Usuario desde {{ user.created_at.strftime("%Y-%m-%d") }}</span>
+    </div>
+    <div class="cta-row">
+      <a class="btn btn-quiet-dark" href="/passport/{{ user.id }}/trips/new">+ Crear viaje</a>
+      <a class="btn btn-quiet-dark" href="/passport/{{ user.id }}/videos/new">+ Subir video</a>
+      <a class="btn btn-quiet-dark" href="/passport/{{ user.id }}/trips/join">Unirme a un viaje</a>
+    </div>
+  </div>
+  {% if next_trip %}
+  <div class="hero-next-trip">Próximo destino — {{ next_trip.destination }}</div>
+  {% endif %}
+  <div class="hero-ridge" aria-hidden="true"></div>
+  <div class="hero-peaks" aria-hidden="true"></div>
+</header>
 
-<h3>Historial de viajes</h3>
-{% if trips %}
-<table>
-  <thead><tr><th>Destino</th><th>Fecha</th><th>Estado</th></tr></thead>
-  <tbody>
-  {% for t in trips %}
-  <tr>
-    <td>{{ t.destination }}</td>
-    <td>{{ t.start_date }}</td>
-    <td><span class="badge {{ 'badge-processed' if t.status == 'completed' else 'badge-pending' }}">{{ t.status }}</span></td>
-  </tr>
-  {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p>Todavía no cargaste ningún viaje.</p>
-{% endif %}
-
-<h3>Mis videos</h3>
-{% if videos %}
-<table>
-  <thead><tr><th>Fecha</th><th>Disciplina</th><th>Viaje</th><th>Estado</th><th>Resumen del análisis</th></tr></thead>
-  <tbody>
-  {% for v in videos %}
-  <tr>
-    <td>{{ v.uploaded_at.strftime("%Y-%m-%d %H:%M") }}</td>
-    <td>{{ v.discipline_tag }}</td>
-    <td>{{ v.trip.destination if v.trip else "-" }}</td>
-    <td><span class="badge badge-{{ v.analysis_status }}">{{ v.analysis_status }}</span></td>
-    <td>
-      {% if v.analysis_status == "processed" and v.analysis_result %}
-        Confidence: {{ v.analysis_result.confidence_score }}/100
-        {% if v.analysis_result.summary %}<br>{{ v.analysis_result.summary }}{% endif %}
-      {% elif v.analysis_status == "failed" %}
-        El análisis no se pudo completar.
+<section class="summary-band">
+  <div class="container-wide summary-grid">
+    <div class="summary-block">
+      <p class="eyebrow">Rating principal</p>
+      {% if top_rating %}
+      <p class="summary-stat">{{ top_rating.discipline }}<span class="summary-stat-value">{{ top_rating.score }}</span></p>
+      <p class="summary-sub">
+        Confidence {{ top_rating.confidence_score }}/100{% if top_rating.coach_verified %} · verificado por coach{% endif %}
+      </p>
       {% else %}
-        Análisis en curso — actualizá la página en un rato.
+      <p class="empty">Todavía no tenés ningún rating cargado.</p>
       {% endif %}
-    </td>
-  </tr>
-  {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p>Todavía no subiste ningún video.</p>
-{% endif %}
+    </div>
+    <div class="summary-block">
+      <p class="eyebrow">Achievements desbloqueados</p>
+      {% if earned_achievements %}
+      <div class="badge-row">
+      {% for a in earned_achievements %}
+        <span class="tag tag-flare">{{ a.title }}</span>
+      {% endfor %}
+      </div>
+      {% else %}
+      <p class="empty">Todavía no desbloqueaste ningún logro.</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
 
-<h3>Ski Card</h3>
-{% if ratings %}
-<table>
-  <thead><tr><th>Disciplina</th><th>Rating</th><th>Confidence score</th><th>Verificado por coach</th></tr></thead>
-  <tbody>
-  {% for r in ratings %}
-  <tr>
-    <td>{{ r.discipline }}</td>
-    <td>{{ r.score }}</td>
-    <td>{{ r.confidence_score }}</td>
-    <td>{{ "Sí" if r.coach_verified else "No" }}</td>
-  </tr>
-  {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p>Todavía no tenés ningún rating cargado.</p>
-{% endif %}
+<section class="section">
+  <div class="container-wide">
+    <div class="accordion">
 
-<h3>Planes de entrenamiento</h3>
-{% if training_plans %}
-<ul>
-{% for plan in training_plans %}
-  <li>
-    <strong>{{ plan.trip.destination if plan.trip else "Sin viaje asociado" }}</strong>
-    ({{ plan.created_at.strftime("%Y-%m-%d") }})
-    <br>{{ plan.content }}
-  </li>
-{% endfor %}
-</ul>
-{% else %}
-<p>Todavía no tenés ningún plan de entrenamiento cargado.</p>
-{% endif %}
+      <details class="acc">
+        <summary>Historial de viajes</summary>
+        <div class="acc-body">
+          {% if trips %}
+          <table>
+            <thead><tr><th>Destino</th><th>Fecha</th><th>Estado</th></tr></thead>
+            <tbody>
+            {% for t in trips %}
+            <tr>
+              <td><a href="/passport/{{ user.id }}/trips/{{ t.id }}">{{ t.destination }}</a></td>
+              <td>{{ t.start_date }}</td>
+              <td><span class="tag {{ 'tag-quiet' if t.status == 'completed' else '' }}">{{ t.status }}</span></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="empty">Todavía no cargaste ningún viaje.</p>
+          {% endif %}
+        </div>
+      </details>
 
-<h3>Season Review</h3>
-{% if season_reviews %}
-{% for sr in season_reviews %}
-<fieldset>
-  <legend>{{ sr.trip.destination if sr.trip else "Viaje" }} — {{ sr.created_at.strftime("%Y-%m-%d") }}</legend>
-  <p>Video comparativo: <a href="{{ sr.comparison_video_url }}">{{ sr.comparison_video_url }}</a></p>
-  <table>
-    <thead><tr><th></th><th>Disciplina</th><th>Score</th><th>Confidence</th></tr></thead>
-    <tbody>
-      <tr>
-        <td>Antes</td>
-        <td>{{ sr.rating_before.discipline }}</td>
-        <td>{{ sr.rating_before.score if sr.rating_before.score is not none else "-" }}</td>
-        <td>{{ sr.rating_before.confidence_score if sr.rating_before.confidence_score is not none else "-" }}</td>
-      </tr>
-      <tr>
-        <td>Después</td>
-        <td>{{ sr.rating_after.discipline }}</td>
-        <td>{{ sr.rating_after.score }}</td>
-        <td>{{ sr.rating_after.confidence_score }}</td>
-      </tr>
-    </tbody>
-  </table>
-</fieldset>
-{% endfor %}
-{% else %}
-<p>Todavía no tenés ningún Season Review.</p>
-{% endif %}
+      <details class="acc">
+        <summary>Mis videos</summary>
+        <div class="acc-body">
+          {% if videos %}
+          <table>
+            <thead><tr><th>Fecha</th><th>Disciplina</th><th>Viaje</th><th>Estado</th><th>Resumen del análisis</th></tr></thead>
+            <tbody>
+            {% for v in videos %}
+            <tr>
+              <td>{{ v.uploaded_at.strftime("%Y-%m-%d %H:%M") }}</td>
+              <td>{{ v.discipline_tag }}</td>
+              <td>{{ v.trip.destination if v.trip else "—" }}</td>
+              <td>
+                <span class="tag {{ 'tag-flare' if v.analysis_status == 'failed' else ('tag-quiet' if v.analysis_status == 'processed' else '') }}">{{ v.analysis_status }}</span>
+              </td>
+              <td>
+                {% if v.analysis_status == "processed" and v.analysis_result %}
+                  Confidence: {{ v.analysis_result.confidence_score }}/100
+                  {% if v.analysis_result.summary %}
+                  <br>
+                  <span class="clamp-text" data-clamped="true">{{ v.analysis_result.summary }}</span>
+                  <button type="button" class="link-toggle" onclick="toggleClamp(this)">ver más</button>
+                  {% endif %}
+                {% elif v.analysis_status == "failed" %}
+                  El análisis no se pudo completar.
+                {% else %}
+                  Análisis en curso — actualizá la página en un rato.
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="empty">Todavía no subiste ningún video.</p>
+          {% endif %}
+        </div>
+      </details>
+
+      <details class="acc">
+        <summary>Ski Card</summary>
+        <div class="acc-body">
+          {% if ratings %}
+          <table>
+            <thead><tr><th>Disciplina</th><th>Rating</th><th>Confidence score</th><th>Verificado por coach</th></tr></thead>
+            <tbody>
+            {% for r in ratings %}
+            <tr>
+              <td>{{ r.discipline }}</td>
+              <td>{{ r.score }}</td>
+              <td>{{ r.confidence_score }}</td>
+              <td>{{ "Sí" if r.coach_verified else "No" }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="empty">Todavía no tenés ningún rating cargado.</p>
+          {% endif %}
+        </div>
+      </details>
+
+      <details class="acc">
+        <summary>Achievements</summary>
+        <div class="acc-body">
+          <ul class="achievement-list">
+          {% for a in achievements %}
+            <li class="achievement {{ 'earned' if a.earned else '' }}">
+              <div class="achievement-title">{{ a.title }}</div>
+              <div class="achievement-desc">{{ a.description }}</div>
+            </li>
+          {% endfor %}
+          </ul>
+        </div>
+      </details>
+
+      <details class="acc">
+        <summary>Planes de entrenamiento</summary>
+        <div class="acc-body">
+          {% if training_plans %}
+          <ul class="plan-list">
+          {% for item in training_plans %}
+            <li>
+              <strong>{{ item.plan.trip.destination if item.plan.trip else "Sin viaje asociado" }}</strong>
+              ({{ item.plan.created_at.strftime("%Y-%m-%d") }})
+              <div class="plan-blocks">
+              {% for blk in item.blocks %}
+                <div class="plan-block">
+                  {% if blk.title %}<div class="plan-block-title">{{ blk.title }}</div>{% endif %}
+                  <ul>
+                  {% for line in blk.lines %}
+                    <li>{{ line }}</li>
+                  {% endfor %}
+                  </ul>
+                </div>
+              {% endfor %}
+              </div>
+            </li>
+          {% endfor %}
+          </ul>
+          {% else %}
+          <p class="empty">Todavía no tenés ningún plan de entrenamiento cargado.</p>
+          {% endif %}
+        </div>
+      </details>
+
+      <details class="acc">
+        <summary>Season Review</summary>
+        <div class="acc-body">
+          {% if season_reviews %}
+          {% for item in season_reviews %}
+          {% set sr = item.review %}
+          <fieldset>
+            <legend>{{ sr.trip.destination if sr.trip else "Viaje" }} — {{ sr.created_at.strftime("%Y-%m-%d") }}</legend>
+            <p class="eyebrow" style="margin-bottom: 0.5rem;">Video comparativo</p>
+            <video controls preload="metadata" class="review-video">
+              <source src="{{ sr.comparison_video_url }}">
+              Tu navegador no soporta la reproducción de video. <a href="{{ sr.comparison_video_url }}">Descargar el archivo</a>.
+            </video>
+            <table>
+              <thead><tr><th></th><th>Disciplina</th><th>Score</th><th>Confidence</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Antes</td>
+                  <td>{{ sr.rating_before.discipline }}</td>
+                  <td>{{ sr.rating_before.score if sr.rating_before.score is not none else "-" }}</td>
+                  <td>{{ sr.rating_before.confidence_score if sr.rating_before.confidence_score is not none else "-" }}</td>
+                </tr>
+                <tr>
+                  <td>Después</td>
+                  <td>{{ sr.rating_after.discipline }}</td>
+                  <td>{{ sr.rating_after.score }}</td>
+                  <td>{{ sr.rating_after.confidence_score }}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3>Diferencias detectadas</h3>
+            {% if item.pattern_rows %}
+            <table>
+              <thead><tr><th>Problema</th><th>Antes</th><th>Después</th><th>Evolución</th></tr></thead>
+              <tbody>
+              {% for row in item.pattern_rows %}
+              <tr>
+                <td>{{ row.label }}</td>
+                <td>
+                  {% if row.before.muted %}<span class="empty">{{ row.before.text }}</span>
+                  {% else %}<span class="tag {{ row.before.css_class }}">{{ row.before.text }}</span>{% endif %}
+                </td>
+                <td>
+                  {% if row.after.muted %}<span class="empty">{{ row.after.text }}</span>
+                  {% else %}<span class="tag {{ row.after.css_class }}">{{ row.after.text }}</span>{% endif %}
+                </td>
+                <td>
+                  {% if row.status_class %}<span class="tag {{ row.status_class }}">{{ row.status_text }}</span>
+                  {% else %}{{ row.status_text }}{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+              </tbody>
+            </table>
+            {% elif item.before_analysis is none and item.after_analysis is none %}
+            <p class="empty">No encontramos videos analizados para comparar en esta disciplina — sin datos.</p>
+            {% else %}
+            <p class="empty">No se detectaron patrones en los videos analizados.</p>
+            {% endif %}
+          </fieldset>
+          {% endfor %}
+          {% else %}
+          <p class="empty">Todavía no tenés ningún Season Review.</p>
+          {% endif %}
+        </div>
+      </details>
+
+    </div>
+  </div>
+</section>
 
 {% endblock %}

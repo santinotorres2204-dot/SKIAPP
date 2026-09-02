@@ -1,0 +1,100 @@
+{% extends "base_user.html" %}
+{% block title %}{{ trip.destination }} - Ski App{% endblock %}
+{% block content %}
+
+<header class="page-header">
+  <div class="container-wide">
+    <a class="back-link" href="/passport/{{ user.id }}">&larr; Volver a mi perfil</a>
+    <p class="eyebrow">Viaje</p>
+    <h1 class="page-title" style="font-size: clamp(2.2rem, 6vw, 3.2rem);">{{ trip.destination }}</h1>
+    <div class="meta-row">
+      <span>{{ trip.start_date }}</span>
+      <span class="tag {{ 'tag-quiet' if trip.status == 'completed' else '' }}">{{ trip.status }}</span>
+      <span>Organiza {{ trip.user.name }}</span>
+    </div>
+    <div class="cta-row">
+      <a class="btn btn-quiet" href="/passport/{{ user.id }}/trips/{{ trip.id }}/day-logs/new">+ Cargar día</a>
+    </div>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container-wide">
+    <h2>Social Ride</h2>
+    {% if is_owner %}
+      {% if trip.join_code %}
+      <p>Compartí este código para que se sumen tus compañeros de viaje:</p>
+      <p class="join-code">{{ trip.join_code }}</p>
+      {% else %}
+      <p class="empty">Todavía no generaste un código de invitación para este viaje.</p>
+      <form method="post" action="/passport/{{ user.id }}/trips/{{ trip.id }}/join-code">
+        <button type="submit" class="btn btn-flare">Generar código</button>
+      </form>
+      {% endif %}
+    {% else %}
+    <p class="empty">
+      Este viaje lo organiza {{ trip.user.name }}. Si tenés un código de invitación,
+      sumate desde <a href="/passport/{{ user.id }}/trips/join">Unirme a un viaje</a>.
+    </p>
+    {% endif %}
+
+    <h3>Participantes</h3>
+    <ul class="plan-list">
+    {% for p in participants %}
+      <li>{{ p.name }}{% if p.id == trip.user_id %} <span class="tag tag-quiet">organizador</span>{% endif %}</li>
+    {% endfor %}
+    </ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-wide">
+    <h2>Ranking</h2>
+    {% if ranking %}
+    <table>
+      <thead><tr><th>Esquiador</th><th>Km totales</th><th>Desnivel</th><th>Vel. máxima</th><th>Días</th></tr></thead>
+      <tbody>
+      {% for r in ranking %}
+      <tr>
+        <td>{{ r.user_name }}{% if loop.first %} <span class="tag tag-flare">líder</span>{% endif %}</td>
+        <td>{{ "%.1f"|format(r.total_km) }} km</td>
+        <td>{{ r.total_elevation_m }} m</td>
+        <td>{{ r.max_speed_kmh }} km/h</td>
+        <td>{{ r.days_logged }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">Todavía nadie cargó un día en este viaje.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-wide">
+    <h2>Recap por día</h2>
+    {% if day_logs %}
+    <table>
+      <thead><tr><th>Fecha</th><th>Esquiador</th><th>Km</th><th>Desnivel</th><th>Vel. máxima</th><th>Bajadas</th><th>Nota</th></tr></thead>
+      <tbody>
+      {% for d in day_logs %}
+      <tr>
+        <td>{{ d.date }}</td>
+        <td>{{ d.user.name }}</td>
+        <td>{{ d.distance_km }} km</td>
+        <td>{{ d.elevation_gain_m }} m</td>
+        <td>{{ d.max_speed_kmh }} km/h</td>
+        <td>{{ d.runs_count }}</td>
+        <td>{{ d.note or "-" }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">Todavía no se cargó ningún día para este viaje.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

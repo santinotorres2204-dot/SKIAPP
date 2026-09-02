@@ -1,38 +1,38 @@
-{% extends "base.html" %}
+{% extends "base_user.html" %}
 {% block title %}Subir video{% endblock %}
-{% block header %}Ski App{% endblock %}
 {% block content %}
-<p><a href="/passport/{{ user.id }}">&larr; Volver a mi perfil</a></p>
+<div class="container">
+  <a class="back-link" href="/passport/{{ user.id }}">&larr; Volver a mi perfil</a>
+  <p class="eyebrow">{{ user.name }}</p>
+  <h1 class="page-title">Subir video</h1>
+  <p class="lede">
+    El análisis (MediaPipe) se corre en segundo plano después de subir el video —
+    no hace falta esperar en esta página. Podés ver el resultado más tarde en tu perfil.
+  </p>
 
-<h2>Subir video</h2>
-<p>Usuario: {{ user.name }}</p>
-<p>
-  El análisis (MediaPipe) se corre en segundo plano después de subir el video —
-  no hace falta esperar en esta página. Podés ver el resultado más tarde en tu perfil.
-</p>
-
-<form method="post" action="/passport/{{ user.id }}/videos" enctype="multipart/form-data">
-  <label>Disciplina:
-    <select name="discipline_tag">
-    {% for d in disciplines %}
-      <option value="{{ d.value }}">{{ d.value }}</option>
-    {% endfor %}
-    </select>
-  </label>
-  <br><br>
-  <label>Viaje (opcional):
-    <select name="trip_id">
-      <option value="">Sin viaje asociado</option>
-    {% for t in trips %}
-      <option value="{{ t.id }}">{{ t.destination }} ({{ t.start_date }})</option>
-    {% endfor %}
-    </select>
-  </label>
-  <br><br>
-  <label>Video:<br>
-    <input type="file" name="file" accept="video/*" required>
-  </label>
-  <br><br>
-  <button type="submit">Subir video</button>
-</form>
+  <form method="post" action="/passport/{{ user.id }}/videos" enctype="multipart/form-data">
+    <div class="field">
+      <label for="discipline_tag">Disciplina</label>
+      <select id="discipline_tag" name="discipline_tag">
+      {% for d in disciplines %}
+        <option value="{{ d.value }}">{{ d.value }}</option>
+      {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="trip_id">Viaje (opcional)</label>
+      <select id="trip_id" name="trip_id">
+        <option value="">Sin viaje asociado</option>
+      {% for t in trips %}
+        <option value="{{ t.id }}">{{ t.destination }} ({{ t.start_date }})</option>
+      {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="file">Video</label>
+      <input type="file" id="file" name="file" accept="video/*" required>
+    </div>
+    <button type="submit" class="btn btn-flare">Subir video</button>
+  </form>
+</div>
 {% endblock %}

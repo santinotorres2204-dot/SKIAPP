@@ -1,25 +1,25 @@
-{% extends "base.html" %}
+{% extends "base_user.html" %}
 {% block title %}Nuevo viaje{% endblock %}
-{% block header %}Ski App{% endblock %}
 {% block content %}
-<p><a href="/passport/{{ user.id }}">&larr; Volver a mi perfil</a></p>
+<div class="container">
+  <a class="back-link" href="/passport/{{ user.id }}">&larr; Volver a mi perfil</a>
+  <p class="eyebrow">{{ user.name }}</p>
+  <h1 class="page-title">Nuevo viaje</h1>
 
-<h2>Nuevo viaje</h2>
-<p>Usuario: {{ user.name }}</p>
+  {% if error %}
+  <p class="alert">{{ error }}</p>
+  {% endif %}
 
-{% if error %}
-<p class="summary-box" style="border-left-color:#a33; background:#fee;">{{ error }}</p>
-{% endif %}
-
-<form method="post" action="/passport/{{ user.id }}/trips">
-  <label>Destino:<br>
-    <input type="text" name="destination" required>
-  </label>
-  <br><br>
-  <label>Fecha de inicio:<br>
-    <input type="date" name="start_date" required>
-  </label>
-  <br><br>
-  <button type="submit">Crear viaje</button>
-</form>
+  <form method="post" action="/passport/{{ user.id }}/trips">
+    <div class="field">
+      <label for="destination">Destino</label>
+      <input type="text" id="destination" name="destination" required>
+    </div>
+    <div class="field">
+      <label for="start_date">Fecha de inicio</label>
+      <input type="date" id="start_date" name="start_date" required>
+    </div>
+    <button type="submit" class="btn btn-flare">Crear viaje</button>
+  </form>
+</div>
 {% endblock %}

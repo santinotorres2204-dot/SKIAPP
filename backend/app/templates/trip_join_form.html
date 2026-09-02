@@ -1,0 +1,22 @@
+{% extends "base_user.html" %}
+{% block title %}Unirme a un viaje{% endblock %}
+{% block content %}
+<div class="container">
+  <a class="back-link" href="/passport/{{ user.id }}">&larr; Volver a mi perfil</a>
+  <p class="eyebrow">Social Ride</p>
+  <h1 class="page-title">Unirme a un viaje</h1>
+  <p class="lede">Pedile el código a quien organizó el viaje y sumate para comparar tus días de ski.</p>
+
+  {% if error %}
+  <p class="alert">{{ error }}</p>
+  {% endif %}
+
+  <form method="post" action="/passport/{{ user.id }}/trips/join">
+    <div class="field">
+      <label for="code">Código de invitación</label>
+      <input type="text" id="code" name="code" maxlength="12" style="text-transform: uppercase;" required>
+    </div>
+    <button type="submit" class="btn btn-flare">Sumarme</button>
+  </form>
+</div>
+{% endblock %}

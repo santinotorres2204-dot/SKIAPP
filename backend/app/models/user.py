@@ -25,3 +25,5 @@ class User(Base):
     ski_ratings = relationship("SkiRating", back_populates="user", cascade="all, delete-orphan")
     training_plans = relationship("TrainingPlan", back_populates="user", cascade="all, delete-orphan")
     season_reviews = relationship("SeasonReview", back_populates="user", cascade="all, delete-orphan")
+    day_logs = relationship("DayLog", back_populates="user", cascade="all, delete-orphan")
+    joined_trip_links = relationship("TripParticipant", back_populates="user", cascade="all, delete-orphan")

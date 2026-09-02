@@ -24,4 +24,18 @@ class TripRead(BaseModel):
     destination: str
     start_date: date
     status: TripStatus
+    join_code: str | None
     created_at: datetime
+
+
+class TripJoinRequest(BaseModel):
+    code: str = Field(min_length=6, max_length=12)
+
+
+class TripRankingEntry(BaseModel):
+    user_id: int
+    user_name: str
+    total_km: float
+    total_elevation_m: int
+    max_speed_kmh: float
+    days_logged: int

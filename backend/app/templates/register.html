@@ -1,33 +1,45 @@
-{% extends "base.html" %}
+{% extends "base_user.html" %}
 {% block title %}Registro{% endblock %}
-{% block header %}Ski App{% endblock %}
 {% block content %}
-<h2>Registro</h2>
-<p>Completá tus datos básicos. Todavía no hay login — al registrarte te llevamos directo a tu perfil.</p>
 
-{% if error %}
-<p class="summary-box" style="border-left-color:#a33; background:#fee;">{{ error }}</p>
-{% endif %}
+<header class="hero hero-compact">
+  <div class="container-wide">
+    <p class="eyebrow eyebrow-light">Bienvenido</p>
+    <h1 class="page-title">Registrate</h1>
+  </div>
+  <div class="hero-ridge" aria-hidden="true"></div>
+  <div class="hero-peaks" aria-hidden="true"></div>
+</header>
 
-<form method="post" action="/register">
-  <label>Nombre:<br>
-    <input type="text" name="name" required>
-  </label>
-  <br><br>
-  <label>Email:<br>
-    <input type="email" name="email" required>
-  </label>
-  <br><br>
-  <label>Nivel:
-    <select name="ski_level">
-    {% for lvl in ski_levels %}
-      <option value="{{ lvl.value }}">{{ lvl.value }}</option>
-    {% endfor %}
-    </select>
-  </label>
-  <br><br>
-  <label>Años esquiando: <input type="number" name="years_skiing" min="0" required></label>
-  <br><br>
-  <button type="submit">Registrarme</button>
-</form>
+<div class="container">
+  <p class="lede">Completá tus datos básicos. Todavía no hay login — al registrarte te llevamos directo a tu perfil.</p>
+
+  {% if error %}
+  <p class="alert">{{ error }}</p>
+  {% endif %}
+
+  <form method="post" action="/register">
+    <div class="field">
+      <label for="name">Nombre</label>
+      <input type="text" id="name" name="name" required>
+    </div>
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required>
+    </div>
+    <div class="field">
+      <label for="ski_level">Nivel</label>
+      <select id="ski_level" name="ski_level">
+      {% for lvl in ski_levels %}
+        <option value="{{ lvl.value }}">{{ lvl.value }}</option>
+      {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="years_skiing">Años esquiando</label>
+      <input type="number" id="years_skiing" name="years_skiing" min="0" required>
+    </div>
+    <button type="submit" class="btn btn-flare">Registrarme</button>
+  </form>
+</div>
 {% endblock %}
