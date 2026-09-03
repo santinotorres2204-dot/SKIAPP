@@ -436,18 +436,27 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1.6rem clamp(1.25rem, 4vw, 3rem) 0;
+    gap: 1.5rem;
+    padding: 1.1rem clamp(1.25rem, 4vw, 3rem);
+    background: var(--ink);
   }
-  .site-nav .site-mark { padding: 0; }
-  .nav-links { display: flex; align-items: center; gap: 1.5rem; }
-  .nav-ride, .nav-coach, .nav-assessment {
+  .site-nav .site-mark { padding: 0; color: rgba(255, 255, 255, 0.65); }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 0.6rem 2.5rem;
+  }
+  .nav-links a {
     font-family: 'Bebas Neue', sans-serif;
     letter-spacing: 0.12em;
-    font-size: 0.78rem;
-    color: var(--flare-dark);
+    font-size: 0.82rem;
+    color: var(--white);
     border-bottom: none;
   }
-  .nav-ride:hover, .nav-coach:hover, .nav-assessment:hover, .nav-mental:hover { color: var(--flare); }
+  .nav-links a:hover { color: var(--flare); }
 </style>
 {% block extra_head %}{% endblock %}
 </head>
