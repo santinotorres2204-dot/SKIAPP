@@ -148,7 +148,10 @@
           <ul class="achievement-list">
           {% for a in achievements %}
             <li class="achievement {{ 'earned' if a.earned else '' }}">
-              <div class="achievement-title">{{ a.title }}</div>
+              <div class="achievement-title-row">
+                <div class="achievement-title">{{ a.title }}</div>
+                {% if not a.earned %}<span class="tag achievement-lock">🔒 Bloqueado</span>{% endif %}
+              </div>
               <div class="achievement-desc">{{ a.description }}</div>
             </li>
           {% endfor %}
