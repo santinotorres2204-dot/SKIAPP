@@ -462,7 +462,7 @@
 </head>
 <body>
 <nav class="site-nav">
-  <a class="site-mark" href="/">Ski App</a>
+  <a class="site-mark" href="{% if user is defined %}/passport/{{ user.id }}{% else %}/{% endif %}">Ski App</a>
   {% if user is defined %}
   <div class="nav-links">
     <a class="nav-assessment" href="/assessment?user_id={{ user.id }}">Assessment</a>
