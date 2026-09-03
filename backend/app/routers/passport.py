@@ -149,6 +149,29 @@ def passport(request: Request, user_id: int, db: Session = Depends(get_db)):
 
 
 # ---------------------------------------------------------------------------
+# Home / login por email. Sin auth ni sesion todavia -- resuelve unicamente
+# "como llego a mi perfil sin memorizar el user_id".
+# ---------------------------------------------------------------------------
+
+@router.get("/")
+def home(request: Request):
+    return templates.TemplateResponse(request, "index.html", {"error": None})
+
+
+@router.post("/")
+def home_login(request: Request, email: str = Form(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        return templates.TemplateResponse(
+            request,
+            "index.html",
+            {"error": "No encontramos ninguna cuenta con ese email."},
+            status_code=404,
+        )
+    return RedirectResponse(url=f"/passport/{user.id}", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# ---------------------------------------------------------------------------
 # Registro (spec seccion 7, pantallas 1-2: registro/login + onboarding).
 # Sin auth todavia, asi que ambas colapsan en un unico formulario de perfil.
 # ---------------------------------------------------------------------------

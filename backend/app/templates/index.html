@@ -1,0 +1,31 @@
+{% extends "base_user.html" %}
+{% block title %}Ski App{% endblock %}
+{% block content %}
+
+<header class="hero hero-compact">
+  <div class="container-wide">
+    <p class="eyebrow eyebrow-light">Bienvenido de vuelta</p>
+    <h1 class="page-title">Entrá a tu perfil</h1>
+  </div>
+  <div class="hero-ridge" aria-hidden="true"></div>
+  <div class="hero-peaks" aria-hidden="true"></div>
+</header>
+
+<div class="container">
+  <p class="lede">Ingresá el email con el que te registraste para volver a tu Ski Passport.</p>
+
+  {% if error %}
+  <p class="alert">{{ error }} <a href="/register">Registrate acá</a>.</p>
+  {% endif %}
+
+  <form method="post" action="/">
+    <div class="field">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required autofocus>
+    </div>
+    <button type="submit" class="btn btn-flare">Entrar</button>
+  </form>
+
+  <p class="back-link">¿Todavía no tenés cuenta? <a href="/register">Registrate</a></p>
+</div>
+{% endblock %}
