@@ -1,0 +1,654 @@
+{% extends "base_user.html" %}
+
+{% block title %}Preparación Mental | Ski App{% endblock %}
+
+{% block content %}
+<style>
+  .mental-container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 24px 16px 48px;
+  }
+
+  .mental-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .mental-header h1 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 0 0 4px;
+    letter-spacing: -0.5px;
+  }
+
+  .mental-header .subtitle {
+    font-size: 0.85rem;
+    color: #888;
+    font-style: italic;
+  }
+
+  .card-section {
+    background: rgba(255,255,255,0.92);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  .card-section h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .fear-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .fear-btn {
+    padding: 14px 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #444;
+    text-align: center;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .fear-btn .icon { font-size: 1.4rem; }
+
+  .fear-btn:hover { border-color: #e8420a; color: #e8420a; }
+  .fear-btn.selected { border-color: #e8420a; background: #fff4f1; color: #e8420a; }
+
+  .intensity-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .intensity-row input[type=range] {
+    flex: 1;
+    accent-color: #e8420a;
+    height: 6px;
+  }
+
+  .intensity-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #e8420a;
+    min-width: 28px;
+    text-align: center;
+  }
+
+  .intensity-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: #999;
+    margin-top: 4px;
+  }
+
+  .technique-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .technique-btn {
+    padding: 16px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #444;
+    text-align: center;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .technique-btn .icon { font-size: 1.3rem; }
+  .technique-btn .desc { font-size: 0.72rem; font-weight: 400; color: #999; }
+  .technique-btn:hover { border-color: #2563eb; color: #2563eb; }
+  .technique-btn.selected { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+
+  /* Guided exercise box */
+  .exercise-box {
+    background: #0d0d0d;
+    color: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    display: none;
+  }
+
+  .exercise-box.active { display: block; }
+
+  .exercise-box h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 12px;
+    color: #e8420a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .exercise-step {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: #ccc;
+    margin-bottom: 12px;
+  }
+
+  .breath-circle {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: #e8420a;
+    margin: 20px auto;
+    animation: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    text-align: center;
+  }
+
+  .breath-circle.inhale { animation: inhale 4s ease-in-out; }
+  .breath-circle.hold { animation: hold 4s ease-in-out; }
+  .breath-circle.exhale { animation: exhale 6s ease-in-out; }
+
+  @keyframes inhale {
+    from { transform: scale(1); }
+    to { transform: scale(1.5); }
+  }
+  @keyframes hold {
+    from { transform: scale(1.5); }
+    to { transform: scale(1.5); }
+  }
+  @keyframes exhale {
+    from { transform: scale(1.5); }
+    to { transform: scale(1); }
+  }
+
+  .breath-instruction {
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    min-height: 28px;
+  }
+
+  .start-exercise-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: #e8420a;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-primary {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    background: #e8420a;
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: opacity 0.2s;
+  }
+
+  .btn-primary:disabled { opacity: 0.4; cursor: default; }
+  .btn-primary:hover:not(:disabled) { opacity: 0.88; }
+
+  /* Completion */
+  .completion-section { display: none; }
+  .completion-section.active { display: block; }
+
+  .result-badge {
+    text-align: center;
+    padding: 24px;
+  }
+
+  .result-badge .emoji { font-size: 3rem; }
+  .result-badge .reduction-text {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 12px 0 4px;
+  }
+  .result-badge .sub { font-size: 0.85rem; color: #888; }
+
+  /* History */
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .history-item:last-child { border-bottom: none; }
+
+  .history-fear {
+    font-size: 1.2rem;
+  }
+
+  .history-info { flex: 1; }
+  .history-info .fear-name { font-size: 0.85rem; font-weight: 700; color: #1a1a1a; text-transform: capitalize; }
+  .history-info .technique-name { font-size: 0.75rem; color: #888; }
+
+  .reduction-pill {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+
+  .reduction-positive { background: #d1fae5; color: #065f46; }
+  .reduction-zero { background: #f3f4f6; color: #888; }
+  .reduction-negative { background: #fee2e2; color: #991b1b; }
+
+  .empty-history {
+    text-align: center;
+    color: #bbb;
+    padding: 24px;
+    font-size: 0.85rem;
+    font-style: italic;
+  }
+
+  .step-indicator {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .step-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #e0e0e0;
+    transition: background 0.3s;
+  }
+
+  .step-dot.active { background: #e8420a; }
+  .step-dot.done { background: #10b981; }
+</style>
+
+<div class="mental-container">
+  <div class="mental-header">
+    <h1>🧠 Preparación Mental</h1>
+    <div class="subtitle">Confianza y control sobre tus miedos en la nieve</div>
+  </div>
+
+  <!-- Step indicators -->
+  <div class="step-indicator">
+    <div class="step-dot active" id="dot1"></div>
+    <div class="step-dot" id="dot2"></div>
+    <div class="step-dot" id="dot3"></div>
+    <div class="step-dot" id="dot4"></div>
+  </div>
+
+  <!-- STEP 1: Fear Selection -->
+  <div id="step1" class="card-section">
+    <h2>¿Qué miedo trabajamos hoy?</h2>
+    <div class="fear-grid">
+      <button class="fear-btn" onclick="selectFear('velocidad', this)">
+        <span class="icon">💨</span> Velocidad
+      </button>
+      <button class="fear-btn" onclick="selectFear('pendiente', this)">
+        <span class="icon">⛰️</span> Pendiente
+      </button>
+      <button class="fear-btn" onclick="selectFear('caidas', this)">
+        <span class="icon">🤕</span> Caídas
+      </button>
+      <button class="fear-btn" onclick="selectFear('exposicion', this)">
+        <span class="icon">🌄</span> Altura / Exposición
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Before intensity + technique -->
+  <div id="step2" class="card-section" style="display:none">
+    <h2>¿Cuánto sentís ese miedo ahora? (antes de la técnica)</h2>
+    <div class="intensity-row">
+      <span style="font-size:0.8rem;color:#999">0</span>
+      <input type="range" id="intensityBefore" min="0" max="10" value="5"
+             oninput="document.getElementById('valBefore').textContent=this.value">
+      <span style="font-size:0.8rem;color:#999">10</span>
+      <span class="intensity-value" id="valBefore">5</span>
+    </div>
+    <div class="intensity-labels"><span>Sin miedo</span><span>Miedo intenso</span></div>
+
+    <h2 style="margin-top:24px">Elegí una técnica</h2>
+    <div class="technique-grid">
+      <button class="technique-btn" onclick="selectTechnique('respiracion', this)">
+        <span class="icon">🌬️</span>
+        Respiración
+        <span class="desc">4-4-6 box breathing</span>
+      </button>
+      <button class="technique-btn" onclick="selectTechnique('visualizacion', this)">
+        <span class="icon">🎯</span>
+        Visualización
+        <span class="desc">Recorrido mental</span>
+      </button>
+      <button class="technique-btn" onclick="selectTechnique('self_talk', this)">
+        <span class="icon">💬</span>
+        Self-talk
+        <span class="desc">Frases de confianza</span>
+      </button>
+      <button class="technique-btn" onclick="selectTechnique('escalera', this)">
+        <span class="icon">🪜</span>
+        Escalera
+        <span class="desc">Exposición gradual</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Guided exercise -->
+  <div id="step3" class="card-section" style="display:none">
+    <h2>Ejercicio guiado</h2>
+
+    <!-- RESPIRACIÓN -->
+    <div class="exercise-box" id="ex-respiracion">
+      <h3>🌬️ Respiración 4-4-6</h3>
+      <p class="exercise-step">Técnica de regulación del sistema nervioso. Reduce la activación fisiológica del miedo en 2-3 minutos.</p>
+      <div class="breath-circle" id="breathCircle">Listo</div>
+      <div class="breath-instruction" id="breathInstruction">Presioná inicio cuando estés listo</div>
+      <button class="start-exercise-btn" id="breathBtn" onclick="startBreathing()">INICIAR (3 ciclos)</button>
+    </div>
+
+    <!-- VISUALIZACIÓN -->
+    <div class="exercise-box" id="ex-visualizacion">
+      <h3>🎯 Visualización guiada</h3>
+      <p class="exercise-step">Cerrá los ojos. Respira profundo. Imaginate en la cima de la pista.</p>
+      <p class="exercise-step">Sentí el frío del aire. Mirá la nieve. Sos competente, entrenaste para esto.</p>
+      <p class="exercise-step">Visualizá el primer viraje: tus rodillas flexionadas, el peso en las puntas, los esquís tallando.</p>
+      <p class="exercise-step">Bajás con control. El ritmo es el tuyo. Llegás al final sintiéndote bien.</p>
+      <p class="exercise-step" style="color:#e8420a;font-weight:600">Repetí esto 3 veces antes de cada bajada difícil.</p>
+    </div>
+
+    <!-- SELF TALK -->
+    <div class="exercise-box" id="ex-self_talk">
+      <h3>💬 Frases de confianza</h3>
+      <p class="exercise-step">Leé estas frases en voz alta o mentalmente. Elegí 1 o 2 que resuenen con vos:</p>
+      <p class="exercise-step">→ <em>"Entrené para esto. Mi cuerpo sabe qué hacer."</em></p>
+      <p class="exercise-step">→ <em>"Puedo ir a mi ritmo. El control es mío."</em></p>
+      <p class="exercise-step">→ <em>"El miedo es energía. La uso para concentrarme."</em></p>
+      <p class="exercise-step">→ <em>"Una cosa a la vez: miro donde quiero ir."</em></p>
+      <p class="exercise-step">→ <em>"Ya estuve aquí antes. Confío en mí."</em></p>
+      <p class="exercise-step" style="color:#e8420a;font-weight:600">Elegí una frase ancla y repetila 5 veces antes de arrancar.</p>
+    </div>
+
+    <!-- ESCALERA DE EXPOSICIÓN -->
+    <div class="exercise-box" id="ex-escalera">
+      <h3>🪜 Escalera de Exposición</h3>
+      <p class="exercise-step">Exponerse gradualmente reduce el miedo de forma duradera. Hoy no tenés que hacer todo.</p>
+      <p class="exercise-step"><strong style="color:#e8420a">Nivel 1</strong> — Parate en la cima y mirá. Sin presión de bajar.</p>
+      <p class="exercise-step"><strong style="color:#e8420a">Nivel 2</strong> — Bajá los primeros 20 metros a tu ritmo, frenate.</p>
+      <p class="exercise-step"><strong style="color:#e8420a">Nivel 3</strong> — Bajá un tramo completo con foco en el control, no la velocidad.</p>
+      <p class="exercise-step"><strong style="color:#e8420a">Nivel 4</strong> — Repetí el nivel anterior hasta que se sienta cómodo.</p>
+      <p class="exercise-step" style="color:#e8420a;font-weight:600">La exposición repetida + éxito = reducción real del miedo.</p>
+    </div>
+
+    <button class="btn-primary" style="margin-top:20px" onclick="goToStep4()">Ya hice el ejercicio →</button>
+  </div>
+
+  <!-- STEP 4: After intensity + complete -->
+  <div id="step4" class="card-section" style="display:none">
+    <div id="completionPre">
+      <h2>¿Cómo está el miedo ahora? (después de la técnica)</h2>
+      <div class="intensity-row">
+        <span style="font-size:0.8rem;color:#999">0</span>
+        <input type="range" id="intensityAfter" min="0" max="10" value="3"
+               oninput="document.getElementById('valAfter').textContent=this.value">
+        <span style="font-size:0.8rem;color:#999">10</span>
+        <span class="intensity-value" id="valAfter">3</span>
+      </div>
+      <div class="intensity-labels"><span>Sin miedo</span><span>Miedo intenso</span></div>
+      <button class="btn-primary" style="margin-top:24px" onclick="completeSession()">GUARDAR SESIÓN</button>
+    </div>
+
+    <div id="completionResult" style="display:none">
+      <div class="result-badge">
+        <div class="emoji" id="resultEmoji">🏔️</div>
+        <div class="reduction-text" id="resultText">Gran trabajo</div>
+        <div class="sub" id="resultSub"></div>
+      </div>
+      <a href="/passport?user_id={{ user.id }}" style="text-decoration:none">
+        <button class="btn-primary" style="background:#1a1a1a;margin-top:8px">← Volver a mi perfil</button>
+      </a>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="card-section" id="historySection">
+    <h2>Sesiones anteriores</h2>
+    <div id="historyList"><div class="empty-history">Cargando...</div></div>
+  </div>
+</div>
+
+<script>
+  const userId = {{ user.id }};
+  let currentFear = null;
+  let currentTechnique = null;
+  let currentSessionId = null;
+  let breathInterval = null;
+  let breathCycle = 0;
+  const totalCycles = 3;
+
+  const fearIcons = {
+    velocidad: '💨', pendiente: '⛰️', caidas: '🤕', exposicion: '🌄', otro: '❓'
+  };
+
+  const techniqueNames = {
+    respiracion: 'Respiración 4-4-6',
+    visualizacion: 'Visualización',
+    self_talk: 'Self-talk',
+    escalera: 'Escalera de exposición'
+  };
+
+  function updateDots(active) {
+    for (let i = 1; i <= 4; i++) {
+      const dot = document.getElementById('dot' + i);
+      if (i < active) { dot.className = 'step-dot done'; }
+      else if (i === active) { dot.className = 'step-dot active'; }
+      else { dot.className = 'step-dot'; }
+    }
+  }
+
+  function selectFear(fear, btn) {
+    document.querySelectorAll('.fear-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    currentFear = fear;
+
+    setTimeout(() => {
+      document.getElementById('step1').style.display = 'none';
+      document.getElementById('step2').style.display = 'block';
+      updateDots(2);
+    }, 300);
+  }
+
+  function selectTechnique(technique, btn) {
+    document.querySelectorAll('.technique-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    currentTechnique = technique;
+
+    setTimeout(async () => {
+      // Create session in DB
+      const res = await fetch('/api/mental/session', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          user_id: userId,
+          fear_type: currentFear,
+          intensity_before: parseInt(document.getElementById('intensityBefore').value),
+          technique_used: currentTechnique
+        })
+      });
+      const data = await res.json();
+      currentSessionId = data.session_id;
+
+      document.getElementById('step2').style.display = 'none';
+      document.getElementById('step3').style.display = 'block';
+      updateDots(3);
+
+      // Show correct exercise
+      document.querySelectorAll('.exercise-box').forEach(b => b.classList.remove('active'));
+      document.getElementById('ex-' + currentTechnique).classList.add('active');
+    }, 300);
+  }
+
+  function goToStep4() {
+    document.getElementById('step3').style.display = 'none';
+    document.getElementById('step4').style.display = 'block';
+    updateDots(4);
+    if (breathInterval) clearInterval(breathInterval);
+  }
+
+  async function completeSession() {
+    const intensityAfter = parseInt(document.getElementById('intensityAfter').value);
+    const res = await fetch(`/api/mental/session/${currentSessionId}`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        intensity_after: intensityAfter,
+        duration_minutes: null
+      })
+    });
+    const data = await res.json();
+
+    document.getElementById('completionPre').style.display = 'none';
+    document.getElementById('completionResult').style.display = 'block';
+
+    const reduction = data.reduction;
+    let emoji, text, sub;
+    if (reduction >= 4) {
+      emoji = '🔥'; text = `¡Excelente! Bajaste ${reduction} puntos`; sub = 'La técnica funcionó muy bien hoy.';
+    } else if (reduction >= 2) {
+      emoji = '💪'; text = `Bien hecho — reducción de ${reduction} puntos`; sub = 'Con práctica va a mejorar aún más.';
+    } else if (reduction >= 0) {
+      emoji = '🧠'; text = 'Sesión completada'; sub = 'No siempre se nota de inmediato. La consistencia es la clave.';
+    } else {
+      emoji = '🤍'; text = 'Gracias por registrarlo'; sub = 'A veces es un día difícil. Volver a intentarlo ya es un logro.';
+    }
+
+    document.getElementById('resultEmoji').textContent = emoji;
+    document.getElementById('resultText').textContent = text;
+    document.getElementById('resultSub').textContent = sub;
+
+    loadHistory();
+  }
+
+  // Breathing exercise
+  function startBreathing() {
+    const circle = document.getElementById('breathCircle');
+    const instruction = document.getElementById('breathInstruction');
+    const btn = document.getElementById('breathBtn');
+    btn.disabled = true;
+    breathCycle = 0;
+
+    function runCycle() {
+      if (breathCycle >= totalCycles) {
+        circle.className = 'breath-circle';
+        circle.textContent = '✓';
+        instruction.textContent = '¡Completado! Ya podés continuar.';
+        return;
+      }
+      breathCycle++;
+      instruction.textContent = `Ciclo ${breathCycle}/${totalCycles} — Inhalá`;
+      circle.className = 'breath-circle';
+      void circle.offsetWidth;
+      circle.className = 'breath-circle inhale';
+      circle.textContent = 'Inhala';
+
+      setTimeout(() => {
+        instruction.textContent = 'Sosté';
+        circle.className = 'breath-circle';
+        void circle.offsetWidth;
+        circle.className = 'breath-circle hold';
+        circle.textContent = 'Sosté';
+      }, 4000);
+
+      setTimeout(() => {
+        instruction.textContent = 'Exhalá lento';
+        circle.className = 'breath-circle';
+        void circle.offsetWidth;
+        circle.className = 'breath-circle exhale';
+        circle.textContent = 'Exhala';
+      }, 8000);
+
+      setTimeout(runCycle, 14000);
+    }
+
+    runCycle();
+  }
+
+  async function loadHistory() {
+    const res = await fetch(`/api/mental/history?user_id=${userId}`);
+    const data = await res.json();
+    const container = document.getElementById('historyList');
+
+    if (!data.length) {
+      container.innerHTML = '<div class="empty-history">Completá tu primera sesión arriba para ver el historial aquí.</div>';
+      return;
+    }
+
+    container.innerHTML = data.map(s => {
+      const reduction = s.reduction;
+      let pillClass, pillText;
+      if (reduction === null) { pillClass = 'reduction-zero'; pillText = 'En curso'; }
+      else if (reduction > 0) { pillClass = 'reduction-positive'; pillText = `−${reduction} pts`; }
+      else if (reduction === 0) { pillClass = 'reduction-zero'; pillText = 'Sin cambio'; }
+      else { pillClass = 'reduction-negative'; pillText = `+${Math.abs(reduction)} pts`; }
+
+      const dateStr = s.created_at ? new Date(s.created_at).toLocaleDateString('es-AR', {day:'numeric', month:'short'}) : '';
+      return `
+        <div class="history-item">
+          <div class="history-fear">${fearIcons[s.fear_type] || '❓'}</div>
+          <div class="history-info">
+            <div class="fear-name">${s.fear_type} · ${dateStr}</div>
+            <div class="technique-name">${techniqueNames[s.technique_used] || s.technique_used}</div>
+          </div>
+          <span class="reduction-pill ${pillClass}">${pillText}</span>
+        </div>`;
+    }).join('');
+  }
+
+  loadHistory();
+</script>
+{% endblock %}

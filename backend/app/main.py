@@ -12,6 +12,7 @@ from app.routers import (
     chat,
     coach,
     day_logs,
+    mental,
     passport,
     ride,
     runs,
@@ -47,6 +48,8 @@ app.include_router(chat.router)
 app.include_router(coach.router)
 app.include_router(assessment.router)
 app.include_router(assessment.page_router)
+app.include_router(mental.router)
+app.include_router(mental.page_router)
 
 
 @app.get("/health")

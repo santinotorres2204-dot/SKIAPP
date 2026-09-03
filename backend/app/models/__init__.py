@@ -2,6 +2,7 @@ from app.models.analysis_result import AnalysisResult
 from app.models.assessment_result import AssessmentResult
 from app.models.chat_message import ChatMessage
 from app.models.day_log import DayLog
+from app.models.mental_session import MentalSession
 from app.models.run import Run
 from app.models.season_review import SeasonReview
 from app.models.ski_rating import SkiRating
@@ -24,4 +25,5 @@ __all__ = [
     "Run",
     "ChatMessage",
     "AssessmentResult",
+    "MentalSession",
 ]
