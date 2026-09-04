@@ -23,6 +23,7 @@
     --line: #d7e0e6;
     --flare: #ff4419;
     --flare-dark: #d9330f;
+    --caution: #ffcc00; /* amarillo señal de pista -- solo para el detalle "cartel" de las feature-card, deliberadamente distinto del naranja */
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -254,6 +255,51 @@
   }
   .hero-meta strong { color: var(--white); font-weight: 500; }
 
+  /* .hero-rotating: variante de .hero solo para la home ("/"), con carrusel
+     de 4 fotos en crossfade en vez de una unica foto estatica. El degradado
+     oscuro + textura de ruido se separan a .hero-overlay (encima de las
+     fotos) para mantener la legibilidad del texto sin importar cual foto
+     este activa.
+     Fotos via Unsplash License (uso libre comercial permitido):
+       1. Lens Fables (@lensfables) -- unsplash.com/photos/9YXHOCdsKwY
+       2. Marek Piwnicki (@marekpiwnicki) -- unsplash.com/photos/Ayla1jDWzyk
+       3. Marek Piwnicki (@marekpiwnicki) -- unsplash.com/photos/E909Oe4N3pM
+       4. Ryan Klaus (@ryankphoto) -- unsplash.com/photos/TliweUwl4Bw */
+  .hero-rotating { background-image: none; }
+  .hero-bg-rotate { position: absolute; inset: 0; }
+  .hero-bg-slide {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    animation: hero-crossfade 24s infinite;
+  }
+  .hero-bg-slide:nth-child(1) { background-image: url('/static/images/hero-rotate-1.jpg'); animation-delay: 0s; }
+  .hero-bg-slide:nth-child(2) { background-image: url('/static/images/hero-rotate-2.jpg'); animation-delay: -18s; }
+  .hero-bg-slide:nth-child(3) { background-image: url('/static/images/hero-rotate-3.jpg'); animation-delay: -12s; }
+  .hero-bg-slide:nth-child(4) { background-image: url('/static/images/hero-rotate-4.jpg'); animation-delay: -6s; }
+  @keyframes hero-crossfade {
+    0%, 18.75% { opacity: 1; }
+    25%, 93.75% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-bg-slide { animation: none; opacity: 0; }
+    .hero-bg-slide:first-child { opacity: 1; }
+  }
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(180deg, rgba(15, 27, 46, 0.9) 0%, rgba(15, 27, 46, 0.32) 48%, rgba(15, 27, 46, 0.55) 100%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: cover, 140px 140px;
+    background-position: center, center;
+    background-repeat: no-repeat, repeat;
+    background-blend-mode: normal, overlay;
+  }
+
   .section { padding: 3.25rem 0 0; background: rgba(247, 247, 245, 0.72); display: flow-root; }
   .section:last-of-type { padding-bottom: 4.5rem; }
   .section h2 {
@@ -397,6 +443,173 @@
     transform: scale(1.06);
     box-shadow: 0 6px 16px rgba(255, 68, 25, 0.28);
   }
+
+  /* home ("/"): texto claro para h2/lede cuando caen dentro del summary-band oscuro */
+  .summary-band h2 { color: var(--white); margin-bottom: 1.25rem; }
+  .summary-band .lede { color: rgba(255, 255, 255, 0.72); }
+
+  /* home ("/"): "El diferencial" como cinta diagonal (parallelogram), no una
+     franja recta -- se corta con clip-path y se monta sobre las secciones
+     vecinas con margen negativo, compensando con padding extra para que el
+     texto no quede recortado. Modificador propio (no toca .summary-band
+     base, que passport.html sigue usando como franja recta). */
+  .diagonal-band {
+    clip-path: polygon(0 3.5vw, 100% 0, 100% calc(100% - 3.5vw), 0 100%);
+    margin: -3.5vw 0;
+    padding-top: calc(clamp(3.25rem, 9vw, 5rem) + 3.5vw);
+    padding-bottom: calc(clamp(3.25rem, 9vw, 5rem) + 3.5vw);
+    text-align: center;
+  }
+  .diagonal-band .container { background: none; padding-top: 0; padding-bottom: 0; }
+  .diagonal-band .lede { margin-left: auto; margin-right: auto; }
+  /* home ("/"): ciclo Preparate / Disfruta / Mejora -- tamanos y altura
+     asimetricos en vez de 3 cajas identicas en fila. */
+  .cycle-grid {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 2rem 2.5rem;
+    margin-top: 3rem;
+  }
+  .cycle-step { border-left: 2px solid var(--line); padding-left: 1.2rem; }
+  .cycle-step:nth-child(1) { flex: 1 1 320px; max-width: 380px; }
+  .cycle-step:nth-child(2) { flex: 1 1 220px; max-width: 260px; margin-top: 3.5rem; }
+  .cycle-step:nth-child(3) {
+    flex: 1 1 260px;
+    max-width: 300px;
+    margin-top: 0.75rem;
+    border-left-color: var(--flare);
+  }
+  .cycle-number {
+    display: block;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    color: var(--flare);
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+  .cycle-step:nth-child(1) .cycle-number { font-size: 3.4rem; }
+  .cycle-step h3 { font-size: 1.1rem; margin: 0 0 0.5rem; }
+  .cycle-step p { color: var(--mist); font-size: 0.92rem; margin: 0; }
+  @media (max-width: 700px) {
+    .cycle-step, .cycle-step:nth-child(1), .cycle-step:nth-child(2), .cycle-step:nth-child(3) {
+      margin-top: 0;
+      max-width: none;
+      flex-basis: 100%;
+    }
+  }
+
+  /* home ("/"): grilla de funcionalidades -- se deja regular a proposito
+     (lista de 8 items, conviene que sea facil de escanear) para que
+     contraste con el resto de secciones, mas organicas. */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-top: 2.75rem;
+  }
+  @media (max-width: 860px) { .feature-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .feature-grid { grid-template-columns: 1fr; } }
+  .feature-card { border: 1px solid var(--line); background: var(--white); padding: 1.5rem 1.6rem; }
+  .feature-card h3 { font-size: 1rem; margin: 0 0 0.6rem; }
+  .feature-card p { color: var(--mist); font-size: 0.88rem; margin: 0; }
+
+  /* home ("/"): variante "cartel de pista" en las 8 feature-card.
+     Cinta de peligro (rayas negro/amarillo) + rombo de advertencia con
+     icono propio por tarjeta, en vez del recuadro liso. El amarillo
+     (--caution) es intencionalmente otro acento, no se mezcla con el
+     naranja del resto del sitio. */
+  .feature-card--sign { position: relative; padding-top: 4rem; }
+  .feature-card--sign::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 7px;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--caution) 0 10px,
+      #1a1a1a 10px 20px
+    );
+  }
+  .sign-badge {
+    position: absolute;
+    top: 20px;
+    left: 1.6rem;
+    width: 30px;
+    height: 30px;
+    background: var(--caution);
+    border: 2px solid #1a1a1a;
+    transform: rotate(45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sign-badge svg {
+    display: block;
+    transform: rotate(-45deg);
+    width: 16px;
+    height: 16px;
+  }
+  .feature-card--sign h3 {
+    font-size: 1.2rem;
+    letter-spacing: 0.05em;
+    color: var(--ink);
+    margin: 0 0 0.6rem;
+  }
+
+  /* home ("/"): cascada de entrada al hacer scroll -- cada feature-card es
+     su propio .reveal (observado por el IntersectionObserver ya existente),
+     con transition-delay creciente por columna/fila para que aparezcan en
+     cascada en vez de todas juntas. */
+  .feature-grid .reveal:nth-child(1) { transition-delay: 0s; }
+  .feature-grid .reveal:nth-child(2) { transition-delay: 0.08s; }
+  .feature-grid .reveal:nth-child(3) { transition-delay: 0.16s; }
+  .feature-grid .reveal:nth-child(4) { transition-delay: 0.24s; }
+  .feature-grid .reveal:nth-child(5) { transition-delay: 0.08s; }
+  .feature-grid .reveal:nth-child(6) { transition-delay: 0.16s; }
+  .feature-grid .reveal:nth-child(7) { transition-delay: 0.24s; }
+  .feature-grid .reveal:nth-child(8) { transition-delay: 0.32s; }
+
+  /* home ("/"): cierre full-bleed -- una sola foto de pared a pared con el
+     formulario superpuesto encima (texto invadiendo la imagen, no una
+     tarjeta prolija aparte), cortada en angulo arriba para no chocar con
+     un borde recto contra la seccion anterior. */
+  .finale {
+    position: relative;
+    overflow: hidden;
+    clip-path: polygon(0 4vw, 100% 0, 100% 100%, 0 100%);
+    margin-top: -4vw;
+    padding: calc(clamp(3rem, 9vw, 5rem) + 4vw) 0 clamp(4rem, 10vw, 6rem);
+  }
+  .finale-bg {
+    position: absolute;
+    inset: -3vw -3vw -3vw -3vw;
+    background-image: url('/static/images/hero-rotate-3.jpg');
+    background-size: cover;
+    background-position: center 35%;
+  }
+  .finale-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(160deg, rgba(13, 13, 13, 0.92) 8%, rgba(13, 13, 13, 0.45) 55%, rgba(13, 13, 13, 0.8) 100%);
+  }
+  .finale .container {
+    position: relative;
+    z-index: 1;
+    background: none;
+  }
+  .finale .eyebrow { color: rgba(255, 255, 255, 0.6); }
+  .finale h2 { color: var(--white); }
+  .finale .lede { color: rgba(255, 255, 255, 0.78); }
+  .finale .field label { color: rgba(255, 255, 255, 0.6); }
+  .finale input {
+    color: var(--white);
+    border-bottom-color: rgba(255, 255, 255, 0.35);
+  }
+  .finale .back-link { color: rgba(255, 255, 255, 0.65); }
+  .finale .back-link a { color: var(--white); }
 
   /* secciones plegables: titulos grandes tipo portada, mucho aire entre secciones */
   .accordion { border-top: 1px solid rgba(16, 32, 47, 0.08); }

@@ -2,7 +2,14 @@
 {% block title %}Ski App{% endblock %}
 {% block content %}
 
-<header class="hero hero-compact">
+<header class="hero hero-compact hero-rotating">
+  <div class="hero-bg-rotate" aria-hidden="true">
+    <div class="hero-bg-slide"></div>
+    <div class="hero-bg-slide"></div>
+    <div class="hero-bg-slide"></div>
+    <div class="hero-bg-slide"></div>
+  </div>
+  <div class="hero-overlay" aria-hidden="true"></div>
   <div class="container-wide">
     <p class="eyebrow eyebrow-light">Bienvenido de vuelta</p>
     <h1 class="page-title">Entrá a tu perfil</h1>
@@ -11,21 +18,173 @@
   <div class="hero-peaks" aria-hidden="true"></div>
 </header>
 
-<div class="container">
-  <p class="lede">Ingresá el email con el que te registraste para volver a tu Ski Passport.</p>
+<section class="section reveal" style="padding-bottom: 2.5rem;">
+  <div class="container-wide">
+    <p class="eyebrow">Llegá listo a la montaña</p>
+    <h2>Preparate. Disfrutá. Mejorá.</h2>
+    <p class="lede" style="max-width: 60ch;">
+      Te preparamos antes del viaje, te acompañamos en la nieve sin presión, y te mostramos
+      cuánto mejoraste al volver. El ciclo arranca de nuevo cada temporada — con más historia
+      detrás cada vez.
+    </p>
 
-  {% if error %}
-  <p class="alert">{{ error }} <a href="/register">Registrate acá</a>.</p>
-  {% endif %}
-
-  <form method="post" action="/">
-    <div class="field">
-      <label for="email">Email</label>
-      <input type="email" id="email" name="email" required autofocus>
+    <div class="cycle-grid">
+      <div class="cycle-step">
+        <span class="cycle-number">1</span>
+        <h3>Preparate</h3>
+        <p>Cargás tu viaje y subís un video esquiando. La app arma tu plan físico y técnico a partir de eso.</p>
+      </div>
+      <div class="cycle-step">
+        <span class="cycle-number">2</span>
+        <h3>Disfrutá</h3>
+        <p>Trackeo, stats, amigos y desafíos en la nieve. Te acompaña, no te exige.</p>
+      </div>
+      <div class="cycle-step">
+        <span class="cycle-number">3</span>
+        <h3>Mejorá</h3>
+        <p>Video comparativo de tu progreso y un nuevo objetivo definido para la temporada que viene.</p>
+      </div>
     </div>
-    <button type="submit" class="btn btn-flare">Entrar</button>
-  </form>
+  </div>
+</section>
 
-  <p class="back-link">¿Todavía no tenés cuenta? <a href="/register">Registrate</a></p>
-</div>
+<section class="summary-band diagonal-band reveal">
+  <div class="container">
+    <p class="eyebrow eyebrow-light">El diferencial</p>
+    <h2>No competimos por tus días de nieve</h2>
+    <p class="lede">
+      Otras apps compiten por eso. Nosotros competimos por los meses previos al viaje — el
+      momento en que ya decidiste ir, tenés fecha límite, y estás más motivado a prepararte
+      que en cualquier otro momento del año. Ahí casi no hay competencia. Y cada temporada que
+      cargás hace que la próxima preparación sea más específica: cuanto más tiempo nos usás,
+      más vale tu perfil.
+    </p>
+  </div>
+</section>
+
+<section class="section reveal" style="padding-bottom: 4.5rem;">
+  <div class="container-wide">
+    <p class="eyebrow">Qué incluye hoy</p>
+    <h2>Todo lo que necesitás para llegar (y volver) mejor</h2>
+
+    <div class="feature-grid">
+      <div class="feature-card feature-card--sign reveal">
+        <span class="sign-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="5" width="18" height="14" rx="2"/>
+            <circle cx="8" cy="10.5" r="2"/>
+            <line x1="13" y1="9.5" x2="18" y2="9.5"/>
+            <line x1="6" y1="15.5" x2="18" y2="15.5"/>
+          </svg>
+        </span>
+        <h3>Ski Passport &amp; Ski Card</h3>
+        <p>Tu perfil, historial de viajes y rating por disciplina con confidence score, en un solo lugar.</p>
+      </div>
+      <div class="feature-card feature-card--sign reveal">
+        <span class="sign-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="13" height="10" rx="2"/>
+            <path d="M15 10.5l6-3.5v10l-6-3.5z"/>
+          </svg>
+        </span>
+        <h3>Análisis de video con IA</h3>
+        <p>Subís un video esquiando y detectamos patrones (asimetrías, balance, rotación) para armar tu plan de entrenamiento.</p>
+      </div>
+      <div class="feature-card feature-card--sign reveal">
+        <span class="sign-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="8.5" cy="8" r="3"/>
+            <circle cx="16" cy="9" r="2.6"/>
+            <path d="M2.5 20c0-3.8 3-6.3 6-6.3s6 2.5 6 6.3"/>
+            <path d="M13.2 19.8c.3-3 2.3-5.1 4.8-5.1s4.5 2.1 4.8 5.1"/>
+          </svg>
+        </span>
+        <h3>Day Recap &amp; Social Ride</h3>
+        <p>Registrá cada jornada y sumá amigos a tu viaje con un código de invitación.</p>
+      </div>
+      <div class="feature-card feature-card--sign reveal">
+        <span class="sign-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 4h10v4a5 5 0 01-10 0V4z"/>
+            <path d="M7 5H4.5A2.5 2.5 0 007 7.5"/>
+            <path d="M17 5h2.5A2.5 2.5 0 0117 7.5"/>
+            <line x1="12" y1="13" x2="12" y2="18"/>
+            <line x1="8.5" y1="20" x2="15.5" y2="20"/>
+          </svg>
+        </span>
+        <h3>Achievements</h3>
+        <p>Objetivos concretos que se desbloquean con tu progreso real, no con promesas.</p>
+      </div>
+      <div class="feature-card feature-card--sign reveal">
+        <span class="sign-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="15" cy="5" r="1.8"/>
+            <path d="M15 7l-1 4-4 2"/>
+            <path d="M14 11l3 2 3-1"/>
+            <path d="M14 11l-2.5 7"/>
+            <path d="M17 13l1 6"/>
+          </svg>
+        </span>
+        <h3>Assessment físico</h3>
+        <p>5 ejercicios ski-específicos con timers integrados para medir tu estado físico antes de viajar.</p>
+      </div>
+      <div class="feature-card feature-card--sign reveal">
+        <span class="sign-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 5.5h16v9.5H10l-4 3.5v-3.5H4z"/>
+            <circle cx="9" cy="10.2" r="0.9" fill="#1a1a1a"/>
+            <circle cx="12.5" cy="10.2" r="0.9" fill="#1a1a1a"/>
+            <circle cx="16" cy="10.2" r="0.9" fill="#1a1a1a"/>
+          </svg>
+        </span>
+        <h3>AI Ski Coach</h3>
+        <p>Consultas rápidas sobre técnica y entrenamiento, con historial guardado.</p>
+      </div>
+      <div class="feature-card feature-card--sign reveal">
+        <span class="sign-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 21s7-7.2 7-12a7 7 0 10-14 0c0 4.8 7 12 7 12z"/>
+            <circle cx="12" cy="9" r="2.4"/>
+          </svg>
+        </span>
+        <h3>Ride Mode</h3>
+        <p>Trackeo GPS en vivo de tus bajadas: velocidad, distancia y desnivel de cada jornada.</p>
+      </div>
+      <div class="feature-card feature-card--sign reveal">
+        <span class="sign-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="8.5"/>
+            <path d="M12 8.2a3.4 3.4 0 013.2 4.5c-.3.9-1.1 1.3-1.9 1.7"/>
+          </svg>
+        </span>
+        <h3>Preparación Mental</h3>
+        <p>Técnicas guiadas — respiración, visualización, self-talk, exposición gradual — para trabajar el miedo antes de bajar.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="finale reveal">
+  <div class="finale-bg" aria-hidden="true"></div>
+  <div class="finale-overlay" aria-hidden="true"></div>
+  <div class="container">
+    <p class="eyebrow">Empezá ahora</p>
+    <h2 class="page-title" style="font-size: clamp(1.9rem, 5vw, 2.6rem); margin-bottom: 0.9rem;">Entrá a tu perfil</h2>
+    <p class="lede">Ingresá el email con el que te registraste para volver a tu Ski Passport.</p>
+
+    {% if error %}
+    <p class="alert">{{ error }} <a href="/register">Registrate acá</a>.</p>
+    {% endif %}
+
+    <form method="post" action="/">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autofocus>
+      </div>
+      <button type="submit" class="btn btn-flare">Entrar</button>
+    </form>
+
+    <p class="back-link">¿Todavía no tenés cuenta? <a href="/register">Registrate</a></p>
+  </div>
+</section>
 {% endblock %}
