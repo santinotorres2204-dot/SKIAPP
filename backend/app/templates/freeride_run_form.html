@@ -1,0 +1,53 @@
+{% extends "base_user.html" %}
+{% block title %}Cargar Freeride Run{% endblock %}
+{% block content %}
+<div class="container">
+  <a class="back-link" href="/passport/{{ user.id }}">&larr; Volver a mi perfil</a>
+  <p class="eyebrow">Video de freeride &middot; {{ video.uploaded_at.strftime("%Y-%m-%d") }}</p>
+  <h1 class="page-title">Freeride Run</h1>
+  <p class="lede">
+    Todavía no hay análisis automático de IA para freeride — auto-evaluate vos mismo.
+    Estos números son tu propia estimación de la bajada, no un puntaje objetivo.
+  </p>
+
+  {% if error %}
+  <p class="alert">{{ error }}</p>
+  {% endif %}
+
+  <form method="post" action="/passport/{{ user.id }}/videos/{{ video.id }}/freeride-run">
+    <div class="field">
+      <label for="location_name">Lugar</label>
+      <input type="text" id="location_name" name="location_name" maxlength="255" required>
+    </div>
+    <div class="field">
+      <label for="vertical_m">Desnivel (metros)</label>
+      <input type="number" id="vertical_m" name="vertical_m" min="0" step="1" required>
+    </div>
+    <div class="field">
+      <label for="distance_km">Distancia (km)</label>
+      <input type="number" id="distance_km" name="distance_km" min="0" step="0.1" required>
+    </div>
+    <div class="field">
+      <label for="max_gradient">Pendiente máxima (grados)</label>
+      <input type="number" id="max_gradient" name="max_gradient" min="0" step="1" required>
+    </div>
+    <div class="field">
+      <label for="flow_score">Fluidez — puntuate a vos mismo del 1 al 100</label>
+      <input type="number" id="flow_score" name="flow_score" min="0" max="100" step="1" required>
+    </div>
+    <div class="field">
+      <label for="control_score">Control — puntuate a vos mismo del 1 al 100</label>
+      <input type="number" id="control_score" name="control_score" min="0" max="100" step="1" required>
+    </div>
+    <div class="field">
+      <label for="line_choice_score">Elección de línea — puntuate a vos mismo del 1 al 100</label>
+      <input type="number" id="line_choice_score" name="line_choice_score" min="0" max="100" step="1" required>
+    </div>
+    <div class="field">
+      <label for="difficulty_score">Dificultad — puntuate a vos mismo del 1 al 100</label>
+      <input type="number" id="difficulty_score" name="difficulty_score" min="0" max="100" step="1" required>
+    </div>
+    <button type="submit" class="btn btn-flare">Guardar Freeride Run</button>
+  </form>
+</div>
+{% endblock %}

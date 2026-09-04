@@ -1,0 +1,45 @@
+{% extends "base_user.html" %}
+{% block title %}Cargar Trick Card{% endblock %}
+{% block content %}
+<div class="container">
+  <a class="back-link" href="/passport/{{ user.id }}">&larr; Volver a mi perfil</a>
+  <p class="eyebrow">Video de park &middot; {{ video.uploaded_at.strftime("%Y-%m-%d") }}</p>
+  <h1 class="page-title">Trick Card</h1>
+  <p class="lede">
+    Todavía no hay análisis automático de IA para park — auto-evaluate vos mismo.
+    Estos números son tu propia estimación de la bajada, no un puntaje objetivo.
+  </p>
+
+  {% if error %}
+  <p class="alert">{{ error }}</p>
+  {% endif %}
+
+  <form method="post" action="/passport/{{ user.id }}/videos/{{ video.id }}/trick-card">
+    <div class="field">
+      <label for="trick_name">Truco</label>
+      <input type="text" id="trick_name" name="trick_name" maxlength="255" required>
+    </div>
+    <div class="field">
+      <label for="difficulty">Dificultad (1-10)</label>
+      <input type="number" id="difficulty" name="difficulty" min="1" max="10" step="1" required>
+    </div>
+    <div class="field">
+      <label for="execution_score">Ejecución — puntuate a vos mismo del 1 al 100</label>
+      <input type="number" id="execution_score" name="execution_score" min="0" max="100" step="1" required>
+    </div>
+    <div class="field">
+      <label for="landing_score">Aterrizaje — puntuate a vos mismo del 1 al 100</label>
+      <input type="number" id="landing_score" name="landing_score" min="0" max="100" step="1" required>
+    </div>
+    <div class="field">
+      <label for="style_score">Estilo — puntuate a vos mismo del 1 al 100</label>
+      <input type="number" id="style_score" name="style_score" min="0" max="100" step="1" required>
+    </div>
+    <div class="field">
+      <label for="consistency_score">Consistencia — puntuate a vos mismo del 1 al 100</label>
+      <input type="number" id="consistency_score" name="consistency_score" min="0" max="100" step="1" required>
+    </div>
+    <button type="submit" class="btn btn-flare">Guardar Trick Card</button>
+  </form>
+</div>
+{% endblock %}

@@ -13,19 +13,25 @@ from app.models import (
     AnalysisResult,
     AssessmentResult,
     DayLog,
+    FreerideRun,
     SeasonReview,
     SkiRating,
     TrainingPlan,
+    TrickCard,
     Trip,
     User,
     VideoUpload,
 )
 from app.models.enums import Discipline, SkiLevel, SportType, TerrainTag
 from app.routers.day_logs import create_day_log
+from app.routers.freeride_runs import create_freeride_run
+from app.routers.trick_cards import create_trick_card
 from app.routers.trips import create_trip, get_or_create_join_code, get_trip_or_404, get_trip_ranking, join_trip
 from app.routers.users import create_user, get_user_or_404
-from app.routers.video_uploads import upload_video
+from app.routers.video_uploads import get_video_or_404, upload_video
 from app.schemas.day_log import DayLogCreate
+from app.schemas.freeride_run import FreerideRunCreate
+from app.schemas.trick_card import TrickCardCreate
 from app.schemas.trip import TripCreate, TripJoinRequest
 from app.schemas.user import UserCreate
 from app.season_review_comparison import compare_analysis_patterns
@@ -106,6 +112,20 @@ def passport(request: Request, user_id: int, db: Session = Depends(get_db)):
         .order_by(AssessmentResult.completed_at.desc())
         .first()
     )
+    trick_cards = (
+        db.query(TrickCard)
+        .options(joinedload(TrickCard.video))
+        .filter(TrickCard.user_id == user_id)
+        .order_by(TrickCard.created_at.desc())
+        .all()
+    )
+    freeride_runs = (
+        db.query(FreerideRun)
+        .options(joinedload(FreerideRun.video))
+        .filter(FreerideRun.user_id == user_id)
+        .order_by(FreerideRun.created_at.desc())
+        .all()
+    )
     training_plans_view = [
         {"plan": plan, "blocks": parse_training_plan_blocks(plan.content)} for plan in training_plans
     ]
@@ -144,6 +164,8 @@ def passport(request: Request, user_id: int, db: Session = Depends(get_db)):
             "achievements": achievements,
             "earned_achievements": earned_achievements,
             "latest_assessment": latest_assessment,
+            "trick_cards": trick_cards,
+            "freeride_runs": freeride_runs,
         },
     )
 
@@ -280,6 +302,116 @@ def new_video_submit(
 ):
     trip_id_value = int(trip_id) if trip_id else None
     upload_video(user_id, background_tasks, discipline_tag, terrain_tag, sport_type, trip_id_value, file, db)
+    return RedirectResponse(url=f"/passport/{user_id}", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# ---------------------------------------------------------------------------
+# Trick Card (park) y Freeride Run (freeride): auto-registro manual que el
+# usuario carga sobre un video ya subido. Sin analisis automatico de IA
+# todavia -- la deteccion de patrones de park/freeride queda para mas
+# adelante; hoy los scores son una autoevaluacion del propio usuario.
+# ---------------------------------------------------------------------------
+
+def _get_own_video_or_404(db: Session, user_id: int, video_id: int) -> VideoUpload:
+    video = get_video_or_404(db, video_id)
+    if video.user_id != user_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Video no encontrado")
+    return video
+
+
+@router.get("/passport/{user_id}/videos/{video_id:int}/trick-card/new")
+def new_trick_card_form(request: Request, user_id: int, video_id: int, db: Session = Depends(get_db)):
+    user = get_user_or_404(db, user_id)
+    video = _get_own_video_or_404(db, user_id, video_id)
+    if video.discipline_tag != "park":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Este video no tiene disciplina 'park'")
+    return templates.TemplateResponse(request, "trick_card_form.html", {"user": user, "video": video, "error": None})
+
+
+@router.post("/passport/{user_id}/videos/{video_id:int}/trick-card")
+def new_trick_card_submit(
+    request: Request,
+    user_id: int,
+    video_id: int,
+    trick_name: str = Form(...),
+    difficulty: int = Form(...),
+    execution_score: int = Form(...),
+    landing_score: int = Form(...),
+    style_score: int = Form(...),
+    consistency_score: int = Form(...),
+    db: Session = Depends(get_db),
+):
+    user = get_user_or_404(db, user_id)
+    video = _get_own_video_or_404(db, user_id, video_id)
+    try:
+        payload = TrickCardCreate(
+            trick_name=trick_name,
+            difficulty=difficulty,
+            execution_score=execution_score,
+            landing_score=landing_score,
+            style_score=style_score,
+            consistency_score=consistency_score,
+        )
+    except ValidationError:
+        return templates.TemplateResponse(
+            request,
+            "trick_card_form.html",
+            {"user": user, "video": video, "error": "Revisa los datos ingresados (dificultad 1-10, scores 0-100)."},
+            status_code=422,
+        )
+
+    create_trick_card(video_id, payload, db)
+    return RedirectResponse(url=f"/passport/{user_id}", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@router.get("/passport/{user_id}/videos/{video_id:int}/freeride-run/new")
+def new_freeride_run_form(request: Request, user_id: int, video_id: int, db: Session = Depends(get_db)):
+    user = get_user_or_404(db, user_id)
+    video = _get_own_video_or_404(db, user_id, video_id)
+    if video.discipline_tag != "freeride":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Este video no tiene disciplina 'freeride'")
+    return templates.TemplateResponse(
+        request, "freeride_run_form.html", {"user": user, "video": video, "error": None}
+    )
+
+
+@router.post("/passport/{user_id}/videos/{video_id:int}/freeride-run")
+def new_freeride_run_submit(
+    request: Request,
+    user_id: int,
+    video_id: int,
+    location_name: str = Form(...),
+    vertical_m: float = Form(...),
+    distance_km: float = Form(...),
+    max_gradient: float = Form(...),
+    flow_score: int = Form(...),
+    control_score: int = Form(...),
+    line_choice_score: int = Form(...),
+    difficulty_score: int = Form(...),
+    db: Session = Depends(get_db),
+):
+    user = get_user_or_404(db, user_id)
+    video = _get_own_video_or_404(db, user_id, video_id)
+    try:
+        payload = FreerideRunCreate(
+            location_name=location_name,
+            vertical_m=vertical_m,
+            distance_km=distance_km,
+            max_gradient=max_gradient,
+            flow_score=flow_score,
+            control_score=control_score,
+            line_choice_score=line_choice_score,
+            difficulty_score=difficulty_score,
+        )
+    except ValidationError:
+        return templates.TemplateResponse(
+            request,
+            "freeride_run_form.html",
+            {"user": user, "video": video, "error": "Revisa los datos ingresados (los scores van de 0 a 100)."},
+            status_code=422,
+        )
+
+    create_freeride_run(video_id, payload, db)
     return RedirectResponse(url=f"/passport/{user_id}", status_code=status.HTTP_303_SEE_OTHER)
 
 

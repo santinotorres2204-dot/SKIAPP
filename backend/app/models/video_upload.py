@@ -42,3 +42,5 @@ class VideoUpload(Base):
     analysis_result = relationship(
         "AnalysisResult", back_populates="video", uselist=False, cascade="all, delete-orphan"
     )
+    trick_cards = relationship("TrickCard", back_populates="video", cascade="all, delete-orphan")
+    freeride_runs = relationship("FreerideRun", back_populates="video", cascade="all, delete-orphan")

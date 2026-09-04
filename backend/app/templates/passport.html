@@ -85,7 +85,7 @@
         <div class="acc-body">
           {% if videos %}
           <table>
-            <thead><tr><th>Fecha</th><th>Deporte</th><th>Disciplina</th><th>Terreno</th><th>Viaje</th><th>Estado</th><th>Resumen del análisis</th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Deporte</th><th>Disciplina</th><th>Terreno</th><th>Viaje</th><th>Estado</th><th>Resumen del análisis</th><th></th></tr></thead>
             <tbody>
             {% for v in videos %}
             <tr>
@@ -111,12 +111,77 @@
                   Análisis en curso — actualizá la página en un rato.
                 {% endif %}
               </td>
+              <td>
+                {% if v.discipline_tag == "park" %}
+                <a href="/passport/{{ user.id }}/videos/{{ v.id }}/trick-card/new">+ Trick Card</a>
+                {% elif v.discipline_tag == "freeride" %}
+                <a href="/passport/{{ user.id }}/videos/{{ v.id }}/freeride-run/new">+ Freeride Run</a>
+                {% else %}
+                —
+                {% endif %}
+              </td>
             </tr>
             {% endfor %}
             </tbody>
           </table>
           {% else %}
           <p class="empty">Todavía no subiste ningún video.</p>
+          {% endif %}
+        </div>
+      </details>
+
+      <details class="acc reveal">
+        <summary>Trick Cards</summary>
+        <div class="acc-body">
+          {% if trick_cards %}
+          <table>
+            <thead><tr><th>Fecha</th><th>Truco</th><th>Dificultad</th><th>Ejecución</th><th>Aterrizaje</th><th>Estilo</th><th>Consistencia</th></tr></thead>
+            <tbody>
+            {% for tc in trick_cards %}
+            <tr>
+              <td>{{ tc.created_at.strftime("%Y-%m-%d") }}</td>
+              <td>{{ tc.trick_name }}</td>
+              <td>{{ tc.difficulty }}/10</td>
+              <td>{{ tc.execution_score }}/100</td>
+              <td>{{ tc.landing_score }}/100</td>
+              <td>{{ tc.style_score }}/100</td>
+              <td>{{ tc.consistency_score }}/100</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          <p class="empty" style="margin-top: 1rem;">Scores auto-evaluados por vos — todavía no hay análisis automático de IA para park.</p>
+          {% else %}
+          <p class="empty">Todavía no cargaste ninguna Trick Card. Subí un video de park para poder cargar una.</p>
+          {% endif %}
+        </div>
+      </details>
+
+      <details class="acc reveal">
+        <summary>Freeride Runs</summary>
+        <div class="acc-body">
+          {% if freeride_runs %}
+          <table>
+            <thead><tr><th>Fecha</th><th>Lugar</th><th>Desnivel</th><th>Distancia</th><th>Pendiente máx.</th><th>Fluidez</th><th>Control</th><th>Línea</th><th>Dificultad</th></tr></thead>
+            <tbody>
+            {% for fr in freeride_runs %}
+            <tr>
+              <td>{{ fr.created_at.strftime("%Y-%m-%d") }}</td>
+              <td>{{ fr.location_name }}</td>
+              <td>{{ fr.vertical_m }} m</td>
+              <td>{{ fr.distance_km }} km</td>
+              <td>{{ fr.max_gradient }}°</td>
+              <td>{{ fr.flow_score }}/100</td>
+              <td>{{ fr.control_score }}/100</td>
+              <td>{{ fr.line_choice_score }}/100</td>
+              <td>{{ fr.difficulty_score }}/100</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          <p class="empty" style="margin-top: 1rem;">Scores auto-evaluados por vos — todavía no hay análisis automático de IA para freeride.</p>
+          {% else %}
+          <p class="empty">Todavía no cargaste ningún Freeride Run. Subí un video de freeride para poder cargar uno.</p>
           {% endif %}
         </div>
       </details>

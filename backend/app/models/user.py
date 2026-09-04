@@ -30,3 +30,5 @@ class User(Base):
     runs = relationship("Run", back_populates="user", cascade="all, delete-orphan")
     chat_messages = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")
     assessment_results = relationship("AssessmentResult", back_populates="user", cascade="all, delete-orphan")
+    trick_cards = relationship("TrickCard", back_populates="user", cascade="all, delete-orphan")
+    freeride_runs = relationship("FreerideRun", back_populates="user", cascade="all, delete-orphan")

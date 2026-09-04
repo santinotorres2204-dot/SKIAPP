@@ -13,6 +13,13 @@ from app.storage import save_video
 router = APIRouter(tags=["video-uploads"])
 
 
+def get_video_or_404(db: Session, video_id: int) -> VideoUpload:
+    video = db.get(VideoUpload, video_id)
+    if video is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Video no encontrado")
+    return video
+
+
 @router.post("/users/{user_id}/videos", response_model=VideoUploadRead, status_code=status.HTTP_201_CREATED)
 def upload_video(
     user_id: int,
@@ -72,7 +79,4 @@ def list_trip_videos(trip_id: int, db: Session = Depends(get_db)) -> list[VideoU
 
 @router.get("/videos/{video_id}", response_model=VideoUploadRead)
 def get_video(video_id: int, db: Session = Depends(get_db)) -> VideoUpload:
-    video = db.get(VideoUpload, video_id)
-    if video is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Video no encontrado")
-    return video
+    return get_video_or_404(db, video_id)
