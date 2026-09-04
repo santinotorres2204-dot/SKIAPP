@@ -13,7 +13,7 @@
 <table>
 <thead>
 <tr>
-  <th>ID</th><th>Usuario</th><th>Disciplina</th><th>Subido</th><th>Estado análisis</th><th>Confidence</th><th>Revisado</th><th></th>
+  <th>ID</th><th>Usuario</th><th>Disciplina</th><th>Terreno</th><th>Subido</th><th>Estado análisis</th><th>Confidence</th><th>Revisado</th><th></th>
 </tr>
 </thead>
 <tbody>
@@ -23,6 +23,7 @@
   <td>{{ v.id }}</td>
   <td>{{ v.user.name }} ({{ v.user.email }})</td>
   <td>{{ v.discipline_tag }}</td>
+  <td>{{ v.terrain_tag or "-" }}</td>
   <td>{{ v.uploaded_at.strftime("%Y-%m-%d %H:%M") }}</td>
   <td><span class="badge badge-{{ v.analysis_status }}">{{ v.analysis_status }}</span></td>
   <td>{{ v.analysis_result.confidence_score if v.analysis_result else "-" }}</td>

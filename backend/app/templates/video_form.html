@@ -20,6 +20,14 @@
       </select>
     </div>
     <div class="field">
+      <label for="terrain_tag">Terreno</label>
+      <select id="terrain_tag" name="terrain_tag">
+      {% for t in terrains %}
+        <option value="{{ t.value }}">{{ t.value }}</option>
+      {% endfor %}
+      </select>
+    </div>
+    <div class="field">
       <label for="trip_id">Viaje (opcional)</label>
       <select id="trip_id" name="trip_id">
         <option value="">Sin viaje asociado</option>

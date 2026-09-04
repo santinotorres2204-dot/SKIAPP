@@ -85,12 +85,13 @@
         <div class="acc-body">
           {% if videos %}
           <table>
-            <thead><tr><th>Fecha</th><th>Disciplina</th><th>Viaje</th><th>Estado</th><th>Resumen del análisis</th></tr></thead>
+            <thead><tr><th>Fecha</th><th>Disciplina</th><th>Terreno</th><th>Viaje</th><th>Estado</th><th>Resumen del análisis</th></tr></thead>
             <tbody>
             {% for v in videos %}
             <tr>
               <td>{{ v.uploaded_at.strftime("%Y-%m-%d %H:%M") }}</td>
               <td>{{ v.discipline_tag }}</td>
+              <td>{{ v.terrain_tag or "—" }}</td>
               <td>{{ v.trip.destination if v.trip else "—" }}</td>
               <td>
                 <span class="tag {{ 'tag-flare' if v.analysis_status == 'failed' else ('tag-quiet' if v.analysis_status == 'processed' else '') }}">{{ v.analysis_status }}</span>

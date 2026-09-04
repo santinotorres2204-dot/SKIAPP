@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.analysis_job import run_analysis_job
 from app.database import get_db
 from app.models import VideoUpload
-from app.models.enums import Discipline
+from app.models.enums import Discipline, TerrainTag
 from app.routers.trips import get_trip_or_404
 from app.routers.users import get_user_or_404
 from app.schemas.video_upload import VideoUploadRead
@@ -18,6 +18,7 @@ def upload_video(
     user_id: int,
     background_tasks: BackgroundTasks,
     discipline_tag: Discipline = Form(...),
+    terrain_tag: TerrainTag = Form(...),
     trip_id: int | None = Form(default=None),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -35,6 +36,7 @@ def upload_video(
         trip_id=trip_id,
         file_url=file_url,
         discipline_tag=discipline_tag.value,
+        terrain_tag=terrain_tag.value,
     )
     db.add(video)
     db.commit()

@@ -33,6 +33,13 @@ class Discipline(str, enum.Enum):
     ALL_MOUNTAIN = "all_mountain"
 
 
+class TerrainTag(str, enum.Enum):
+    PISTA_PISADA = "pista_pisada"
+    POWDER = "powder"
+    HIELO = "hielo"
+    MIXTO = "mixto"
+
+
 class AnalysisStatus(str, enum.Enum):
     PENDING = "pending"
     PROCESSED = "processed"
