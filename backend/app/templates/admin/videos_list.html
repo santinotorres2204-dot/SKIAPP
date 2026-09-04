@@ -13,7 +13,7 @@
 <table>
 <thead>
 <tr>
-  <th>ID</th><th>Usuario</th><th>Disciplina</th><th>Terreno</th><th>Subido</th><th>Estado análisis</th><th>Confidence</th><th>Revisado</th><th></th>
+  <th>ID</th><th>Usuario</th><th>Deporte</th><th>Disciplina</th><th>Terreno</th><th>Subido</th><th>Estado análisis</th><th>Confidence</th><th>Revisado</th><th></th>
 </tr>
 </thead>
 <tbody>
@@ -22,6 +22,7 @@
 <tr>
   <td>{{ v.id }}</td>
   <td>{{ v.user.name }} ({{ v.user.email }})</td>
+  <td>{{ ("⚠️ " if v.sport_type == "snowboard" else "") ~ (v.sport_type or "-") }}</td>
   <td>{{ v.discipline_tag }}</td>
   <td>{{ v.terrain_tag or "-" }}</td>
   <td>{{ v.uploaded_at.strftime("%Y-%m-%d %H:%M") }}</td>

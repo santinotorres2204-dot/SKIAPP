@@ -12,6 +12,14 @@
 
   <form method="post" action="/passport/{{ user.id }}/videos" enctype="multipart/form-data">
     <div class="field">
+      <label for="sport_type">Deporte</label>
+      <select id="sport_type" name="sport_type">
+      {% for s in sports %}
+        <option value="{{ s.value }}">{{ s.value }}</option>
+      {% endfor %}
+      </select>
+    </div>
+    <div class="field">
       <label for="discipline_tag">Disciplina</label>
       <select id="discipline_tag" name="discipline_tag">
       {% for d in disciplines %}

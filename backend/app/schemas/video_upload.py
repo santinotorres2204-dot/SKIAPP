@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.enums import AnalysisStatus, Discipline, TerrainTag
+from app.models.enums import AnalysisStatus, Discipline, SportType, TerrainTag
 
 
 class VideoUploadRead(BaseModel):
@@ -14,5 +14,6 @@ class VideoUploadRead(BaseModel):
     file_url: str
     discipline_tag: Discipline
     terrain_tag: TerrainTag | None
+    sport_type: SportType | None
     uploaded_at: datetime
     analysis_status: AnalysisStatus

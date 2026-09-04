@@ -20,7 +20,7 @@ from app.models import (
     User,
     VideoUpload,
 )
-from app.models.enums import Discipline, SkiLevel, TerrainTag
+from app.models.enums import Discipline, SkiLevel, SportType, TerrainTag
 from app.routers.day_logs import create_day_log
 from app.routers.trips import create_trip, get_or_create_join_code, get_trip_or_404, get_trip_ranking, join_trip
 from app.routers.users import create_user, get_user_or_404
@@ -255,7 +255,13 @@ def new_video_form(request: Request, user_id: int, db: Session = Depends(get_db)
     return templates.TemplateResponse(
         request,
         "video_form.html",
-        {"user": user, "trips": trips, "disciplines": list(Discipline), "terrains": list(TerrainTag)},
+        {
+            "user": user,
+            "trips": trips,
+            "disciplines": list(Discipline),
+            "terrains": list(TerrainTag),
+            "sports": list(SportType),
+        },
     )
 
 
@@ -265,6 +271,7 @@ def new_video_submit(
     background_tasks: BackgroundTasks,
     discipline_tag: Discipline = Form(...),
     terrain_tag: TerrainTag = Form(...),
+    sport_type: SportType = Form(...),
     # str en vez de int|None: un <select> con la opcion "sin viaje" manda "",
     # que Pydantic no puede parsear como int -- se convierte a mano abajo.
     trip_id: str = Form(default=""),
@@ -272,7 +279,7 @@ def new_video_submit(
     db: Session = Depends(get_db),
 ):
     trip_id_value = int(trip_id) if trip_id else None
-    upload_video(user_id, background_tasks, discipline_tag, terrain_tag, trip_id_value, file, db)
+    upload_video(user_id, background_tasks, discipline_tag, terrain_tag, sport_type, trip_id_value, file, db)
     return RedirectResponse(url=f"/passport/{user_id}", status_code=status.HTTP_303_SEE_OTHER)
 
 

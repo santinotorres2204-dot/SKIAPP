@@ -4,7 +4,7 @@ from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, f
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-from app.models.enums import AnalysisStatus, Discipline, TerrainTag, sql_in_values
+from app.models.enums import AnalysisStatus, Discipline, SportType, TerrainTag, sql_in_values
 
 
 class VideoUpload(Base):
@@ -15,6 +15,10 @@ class VideoUpload(Base):
         CheckConstraint(
             f"terrain_tag IS NULL OR terrain_tag IN ({sql_in_values(TerrainTag)})",
             name="ck_video_uploads_terrain_tag",
+        ),
+        CheckConstraint(
+            f"sport_type IS NULL OR sport_type IN ({sql_in_values(SportType)})",
+            name="ck_video_uploads_sport_type",
         ),
     )
 
@@ -28,6 +32,8 @@ class VideoUpload(Base):
     # Se pide obligatorio en el formulario para subidas nuevas (ver
     # video_uploads.upload_video), pero no se retroactiva a lo ya cargado.
     terrain_tag: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # Nullable por el mismo motivo que terrain_tag (videos viejos sin dato).
+    sport_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     analysis_status: Mapped[str] = mapped_column(String(20), nullable=False, default=AnalysisStatus.PENDING.value)
 

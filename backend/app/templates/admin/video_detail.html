@@ -6,12 +6,19 @@
 <h2>Video #{{ video.id }}</h2>
 <ul>
   <li>Usuario: {{ video.user.name }} ({{ video.user.email }}) — nivel {{ video.user.ski_level }}, {{ video.user.years_skiing }} años esquiando</li>
+  <li>Deporte: {{ video.sport_type or "-" }}</li>
   <li>Disciplina: {{ video.discipline_tag }}</li>
   <li>Terreno: {{ video.terrain_tag or "-" }}</li>
   <li>Subido: {{ video.uploaded_at }}</li>
   <li>Estado análisis: {{ video.analysis_status }}</li>
   <li>Archivo: <a href="{{ video.file_url }}">{{ video.file_url }}</a></li>
 </ul>
+
+{% if video.sport_type == "snowboard" %}
+<p style="background: rgba(255, 68, 25, 0.08); border-left: 3px solid var(--flare); padding: 0.7rem 1rem; margin: 0.75rem 0 1.25rem; color: var(--flare-dark); font-weight: 600;">
+  ⚠️ Análisis calibrado para ski, puede no ser preciso para snowboard.
+</p>
+{% endif %}
 
 <h3>Resultado de análisis (MediaPipe)</h3>
 {% if video.analysis_result %}

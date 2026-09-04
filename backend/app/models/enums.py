@@ -40,6 +40,11 @@ class TerrainTag(str, enum.Enum):
     MIXTO = "mixto"
 
 
+class SportType(str, enum.Enum):
+    SKI = "ski"
+    SNOWBOARD = "snowboard"
+
+
 class AnalysisStatus(str, enum.Enum):
     PENDING = "pending"
     PROCESSED = "processed"
