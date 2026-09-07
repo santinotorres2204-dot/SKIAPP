@@ -28,6 +28,7 @@
     --flare: #ff4419;
     --flare-dark: #d9330f;
     --caution: #ffcc00; /* amarillo señal de pista -- solo para el detalle "cartel" de las feature-card, deliberadamente distinto del naranja */
+    --success: #1a7a4c; /* verde reservado solo para confirmaciones de exito, no se mezcla con el resto de la paleta */
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -203,6 +204,28 @@
     font-size: 0.92rem;
     margin: 0 0 1.8rem;
   }
+  /* confirmacion de exito (crear viaje, guardar dia, etc.) -- mismo formato
+     que .alert de error pero con el verde reservado solo para esto, para
+     que la diferencia entre "salio bien" y "salio mal" sea inequivoca. */
+  .alert-success { border-left-color: var(--success); background: rgba(26, 122, 76, 0.08); }
+
+  /* variante de .alert/.alert-success para flotar sobre el hero con foto
+     (fondo oscuro): mismo mensaje, fondo semitransparente propio en vez del
+     --snow-dim claro que no se veria sobre una foto. */
+  .flash-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.4rem;
+    padding: 0.75rem 1.1rem;
+    background: rgba(13, 13, 13, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-left: 3px solid var(--flare);
+    color: var(--white);
+    font-size: 0.88rem;
+  }
+  .flash-banner--success { border-left-color: var(--success); }
 
   /* hero (passport) */
   /* Foto de fondo: Slava Auchynnikau via Unsplash (unsplash.com), Unsplash License — uso libre comercial, crédito por buena práctica. */
@@ -729,6 +752,34 @@
         revealEls.forEach(function (el) { el.classList.add('is-visible'); });
       }
     }
+
+    // Mensajes de validacion nativa (HTML5) en español y mas claros que el
+    // globo por defecto del navegador ("Please fill out this field" o
+    // equivalente). Aplica a todos los formularios del sitio -- no reemplaza
+    // el bloqueo nativo (sigue sin dejar enviar el form), solo el texto.
+    document.querySelectorAll('form').forEach(function (form) {
+      form.querySelectorAll('input[required], select[required], textarea[required]').forEach(function (field) {
+        field.addEventListener('invalid', function () {
+          if (field.validity.valueMissing) {
+            field.setCustomValidity(
+              field.type === 'file' ? 'Elegí un archivo antes de continuar.' : 'Completá este campo antes de continuar.'
+            );
+          } else if (field.validity.typeMismatch && field.type === 'email') {
+            field.setCustomValidity('Ingresá un email válido (por ejemplo: nombre@dominio.com).');
+          } else if (field.validity.rangeUnderflow || field.validity.rangeOverflow) {
+            field.setCustomValidity('El valor ingresado está fuera del rango permitido.');
+          } else if (field.validity.badInput) {
+            field.setCustomValidity('Ingresá un valor válido.');
+          } else {
+            field.setCustomValidity('Revisá este campo.');
+          }
+        });
+        // Sin este reset, el mensaje custom queda "pegado" (invalido) aunque
+        // el usuario ya haya corregido el valor.
+        field.addEventListener('input', function () { field.setCustomValidity(''); });
+        field.addEventListener('change', function () { field.setCustomValidity(''); });
+      });
+    });
   });
 </script>
 </body>

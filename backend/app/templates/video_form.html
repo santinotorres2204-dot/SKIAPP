@@ -10,6 +10,10 @@
     no hace falta esperar en esta página. Podés ver el resultado más tarde en tu perfil.
   </p>
 
+  {% if error %}
+  <p class="alert">{{ error }}</p>
+  {% endif %}
+
   <form method="post" action="/passport/{{ user.id }}/videos" enctype="multipart/form-data">
     <div class="field">
       <label for="sport_type">Deporte</label>

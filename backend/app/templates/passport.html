@@ -7,6 +7,11 @@
   <div class="container-wide">
     <p class="eyebrow eyebrow-light">Ski Passport</p>
     <h1 class="page-title">{{ user.name }}</h1>
+    {% if success_message %}
+    <p class="flash-banner flash-banner--success">✓ {{ success_message }}</p>
+    {% elif error_message %}
+    <p class="flash-banner">⚠ {{ error_message }}</p>
+    {% endif %}
     <div class="hero-meta">
       <span><strong>{{ user.ski_level }}</strong> nivel</span>
       <span><strong>{{ user.years_skiing }}</strong> años esquiando</span>

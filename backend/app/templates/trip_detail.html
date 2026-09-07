@@ -7,6 +7,11 @@
     <a class="back-link" href="/passport/{{ user.id }}">&larr; Volver a mi perfil</a>
     <p class="eyebrow">Viaje</p>
     <h1 class="page-title" style="font-size: clamp(2.2rem, 6vw, 3.2rem);">{{ trip.destination }}</h1>
+    {% if success_message %}
+    <p class="alert alert-success">✓ {{ success_message }}</p>
+    {% elif error_message %}
+    <p class="alert">⚠ {{ error_message }}</p>
+    {% endif %}
     <div class="meta-row">
       <span>{{ trip.start_date }}</span>
       <span class="tag {{ 'tag-quiet' if trip.status == 'completed' else '' }}">{{ trip.status }}</span>
