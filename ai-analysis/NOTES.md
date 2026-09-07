@@ -36,14 +36,61 @@ del caso de park, no mejor detección real.
 
 ## Pendientes / limitaciones conocidas para revisar más adelante
 
-- **Park necesita lógica de análisis distinta a la de giros.** El pipeline
-  actual (`segment_turns`, `detect_asymmetry`, `detect_inconsistency`) está
-  calibrado para disciplinas con giros alternados (carving, freeride,
-  all_mountain). Un salto de park no genera esa secuencia de giros, así que
-  aunque la pose se trackee perfectamente esos patrones no van a disparar.
-  Falta definir qué "patrones de screening" tienen sentido para park (ej.
-  detección de caída al aterrizar, simetría en el take-off) antes de poder
-  dar un análisis útil para esa disciplina.
+- **Park: prototipo v1 agregado (`analyze_park_video.py`), separado de
+  `segment_turns`/`detect_asymmetry`/etc. porque un salto no genera la
+  secuencia de giros alternados que esa lógica espera.** Detecta 3 patrones
+  a partir de las mismas métricas por frame de `analyze_ski_video.py`
+  (centro de masa, escala de torso, inclinación de tronco):
+  `salto_detectado` (pico brusco de elevación de caderas/hombros que sube y
+  vuelve a bajar, vs. el vaivén lateral gradual de un giro),
+  `aterrizaje_inestable` (desplazamiento brusco de centro de masa después
+  del pico) y `posible_caida` (tronco cerca de la horizontal después de un
+  aterrizaje). El tercer patrón distingue explícitamente una caída real de
+  una pérdida de tracking de MediaPipe: si la ventana posterior al
+  aterrizaje tiene una proporción alta de frames sin pose válida, se reporta
+  aparte en `insufficient_data_events` y **nunca** como `posible_caida` —
+  mismo principio que la nota de encuadre de más arriba (frames faltantes no
+  son evidencia de nada, son ausencia de datos).
+
+  Es explícitamente un **prototipo sin calibrar**: con 4 videos de
+  referencia no hay forma de ajustar umbrales con rigor. El
+  `confidence_score` en este modo tiene un tope duro (25/100, ver
+  `PARK_PROTOTYPE_MAX_CONFIDENCE`) sea cual sea la cantidad de datos, y el
+  JSON de salida incluye `"prototype_notice"` marcando esto explícitamente.
+
+  **Resultado de la corrida de validación contra `park1-4.mp4`:**
+
+  | Video | Frames válidos (8fps) | Salto detectado | Nota |
+  |---|---|---|---|
+  | park1 | 0/41 | — | Ver caso especial abajo |
+  | park2 | 0/97 | — | Encuadre muy abierto (esquiadores a lo lejos, mismo patrón que el caso de park documentado arriba) |
+  | park3 | 0/150 | — | Igual que park2 |
+  | park4 | 23/109 | Sí (1) | Encuadre cercano; sin inestabilidad ni caída detectada |
+
+  Solo `park4` tenía encuadre suficientemente cercano para trackear algo, y
+  ahí la lógica funcionó end-to-end: detectó el único salto del clip sin
+  falsos positivos de inestabilidad/caída. Los otros tres fallan por el
+  mismo motivo ya documentado arriba (sujeto chico en el frame).
+
+  **Caso especial — park1 (revisado manualmente frame a frame):** el video
+  sí contiene un salto con una caída real y visible (aterrizaje con el
+  cuerpo en el piso, esquís separados), pero el pipeline no detectó pose en
+  ningún frame muestreado a 8fps. Subiendo el muestreo a 15fps se rescatan
+  21/81 frames, pero siguen siendo demasiado discontinuos (gaps grandes
+  entre frames válidos) como para que `find_jumps` arme la señal de
+  elevación — la ventana de pico/baseline asume frames aproximadamente
+  contiguos (mismo supuesto que ya usa `segment_turns` para giros), y con
+  gaps grandes esa ventana deja de tener sentido en tiempo real aunque sí
+  lo tenga en índice de lista. Conclusión: la combinación de rotación rápida
+  del cuerpo durante el truco (motion blur) + encuadre no siempre cercano
+  rompe el tracking justo en el momento más importante (el aterrizaje). Esto
+  es una ilustración concreta de por qué `insufficient_data_events` existe
+  como categoría separada: acá ni siquiera llegamos a esa categoría, porque
+  la falta de datos es tan severa que no se detecta el salto en absoluto, no
+  solo el aterrizaje. Pendiente para cuando haya más videos: si esto se
+  repite, evaluar si vale la pena rehacer las ventanas de `find_jumps`
+  sobre timestamps reales en vez de posición en la lista de frames válidos,
+  para tolerar mejor los gaps.
 - **terrain_tag**: falta un campo para el tipo de terreno/pista (pista
   groomed vs fuera de pista, por ejemplo). Pendiente definir si aporta algo
   a las reglas heurísticas o si es solo metadata informativa.

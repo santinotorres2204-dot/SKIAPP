@@ -1,0 +1,29 @@
+{
+  "video": "../park4.mp4",
+  "mode": "park_prototype",
+  "prototype_notice": "prototipo park - primera version, requiere mas datos para calibrar",
+  "detected_patterns": [
+    {
+      "pattern": "salto_detectado",
+      "severity": null,
+      "sample_size": 1,
+      "occurrences": [
+        {
+          "t_peak": "00:09.20",
+          "t_landing": "00:13.60",
+          "rise_estimate_torsos": 2.299
+        }
+      ]
+    }
+  ],
+  "insufficient_data_events": [],
+  "confidence_score": 21,
+  "summary": "[prototipo park - primera version, requiere mas datos para calibrar] Confianza 21/100 (tope bajo fijo en este modo, todavia sin calibrar con suficientes videos). Se detectaron 1 salto(s). Los aterrizajes analizados no mostraron señales de inestabilidad o caida con estos umbrales.",
+  "meta": {
+    "frames_sampled": 109,
+    "frames_with_valid_pose": 23,
+    "effective_fps": 7.5,
+    "jumps_detected": 1,
+    "reference_torso_scale": 0.0268
+  }
+}

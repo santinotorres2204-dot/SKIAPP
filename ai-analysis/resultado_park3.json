@@ -1,0 +1,14 @@
+{
+  "video": "../park3.mp4",
+  "mode": "park_prototype",
+  "prototype_notice": "prototipo park - primera version, requiere mas datos para calibrar",
+  "detected_patterns": [],
+  "insufficient_data_events": [],
+  "confidence_score": 0,
+  "summary": "[prototipo park - primera version, requiere mas datos para calibrar] No se pudo detectar la pose del esquiador/snowboarder en ningun frame muestreado del video, por lo que no fue posible generar ningun analisis.",
+  "meta": {
+    "frames_sampled": 150,
+    "frames_with_valid_pose": 0,
+    "jumps_detected": 0
+  }
+}
