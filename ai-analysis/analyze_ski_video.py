@@ -10,17 +10,23 @@ precision) para detectar:
   - perdida_de_balance           (desplazamiento brusco del centro de masa)
   - rotacion_excesiva_tren_superior (separacion hombros/cadera)
   - inconsistencia_entre_giros   (varianza alta entre giros consecutivos)
+  - peso_hacia_atras             (solo carving/powder, ver --discipline y
+                                   detect_weight_position() -- interpretacion
+                                   del mismo angulo de tronco es distinta
+                                   segun disciplina, el resto de disciplinas
+                                   no lo evalua todavia)
 
 Salida: JSON con la forma descripta en la spec:
   {
     "detected_patterns": [{"pattern": ..., "severity": ..., "sample_size": ...}],
+    "discipline_note": "explicacion en lenguaje simple del criterio aplicado (o null)",
     "confidence_score": 0-100
   }
 
 Uso:
   pip install -r requirements.txt
   python analyze_ski_video.py video.mp4
-  python analyze_ski_video.py video.mp4 -o resultado.json --pretty
+  python analyze_ski_video.py video.mp4 --discipline carving -o resultado.json --pretty
 
 Este script es deliberadamente aislado de la app (sin DB, sin backend):
 la idea es poder probar y calibrar la logica de deteccion antes de
@@ -68,6 +74,20 @@ BALANCE_LOSS_PROPORTION_THRESHOLDS = {"baja": 0.02, "media": 0.05, "alta": 0.09}
 MIN_TURNS_FOR_ASYMMETRY = 2   # por lado
 MIN_TURNS_FOR_INCONSISTENCY = 3
 MIN_VALID_FRAMES_FOR_BALANCE = 20
+
+# Peso hacia atras (trunk_fore_aft_deg > 0), interpretado distinto segun
+# discipline_tag -- ver contexto tecnico en detect_weight_position(). Carving
+# marca peso atras con umbrales bajos (es el error a corregir mas comun);
+# powder solo lo marca si es mucho mas pronunciado, porque un centro de masa
+# levemente mas neutro/atras es esperable ahi (sobre todo al iniciar el giro,
+# para mantener las puntas arriba de la nieve). Placeholders sin calibrar,
+# como el resto de los umbrales de este archivo (ver nota al final).
+BACKWARD_LEAN_THRESHOLDS_DEG = {
+    "carving": {"baja": 6.0, "media": 10.0, "alta": 15.0},
+    "powder": {"baja": 14.0, "media": 20.0, "alta": 28.0},
+}
+MIN_VALID_FRAMES_FOR_WEIGHT_POSITION = 20
+SUSTAINED_BACKWARD_PROPORTION = 0.35  # proporcion minima de frames por encima del umbral "baja" para contar como "sostenido" (no un bache puntual)
 
 # Mediapipe >= 1.0 saco la API legacy `mediapipe.solutions.pose`; el reemplazo
 # es la Tasks API, que necesita un modelo .task descargado aparte. Se cachea
@@ -221,10 +241,49 @@ class FrameMetrics:
     t: float
     knee_flex_left: float
     knee_flex_right: float
-    trunk_lean: float          # signado: + = inclinacion hacia un lado, - hacia el otro
+    trunk_lean: float          # signado: + = inclinacion hacia un lado, - hacia el otro (lateral, para giros)
+    trunk_fore_aft_deg: float  # signado: + = tronco atras de la rodilla (peso atras), - = adelante (ver _trunk_fore_aft_deg)
     rotation_diff: float       # separacion angular hombros vs cadera (grados)
     com: np.ndarray            # centro de masa aproximado (x, y)
     torso_scale: float         # distancia hombro-cadera, usada para normalizar desplazamientos
+
+
+def _trunk_fore_aft_deg(mid_ankle: np.ndarray, mid_knee: np.ndarray, mid_hip: np.ndarray, mid_shoulder: np.ndarray) -> float:
+    """Angulo (grados) de cuanto el tronco (hombro) queda por detras (+) o por
+    delante (-) de la linea tobillo-cadera, respecto de hacia donde flexiona
+    la rodilla.
+
+    No usamos la vertical absoluta de la imagen como referencia de "adelante"
+    porque en 2D monocular no sabemos hacia que lado del frame mira el
+    esquiador (depende del encuadre: camara siguiendo desde atras, de
+    frente, lateral, etc. — mismo problema que ya documenta segment_turns
+    para izquierda/derecha). En cambio, la rodilla flexiona hacia adelante
+    en cualquier postura funcional de esqui sin importar el encuadre, asi
+    que se usa como referencia de "hacia donde es adelante" en ese frame:
+    si el hombro cae del mismo lado que la rodilla (respecto a la linea
+    tobillo-cadera), el tronco esta adelantado; si cae del lado opuesto,
+    esta atrasado ("peso hacia atras").
+
+    Esto es una aproximacion 2D de pose, no una medicion real de presion
+    sobre la bota/esqui — ver disclaimer en detect_weight_position().
+    """
+    leg_vec = mid_hip[:2] - mid_ankle[:2]
+    leg_len = float(np.linalg.norm(leg_vec))
+    if leg_len < 1e-6:
+        return 0.0
+    perp = np.array([-leg_vec[1], leg_vec[0]]) / leg_len  # perpendicular unitario a la pierna
+
+    knee_offset = float(np.dot(mid_knee[:2] - mid_ankle[:2], perp))
+    if abs(knee_offset) < 0.04 * leg_len:
+        # la rodilla esta casi sobre la linea tobillo-cadera: el "hacia
+        # adelante" de este frame es demasiado ambiguo para confiar en el signo
+        return 0.0
+    forward_sign = 1.0 if knee_offset >= 0 else -1.0
+
+    shoulder_offset = float(np.dot(mid_shoulder[:2] - mid_ankle[:2], perp))
+    forward_component = shoulder_offset * forward_sign  # + = hombro del lado de la rodilla (adelante)
+
+    return float(np.degrees(np.arctan2(-forward_component, leg_len)))  # + = atras, - = adelante
 
 
 def compute_frame_metrics(frames: list[PoseFrame]) -> list[FrameMetrics]:
@@ -237,6 +296,9 @@ def compute_frame_metrics(frames: list[PoseFrame]) -> list[FrameMetrics]:
 
         mid_hip = (p["left_hip"][:2] + p["right_hip"][:2]) / 2.0
         mid_shoulder = (p["left_shoulder"][:2] + p["right_shoulder"][:2]) / 2.0
+        mid_knee = (p["left_knee"][:2] + p["right_knee"][:2]) / 2.0
+        mid_ankle = (p["left_ankle"][:2] + p["right_ankle"][:2]) / 2.0
+
         trunk_vec = mid_shoulder - mid_hip
         vertical_ref = np.array([0.0, -1.0])  # "arriba" en la imagen = y menor
         denom = np.linalg.norm(trunk_vec) * np.linalg.norm(vertical_ref)
@@ -246,6 +308,8 @@ def compute_frame_metrics(frames: list[PoseFrame]) -> list[FrameMetrics]:
             raw_angle = float(np.degrees(np.arccos(cos_a)))
         sign = 1.0 if trunk_vec[0] >= 0 else -1.0
         trunk_lean = sign * raw_angle
+
+        trunk_fore_aft_deg = _trunk_fore_aft_deg(mid_ankle, mid_knee, mid_hip, mid_shoulder)
 
         # Rotacion tren superior vs inferior: se aproxima proyectando la linea
         # de hombros y la linea de cadera sobre el plano (x, z) — z es la
@@ -266,6 +330,7 @@ def compute_frame_metrics(frames: list[PoseFrame]) -> list[FrameMetrics]:
             knee_flex_left=knee_flex_left,
             knee_flex_right=knee_flex_right,
             trunk_lean=trunk_lean,
+            trunk_fore_aft_deg=trunk_fore_aft_deg,
             rotation_diff=rotation_diff,
             com=com,
             torso_scale=torso_scale,
@@ -492,6 +557,60 @@ def detect_balance_loss(metrics: list[FrameMetrics], n_turns: int) -> Optional[d
     }
 
 
+def detect_weight_position(metrics: list[FrameMetrics], discipline_tag: Optional[str]) -> Optional[dict]:
+    """Peso hacia atras (trunk_fore_aft_deg > 0), interpretado segun disciplina.
+
+    Contexto tecnico (referencia validada por instructor certificado):
+      - CARVING: el peso debe ir adelante, presion sobre la lengueta de la
+        bota. Peso atras es el error tecnico mas comun a corregir -> se marca
+        con umbrales bajos.
+      - POWDER: se busca ir centrado (no "tirado atras" como dice la creencia
+        popular), pero se admite un centro de masa levemente mas neutro/atras
+        que en carving, sobre todo al iniciar el giro, para mantener las
+        puntas arriba de la nieve. Solo se marca si es MUY pronunciado y
+        sostenido, mas alla de lo razonable para la disciplina.
+
+    Solo aplica a estas dos disciplinas por ahora (el resto sigue con el
+    analisis generico). "Sostenido" se exige explicitamente: un pico aislado
+    de trunk_fore_aft_deg no alcanza, tiene que superar el umbral en una
+    proporcion minima de los frames validos (SUSTAINED_BACKWARD_PROPORTION).
+
+    Es una aproximacion 2D a partir de pose estimada (angulo del tronco
+    relativo a la linea tobillo-rodilla), NO una medicion real de presion
+    sobre los esquis/botas.
+    """
+    if discipline_tag not in BACKWARD_LEAN_THRESHOLDS_DEG:
+        return None
+    if len(metrics) < MIN_VALID_FRAMES_FOR_WEIGHT_POSITION:
+        return None
+
+    thresholds = BACKWARD_LEAN_THRESHOLDS_DEG[discipline_tag]
+    fore_aft = np.array([m.trunk_fore_aft_deg for m in metrics])
+
+    flagged_idx = np.where(fore_aft >= thresholds["baja"])[0]
+    proportion = len(flagged_idx) / len(fore_aft)
+    if proportion < SUSTAINED_BACKWARD_PROPORTION:
+        return None  # no fue sostenido, no lo marcamos
+
+    mean_backward = float(np.mean(fore_aft[flagged_idx]))
+    severity = _severity_from_thresholds(mean_backward, thresholds)
+    if severity is None:
+        return None
+
+    occurrences = [
+        {"t": format_ts(metrics[i].t), "trunk_fore_aft_deg": round(float(fore_aft[i]), 1)}
+        for i in flagged_idx
+    ]
+
+    return {
+        "pattern": "peso_hacia_atras",
+        "severity": severity,
+        "sample_size": len(metrics),
+        "proportion_frames_afectados": round(proportion, 2),
+        "occurrences": occurrences,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Confidence score
 # ---------------------------------------------------------------------------
@@ -523,7 +642,49 @@ PATTERN_DESCRIPTIONS = {
     "perdida_de_balance": "perdida de balance en algunos momentos del video",
     "rotacion_excesiva_tren_superior": "una rotacion marcada del tren superior respecto al tren inferior",
     "inconsistencia_entre_giros": "inconsistencia en la tecnica entre giros consecutivos",
+    "peso_hacia_atras": "un peso sostenido hacia atras (tronco por detras de lo esperado para la disciplina)",
 }
+
+# Explicacion breve de que se espera de cada disciplina, para que el usuario
+# entienda el criterio aplicado (no solo el resultado). Solo estas dos por
+# ahora -- ver detect_weight_position().
+DISCIPLINE_EXPECTATIONS = {
+    "carving": (
+        "peso adelantado (presion sobre la lengueta de la bota) y un tronco "
+        "estable y centrado, sin balanceo hacia atras"
+    ),
+    "powder": (
+        "una posicion centrada -- no \"tirado hacia atras\" como dice la creencia "
+        "popular, aunque se admite un centro de masa levemente mas neutro/atras "
+        "que en carving, sobre todo al iniciar el giro, para mantener las puntas "
+        "arriba de la nieve, junto con mas movimiento vertical de flexo-extension"
+    ),
+}
+
+
+def build_discipline_note(discipline_tag: Optional[str], weight_pattern: Optional[dict]) -> Optional[str]:
+    """Explicacion del criterio aplicado segun disciplina (spec: que el usuario
+    entienda el "porque" del analisis, no solo el resultado). None si la
+    disciplina no tiene interpretacion especifica todavia (usa el analisis
+    generico sin este agregado).
+    """
+    expectation = DISCIPLINE_EXPECTATIONS.get(discipline_tag)
+    if expectation is None:
+        return None
+
+    base = f"Este video fue analizado como {discipline_tag}, donde se espera {expectation}."
+    if weight_pattern:
+        result_text = (
+            f" Se detecto un patron sostenido de peso hacia atras (severidad {weight_pattern['severity']}, "
+            f"en {int(round(weight_pattern['proportion_frames_afectados'] * 100))}% de los frames validos)."
+        )
+    else:
+        result_text = " No se detecto un patron sostenido de peso hacia atras con los umbrales de esta disciplina."
+    caveat = (
+        " Esto es una aproximacion 2D a partir de pose estimada (angulo del tronco respecto a la "
+        "linea tobillo-rodilla), no una medicion real de presion sobre los esquis o las botas."
+    )
+    return base + result_text + caveat
 
 
 def build_summary(detected_patterns: list[dict], confidence_score: int, n_turns: int) -> str:
@@ -568,6 +729,7 @@ def analyze_video(
     sample_fps: float = SAMPLE_FPS_DEFAULT,
     min_visibility: float = MIN_VISIBILITY_DEFAULT,
     model_complexity: int = 1,
+    discipline_tag: Optional[str] = None,
 ) -> dict:
     frames, sampled_count, effective_fps = extract_pose_sequence(
         video_path, sample_fps, min_visibility, model_complexity
@@ -576,7 +738,9 @@ def analyze_video(
     if not frames:
         return {
             "video": video_path,
+            "discipline_tag": discipline_tag,
             "detected_patterns": [],
+            "discipline_note": None,
             "confidence_score": 0,
             "summary": (
                 "No se pudo detectar la pose del esquiador en ningun frame muestreado del video, "
@@ -594,20 +758,26 @@ def analyze_video(
     metrics = compute_frame_metrics(frames)
     turns = segment_turns(metrics, effective_fps)
 
+    weight_pattern = detect_weight_position(metrics, discipline_tag)
+
     detections = [
         detect_asymmetry(turns, metrics),
         detect_balance_loss(metrics, len(turns)),
         detect_rotation_excessive(metrics, turns),
         detect_inconsistency(turns, metrics),
+        weight_pattern,
     ]
     detected_patterns = [d for d in detections if d is not None]
 
     confidence_score = compute_confidence_score(len(frames), sampled_count, len(turns))
     summary = build_summary(detected_patterns, confidence_score, len(turns))
+    discipline_note = build_discipline_note(discipline_tag, weight_pattern)
 
     return {
         "video": video_path,
+        "discipline_tag": discipline_tag,
         "detected_patterns": detected_patterns,
+        "discipline_note": discipline_note,
         "confidence_score": confidence_score,
         "summary": summary,
         "meta": {
@@ -638,6 +808,10 @@ def main() -> None:
                          help=f"Visibilidad minima de MediaPipe por keypoint (default: {MIN_VISIBILITY_DEFAULT})")
     parser.add_argument("--model-complexity", type=int, choices=[0, 1, 2], default=1,
                          help="Complejidad del modelo MediaPipe Pose (0=rapido, 2=preciso)")
+    parser.add_argument("--discipline", default=None,
+                         help="discipline_tag del video (carving, powder, freeride, moguls, all_mountain, park). "
+                              "Solo carving y powder tienen interpretacion especifica por ahora (peso hacia atras); "
+                              "el resto usa el analisis generico sin cambios.")
     parser.add_argument("--pretty", action="store_true", help="Indentar el JSON de salida")
 
     args = parser.parse_args()
@@ -651,6 +825,7 @@ def main() -> None:
         sample_fps=args.sample_fps,
         min_visibility=args.min_visibility,
         model_complexity=args.model_complexity,
+        discipline_tag=args.discipline,
     )
 
     indent = 2 if args.pretty else None

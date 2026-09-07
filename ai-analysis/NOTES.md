@@ -34,6 +34,80 @@ No se relaja `min_visibility` (default 0.5) para compensar encuadres
 lejanos — bajarlo generaría más falsos positivos como el de los árboles
 del caso de park, no mejor detección real.
 
+## Interpretación por disciplina: peso hacia atrás (carving vs. powder)
+
+`analyze_ski_video.py` ahora acepta `--discipline` (mismos valores que
+`discipline_tag`) y, solo para **carving** y **powder**, interpreta una
+nueva métrica (`trunk_fore_aft_deg`) con umbrales distintos por disciplina.
+El resto de las disciplinas (freeride, moguls, all_mountain) sigue con el
+análisis genérico sin este agregado — no se tocó nada de lo existente para
+ellas.
+
+**La métrica** (`_trunk_fore_aft_deg` en el código): ángulo del tronco
+(hombro) respecto a la línea tobillo-cadera, positivo cuando el hombro cae
+por detrás de la dirección hacia la que flexiona la rodilla ("peso atrás"),
+negativo cuando cae adelante. No se usa la vertical absoluta de la imagen
+como referencia porque en 2D monocular no sabemos hacia qué lado del frame
+mira el esquiador (mismo problema que ya afecta la etiqueta
+izquierda/derecha de los giros — ver nota en `segment_turns`). En cambio, la
+rodilla flexiona hacia adelante en cualquier postura funcional de esquí sin
+importar el encuadre de cámara, así que se usa como referencia de "adelante"
+frame a frame. Cuando la rodilla está casi alineada con la línea
+tobillo-cadera (offset lateral menor al 4% del largo de la pierna), el
+frame se descarta para esta métrica en particular (se guarda como `0.0`,
+"no confiable") en vez de arriesgar un signo adivinado.
+
+**Sigue siendo una aproximación 2D de pose, no una medición real de presión
+sobre los esquís/botas** — se lo aclara explícitamente en `discipline_note`
+del JSON de salida (ver más abajo), no solo acá.
+
+**Contexto técnico** (referencia validada por el fundador, instructor
+certificado):
+- *Carving*: el peso debe ir adelante, presión sobre la lengüeta de la
+  bota. Peso atrás es el error técnico más común a corregir → umbrales
+  bajos (`BACKWARD_LEAN_THRESHOLDS_DEG["carving"]`).
+- *Powder*: se busca ir centrado (no "tirado atrás" como dice la creencia
+  popular), pero se admite un centro de masa levemente más neutro/atrás que
+  en carving, sobre todo al iniciar el giro, para mantener las puntas
+  arriba de la nieve. Solo se marca si es *muy* pronunciado y sostenido →
+  umbrales bastante más altos que carving.
+
+En ambos casos se exige que sea **sostenido**: un pico aislado de
+`trunk_fore_aft_deg` no alcanza, tiene que superar el umbral "baja" en al
+menos `SUSTAINED_BACKWARD_PROPORTION` (35%) de los frames válidos del video
+para generar el patrón `peso_hacia_atras`.
+
+El JSON de salida ahora incluye `discipline_note`: una explicación en
+lenguaje simple del criterio aplicado (ej. *"Este video fue analizado como
+carving, donde se espera peso adelantado... No se detectó un patrón
+sostenido de peso hacia atrás con los umbrales de esta disciplina."*), para
+que quien lea el resultado entienda el porqué, no solo el resultado. Es
+`null` si `discipline_tag` no es carving ni powder (o no se pasó ninguno),
+en cuyo caso el comportamiento es idéntico al de antes de este cambio
+(backward-compatible: sin `--discipline`, no se agrega ni el patrón ni la
+nota).
+
+**Validado corriendo `--discipline carving` contra `prueba1-4.mp4`** (las
+referencias ya usadas para calibrar el resto del pipeline): el mecanismo
+corre end-to-end sin romper nada de lo existente, produce valores de
+`trunk_fore_aft_deg` con variación real (no degenerados — ej. prueba4: rango
+-77° a +30°, mediana -2.7°) y **no dispara** `peso_hacia_atras` en ninguno
+de los 4 (esperable, son videos de referencia con técnica razonable). Con
+`--discipline powder` sobre los mismos videos tampoco dispara (consistente:
+el umbral de powder es más laxo que el de carving, así que si carving no
+marca, powder tampoco debería). Todavía no hay un video de referencia con
+un "peso atrás" real conocido para confirmar el caso positivo — pendiente
+para cuando haya más material. **Sin calibrar** como el resto de los
+umbrales de este archivo: son placeholders razonables para validar que la
+lógica corre, no valores derivados de un dataset etiquetado.
+
+**Limitación abierta**: en algunos frames (ej. prueba2: ~51% del total) el
+offset de rodilla es demasiado chico para confiar en el signo, y se
+descartan de esta métrica en particular. Si esto resulta ser frecuente en
+más videos, la señal de `peso_hacia_atras` va a tener menos frames útiles
+de los que sugiere `frames_with_valid_pose` — vale la pena trackearlo por
+separado si se sigue calibrando esto.
+
 ## Pendientes / limitaciones conocidas para revisar más adelante
 
 - **Park: prototipo v1 agregado (`analyze_park_video.py`), separado de

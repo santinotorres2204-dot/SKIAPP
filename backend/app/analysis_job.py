@@ -21,9 +21,15 @@ if not AI_ANALYSIS_PYTHON.exists():
 ANALYSIS_TIMEOUT_SECONDS = 600
 
 
-def _run_mediapipe(video_path: Path) -> dict:
+def _run_mediapipe(video_path: Path, discipline_tag: str | None) -> dict:
+    cmd = [str(AI_ANALYSIS_PYTHON), str(AI_ANALYSIS_SCRIPT), str(video_path)]
+    if discipline_tag:
+        # Interpretacion especifica por disciplina (por ahora solo carving y
+        # powder la usan; el resto ignora el flag y sigue con el analisis
+        # generico -- ver NOTES.md "Interpretacion por disciplina").
+        cmd += ["--discipline", discipline_tag]
     proc = subprocess.run(
-        [str(AI_ANALYSIS_PYTHON), str(AI_ANALYSIS_SCRIPT), str(video_path)],
+        cmd,
         capture_output=True,
         text=True,
         timeout=ANALYSIS_TIMEOUT_SECONDS,
@@ -49,11 +55,19 @@ def run_analysis_job(video_id: int, video_path: Path) -> None:
             return
 
         try:
-            result = _run_mediapipe(video_path)
+            result = _run_mediapipe(video_path, video.discipline_tag)
         except Exception:
             video.analysis_status = AnalysisStatus.FAILED.value
             db.commit()
             raise
+
+        # discipline_note (carving/powder, ver NOTES.md) no tiene columna propia
+        # todavia -- se antepone al summary para no perderlo al persistir, en
+        # vez de agregar una migracion para este primer paso.
+        summary = result.get("summary")
+        discipline_note = result.get("discipline_note")
+        if discipline_note:
+            summary = f"{discipline_note}\n\n{summary}" if summary else discipline_note
 
         analysis = AnalysisResult(
             video_id=video_id,
@@ -63,7 +77,7 @@ def run_analysis_job(video_id: int, video_path: Path) -> None:
             # detectados), no keypoints crudos frame a frame -- analyze_video()
             # no los retiene. Se guarda igual aca para trazabilidad/auditoria.
             raw_pose_data=result.get("meta"),
-            summary=result.get("summary"),
+            summary=summary,
         )
         db.add(analysis)
         video.analysis_status = AnalysisStatus.PROCESSED.value
