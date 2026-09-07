@@ -50,7 +50,9 @@
     background: var(--flare);
     color: #fff;
     cursor: pointer;
+    transition: background-color 0.15s ease;
   }
+  .ride-btn-start:hover:not(:disabled) { background: var(--flare-dark); }
   .ride-btn-start:disabled { background: #333; color: rgba(255, 255, 255, 0.4); cursor: not-allowed; }
   .ride-error {
     color: #ff9a73;
@@ -110,7 +112,9 @@
     color: #fff;
     cursor: pointer;
     width: 100%;
+    transition: background-color 0.15s ease;
   }
+  .ride-btn-end:hover:not(:disabled) { background: var(--flare-dark); }
   .ride-btn-end:disabled { background: #333; color: rgba(255, 255, 255, 0.4); cursor: not-allowed; }
 </style>
 {% endblock %}

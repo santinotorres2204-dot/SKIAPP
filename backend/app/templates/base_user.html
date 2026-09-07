@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>document.documentElement.classList.remove('no-js'); document.documentElement.classList.add('js');</script>
 <title>{% block title %}Ski App{% endblock %}</title>
+<!-- Favicon inline (SVG data URI, sin archivos externos): pico nevado en la
+     paleta del sitio (navy --ink + blanco), con una banderita en el acento
+     naranja --flare como guiño a los carteles de pista del resto del sitio. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2310202f'/%3E%3Cpath d='M3 25 L11 9 L15 15 L21 4 L29 25 Z' fill='%23ffffff'/%3E%3Cpath d='M21 4 L21 1' stroke='%23ff4419' stroke-width='1.4' stroke-linecap='round'/%3E%3Cpath d='M21 1 L24.6 2.3 L21 3.5 Z' fill='%23ff4419'/%3E%3C/svg%3E">
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#0d0d0d">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -61,7 +65,11 @@
     font-size: 0.85rem;
     color: var(--mist);
     border-bottom: none;
+    transition: color 0.15s ease;
   }
+  /* .site-mark pisa border-bottom a "none", asi que el a:hover generico
+     (que solo cambia border-bottom-color) no alcanza a verse -- hover propio. */
+  .site-mark:hover { color: var(--flare); }
 
   .container {
     max-width: 620px;
@@ -159,7 +167,7 @@
     padding: 0.85rem 2.1rem;
     border: 1px solid transparent;
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
   .btn-flare {
     background: var(--flare);
@@ -176,7 +184,7 @@
     font-weight: 400;
     padding: 0.7rem 1.75rem;
   }
-  .btn-quiet-dark:hover { border-color: var(--white); }
+  .btn-quiet-dark:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--flare); color: var(--flare); }
   .btn-quiet {
     background: transparent;
     color: var(--shadow);
@@ -184,7 +192,7 @@
     font-size: 0.85rem;
     padding: 0.65rem 1.4rem;
   }
-  .btn-quiet:hover { border-color: var(--shadow-2); }
+  .btn-quiet:hover { background: rgba(255, 68, 25, 0.06); border-color: var(--flare); color: var(--flare-dark); }
 
   .cta-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.8rem; }
 
@@ -656,6 +664,7 @@
     background: var(--ink);
   }
   .site-nav .site-mark { padding: 0; color: rgba(255, 255, 255, 0.65); }
+  .site-nav .site-mark:hover { color: var(--flare); }
   .nav-links {
     display: flex;
     align-items: center;

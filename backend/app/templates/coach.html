@@ -133,7 +133,9 @@
     cursor: pointer;
     font-size: 1.05rem;
     line-height: 1;
+    transition: background-color 0.15s ease;
   }
+  .coach-send:hover:not(:disabled) { background: var(--flare-dark); }
   .coach-send:disabled { background: #333; color: rgba(255, 255, 255, 0.4); cursor: not-allowed; }
 </style>
 {% endblock %}

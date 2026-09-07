@@ -47,8 +47,11 @@
     cursor: pointer;
     white-space: nowrap;
     height: 2.6rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
   }
+  .assess-timer-btn:hover:not(.is-running) { background: rgba(255, 68, 25, 0.08); }
   .assess-timer-btn.is-running { background: var(--flare); color: var(--white); }
+  .assess-timer-btn.is-running:hover { background: var(--flare-dark); }
   .assess-timer-display { font-variant-numeric: tabular-nums; min-width: 3rem; text-align: center; }
 
   .assess-submit { width: 100%; text-align: center; margin-top: 0.5rem; }
