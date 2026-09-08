@@ -183,10 +183,86 @@ separado si se sigue calibrando esto.
   repite, evaluar si vale la pena rehacer las ventanas de `find_jumps`
   sobre timestamps reales en vez de posición en la lista de frames válidos,
   para tolerar mejor los gaps.
+- **Snowboard: prototipo v1 agregado (`analyze_snowboard_video.py`), separado
+  de `analyze_ski_video.py` (no una modificación de ese archivo).**
+  *** SIN VALIDAR CONTRA NINGÚN VIDEO REAL DE SNOWBOARD — basado únicamente
+  en referencia técnica documentada. No usar para dar feedback real a un
+  usuario hasta conseguir videos de prueba. ***
+
+  Se separa de ski porque la mecánica es fundamentalmente distinta, no un
+  ajuste de umbrales: el rider viaja de costado a la dirección de
+  desplazamiento (no de frente como en ski), y los giros no son simétricos
+  izquierda/derecha sino **toe-side** (peso sobre los dedos) y **heel-side**
+  (peso sobre el talón) — mecánicamente distintos a propósito. Referencia
+  técnica validada por el fundador (instructor certificado): en toe-side el
+  peso arranca en el pie delantero sobre los dedos y se centra en el apex,
+  con las rodillas siguiendo la dirección de los dedos; en heel-side el peso
+  arranca todavía adelantado y se traslada al pie trasero y el talón al
+  completar el giro, con hombros/cabeza apuntando a la dirección de
+  descenso y torso relativamente calmo. Que haya diferencias de ejecución
+  entre toe-side y heel-side en el mismo rider **no es un error en sí
+  mismo** — por eso el módulo nunca compara un tipo contra el otro.
+
+  Reutiliza de `analyze_ski_video.py` solo lo que es geometría genérica y no
+  depende de orientación corporal ni de simetría de giros: extracción de
+  pose, `compute_frame_metrics` (centro de masa / escala de torso) y
+  `detect_balance_loss` **tal cual, sin cambios** — es portable porque solo
+  mide saltos bruscos del centro de masa entre frames, no depende de hacia
+  dónde mira el cuerpo. También reutiliza `INCONSISTENCY_CV_THRESHOLDS` (es
+  un coeficiente de variación adimensional, portable igual).
+
+  La segmentación de giros usa un proxy nuevo en vez del cruce por cero de
+  `trunk_lean` que usa ski: el cambio de orientación cadera-hombro
+  (`hip_vec + shoulder_vec`, plano x-y) respecto a la dirección de
+  desplazamiento del centro de masa entre frames consecutivos
+  (`compute_edge_orientation_series`). Como el rider viaja de costado, ese
+  ángulo tiene un offset base esperable de ~90° en postura neutra (en vez de
+  ~0° como el `trunk_lean` de ski), así que en vez de comparar contra cero
+  se le resta un baseline móvil ancho (`compute_edge_deviation`) — mismo
+  truco que usa `find_jumps` en `analyze_park_video.py` para aislar el pico
+  de un salto del nivel de piso de la elevación. Los cruces de signo de esa
+  desviación segmentan los giros (`segment_edge_turns`), igual mecanismo que
+  `segment_turns` de ski pero sobre esta señal.
+
+  **Caveat más fuerte que el de izquierda/derecha en ski**: la etiqueta
+  `toe_side`/`heel_side` asignada a cada signo es una convención arbitraria
+  de este prototipo (positivo = `toe_side`), no una detección real de qué
+  borde está cargado — sin un video real filmado con stance y encuadre
+  conocidos no hay forma de confirmar la correspondencia. Lo que sí es
+  válido es que ambos signos alternan de forma consistente dentro del mismo
+  video, así que sirve para separar "giros del mismo tipo entre sí" para el
+  chequeo de inconsistencia, aunque la etiqueta en sí no esté confirmada.
+
+  Patrones detectados: `perdida_de_balance` (reusado de ski, sin cambios) e
+  `inconsistencia_entre_giros` **por separado para `toe_side` y `heel_side`**
+  (nunca cruzado — comparar un tipo contra el otro no tiene sentido, ver
+  arriba). El `confidence_score` tiene un tope duro de **15/100**
+  (`SNOWBOARD_PROTOTYPE_MAX_CONFIDENCE`), más bajo que el de park (25/100)
+  porque ahí al menos hay 4 videos reales de referencia (`park1-4.mp4`) y acá
+  no hay ninguno todavía. El JSON de salida incluye `"prototype_notice"` con
+  el disclaimer completo.
+
+  **Validación**: no hay ningún video real de snowboard en el repo todavía,
+  así que se validó con una secuencia sintética de keypoints (rider
+  simulado viajando a velocidad constante, con la línea cadera-hombro
+  rotando en seno alrededor de la perpendicular a la dirección de
+  desplazamiento, más un salto brusco de centro de masa inyectado a
+  propósito). El pipeline completo corrió sin excepciones: segmentó 13
+  giros alternando `toe_side`/`heel_side` como se esperaba de la señal
+  simulada, `detect_balance_loss` disparó sobre el salto de centro de masa
+  inyectado, y ambos chequeos de inconsistencia (`toe_side` y `heel_side`
+  por separado) se ejecutaron y devolvieron severidad "baja" sobre la
+  variación sintética. Esto confirma que la lógica corre end-to-end sin
+  errores estructurales — **no confirma que el resultado tenga sentido
+  biomecánico real**, eso requiere video real (mismo criterio que se usó al
+  validar carving/powder/moguls/freeride más arriba, pero un escalón más
+  débil: ahí al menos había videos reales, aunque sin el caso positivo
+  específico).
+
+  **No conectado al flujo real todavía**: el pipeline async
+  (`analysis_job.py`) y el campo `sport_type=snowboard` de `VideoUpload`
+  siguen sin tocarse — a propósito, hasta tener al menos un video real de
+  snowboard para probar este módulo contra él.
 - **terrain_tag**: falta un campo para el tipo de terreno/pista (pista
   groomed vs fuera de pista, por ejemplo). Pendiente definir si aporta algo
   a las reglas heurísticas o si es solo metadata informativa.
-- **ski vs snowboard**: el pipeline asume postura de ski (flexión de
-  rodilla, giros alternados izquierda/derecha de cara a la pendiente).
-  Snowboard tiene una biomecánica distinta (postura lateral, "giros" de
-  canto), no evaluado ni calibrado todavía.
