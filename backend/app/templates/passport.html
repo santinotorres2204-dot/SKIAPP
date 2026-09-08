@@ -72,9 +72,9 @@
             <tbody>
             {% for t in trips %}
             <tr>
-              <td><a href="/passport/{{ user.id }}/trips/{{ t.id }}">{{ t.destination }}</a></td>
-              <td>{{ t.start_date }}</td>
-              <td><span class="tag {{ 'tag-quiet' if t.status == 'completed' else '' }}">{{ t.status }}</span></td>
+              <td data-label="Destino"><a href="/passport/{{ user.id }}/trips/{{ t.id }}">{{ t.destination }}</a></td>
+              <td data-label="Fecha">{{ t.start_date }}</td>
+              <td data-label="Estado"><span class="tag {{ 'tag-quiet' if t.status == 'completed' else '' }}">{{ t.status }}</span></td>
             </tr>
             {% endfor %}
             </tbody>
@@ -94,15 +94,15 @@
             <tbody>
             {% for v in videos %}
             <tr>
-              <td>{{ v.uploaded_at.strftime("%Y-%m-%d %H:%M") }}</td>
-              <td>{{ v.sport_type or "—" }}</td>
-              <td>{{ v.discipline_tag }}</td>
-              <td>{{ v.terrain_tag or "—" }}</td>
-              <td>{{ v.trip.destination if v.trip else "—" }}</td>
-              <td>
+              <td data-label="Fecha">{{ v.uploaded_at.strftime("%Y-%m-%d %H:%M") }}</td>
+              <td data-label="Deporte">{{ v.sport_type or "—" }}</td>
+              <td data-label="Disciplina">{{ v.discipline_tag }}</td>
+              <td data-label="Terreno">{{ v.terrain_tag or "—" }}</td>
+              <td data-label="Viaje">{{ v.trip.destination if v.trip else "—" }}</td>
+              <td data-label="Estado">
                 <span class="tag {{ 'tag-flare' if v.analysis_status == 'failed' else ('tag-quiet' if v.analysis_status == 'processed' else '') }}">{{ v.analysis_status }}</span>
               </td>
-              <td>
+              <td data-label="Resumen del análisis">
                 {% if v.analysis_status == "processed" and v.analysis_result %}
                   Confidence: {{ v.analysis_result.confidence_score }}/100
                   {% if v.analysis_result.summary %}
@@ -116,7 +116,7 @@
                   Análisis en curso — actualizá la página en un rato.
                 {% endif %}
               </td>
-              <td>
+              <td data-label="Acción">
                 {% if v.discipline_tag == "park" %}
                 <a href="/passport/{{ user.id }}/videos/{{ v.id }}/trick-card/new">+ Trick Card</a>
                 {% elif v.discipline_tag == "freeride" %}
@@ -144,13 +144,13 @@
             <tbody>
             {% for tc in trick_cards %}
             <tr>
-              <td>{{ tc.created_at.strftime("%Y-%m-%d") }}</td>
-              <td>{{ tc.trick_name }}</td>
-              <td>{{ tc.difficulty }}/10</td>
-              <td>{{ tc.execution_score }}/100</td>
-              <td>{{ tc.landing_score }}/100</td>
-              <td>{{ tc.style_score }}/100</td>
-              <td>{{ tc.consistency_score }}/100</td>
+              <td data-label="Fecha">{{ tc.created_at.strftime("%Y-%m-%d") }}</td>
+              <td data-label="Truco">{{ tc.trick_name }}</td>
+              <td data-label="Dificultad">{{ tc.difficulty }}/10</td>
+              <td data-label="Ejecución">{{ tc.execution_score }}/100</td>
+              <td data-label="Aterrizaje">{{ tc.landing_score }}/100</td>
+              <td data-label="Estilo">{{ tc.style_score }}/100</td>
+              <td data-label="Consistencia">{{ tc.consistency_score }}/100</td>
             </tr>
             {% endfor %}
             </tbody>
@@ -171,15 +171,15 @@
             <tbody>
             {% for fr in freeride_runs %}
             <tr>
-              <td>{{ fr.created_at.strftime("%Y-%m-%d") }}</td>
-              <td>{{ fr.location_name }}</td>
-              <td>{{ fr.vertical_m }} m</td>
-              <td>{{ fr.distance_km }} km</td>
-              <td>{{ fr.max_gradient }}°</td>
-              <td>{{ fr.flow_score }}/100</td>
-              <td>{{ fr.control_score }}/100</td>
-              <td>{{ fr.line_choice_score }}/100</td>
-              <td>{{ fr.difficulty_score }}/100</td>
+              <td data-label="Fecha">{{ fr.created_at.strftime("%Y-%m-%d") }}</td>
+              <td data-label="Lugar">{{ fr.location_name }}</td>
+              <td data-label="Desnivel">{{ fr.vertical_m }} m</td>
+              <td data-label="Distancia">{{ fr.distance_km }} km</td>
+              <td data-label="Pendiente máx.">{{ fr.max_gradient }}°</td>
+              <td data-label="Fluidez">{{ fr.flow_score }}/100</td>
+              <td data-label="Control">{{ fr.control_score }}/100</td>
+              <td data-label="Línea">{{ fr.line_choice_score }}/100</td>
+              <td data-label="Dificultad">{{ fr.difficulty_score }}/100</td>
             </tr>
             {% endfor %}
             </tbody>
@@ -200,10 +200,10 @@
             <tbody>
             {% for r in ratings %}
             <tr>
-              <td>{{ r.discipline }}</td>
-              <td>{{ r.score }}</td>
-              <td>{{ r.confidence_score }}</td>
-              <td>{{ "Sí" if r.coach_verified else "No" }}</td>
+              <td data-label="Disciplina">{{ r.discipline }}</td>
+              <td data-label="Rating">{{ r.score }}</td>
+              <td data-label="Confidence score">{{ r.confidence_score }}</td>
+              <td data-label="Verificado por coach">{{ "Sí" if r.coach_verified else "No" }}</td>
             </tr>
             {% endfor %}
             </tbody>
@@ -270,11 +270,11 @@
             <thead><tr><th>Wall Sit</th><th>Single Leg Squat</th><th>Jump Squat</th><th>Plank</th><th>Lateral Bound</th></tr></thead>
             <tbody>
               <tr>
-                <td>{{ latest_assessment.wall_sit_seconds }} s</td>
-                <td>{{ latest_assessment.single_leg_squat_left }} / {{ latest_assessment.single_leg_squat_right }} reps (izq/der)</td>
-                <td>{{ latest_assessment.jump_squat_reps }} reps</td>
-                <td>{{ latest_assessment.plank_seconds }} s</td>
-                <td>{{ latest_assessment.lateral_bound_reps }} reps</td>
+                <td data-label="Wall Sit">{{ latest_assessment.wall_sit_seconds }} s</td>
+                <td data-label="Single Leg Squat">{{ latest_assessment.single_leg_squat_left }} / {{ latest_assessment.single_leg_squat_right }} reps (izq/der)</td>
+                <td data-label="Jump Squat">{{ latest_assessment.jump_squat_reps }} reps</td>
+                <td data-label="Plank">{{ latest_assessment.plank_seconds }} s</td>
+                <td data-label="Lateral Bound">{{ latest_assessment.lateral_bound_reps }} reps</td>
               </tr>
             </tbody>
           </table>
@@ -307,16 +307,16 @@
               <thead><tr><th></th><th>Disciplina</th><th>Score</th><th>Confidence</th></tr></thead>
               <tbody>
                 <tr>
-                  <td>Antes</td>
-                  <td>{{ sr.rating_before.discipline }}</td>
-                  <td>{{ sr.rating_before.score if sr.rating_before.score is not none else "-" }}</td>
-                  <td>{{ sr.rating_before.confidence_score if sr.rating_before.confidence_score is not none else "-" }}</td>
+                  <td data-label="">Antes</td>
+                  <td data-label="Disciplina">{{ sr.rating_before.discipline }}</td>
+                  <td data-label="Score">{{ sr.rating_before.score if sr.rating_before.score is not none else "-" }}</td>
+                  <td data-label="Confidence">{{ sr.rating_before.confidence_score if sr.rating_before.confidence_score is not none else "-" }}</td>
                 </tr>
                 <tr>
-                  <td>Después</td>
-                  <td>{{ sr.rating_after.discipline }}</td>
-                  <td>{{ sr.rating_after.score }}</td>
-                  <td>{{ sr.rating_after.confidence_score }}</td>
+                  <td data-label="">Después</td>
+                  <td data-label="Disciplina">{{ sr.rating_after.discipline }}</td>
+                  <td data-label="Score">{{ sr.rating_after.score }}</td>
+                  <td data-label="Confidence">{{ sr.rating_after.confidence_score }}</td>
                 </tr>
               </tbody>
             </table>
@@ -328,16 +328,16 @@
               <tbody>
               {% for row in item.pattern_rows %}
               <tr>
-                <td>{{ row.label }}</td>
-                <td>
+                <td data-label="Problema">{{ row.label }}</td>
+                <td data-label="Antes">
                   {% if row.before.muted %}<span class="empty">{{ row.before.text }}</span>
                   {% else %}<span class="tag {{ row.before.css_class }}">{{ row.before.text }}</span>{% endif %}
                 </td>
-                <td>
+                <td data-label="Después">
                   {% if row.after.muted %}<span class="empty">{{ row.after.text }}</span>
                   {% else %}<span class="tag {{ row.after.css_class }}">{{ row.after.text }}</span>{% endif %}
                 </td>
-                <td>
+                <td data-label="Evolución">
                   {% if row.status_class %}<span class="tag {{ row.status_class }}">{{ row.status_text }}</span>
                   {% else %}{{ row.status_text }}{% endif %}
                 </td>
