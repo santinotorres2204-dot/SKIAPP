@@ -1,6 +1,150 @@
 {% extends "base_user.html" %}
 {% block title %}Ski App{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* home ("/"): indice lateral de secciones -- adaptacion vanilla JS/CSS del
+     componente "LineSidebar" de React Bits. El CSS de abajo es el original
+     tal cual (solo colores/medidas retocados a nuestra paleta); lo que se
+     agrega respecto al original es: (1) el panel-contenedor fijo con fondo
+     oscuro para que se lea igual sobre secciones claras y oscuras, (2) el
+     estado ".is-active" que la seccion visible en pantalla dispara via
+     IntersectionObserver (ver script al final del bloque content), sumado
+     al efecto de hover por mouse que ya traia el original. Solo desktop
+     grande: no hay lugar lateral en pantallas chicas y el resto del sitio
+     ya es responsive sin este agregado opcional. */
+  .home-sidenav { display: none; }
+  @media (min-width: 1360px) {
+    .home-sidenav {
+      display: block;
+      position: fixed;
+      top: 50%;
+      left: 22px;
+      transform: translateY(-50%);
+      z-index: 40;
+    }
+  }
+  .home-sidenav .line-sidebar {
+    background: rgba(16, 32, 47, 0.68);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-left: 2px solid var(--flare);
+    border-radius: 0 14px 14px 0;
+    padding: 0.9rem 1.6rem 0.9rem 1.1rem;
+  }
+
+  /* --- CSS original del componente (variables adaptadas a la paleta) --- */
+  .line-sidebar {
+    --accent-color: var(--flare);
+    --text-color: rgba(255, 255, 255, 0.6);
+    --marker-color: rgba(255, 255, 255, 0.28);
+    --marker-length: 40px;
+    --marker-gap: 0px;
+    --tick-scale: 0.5;
+    --max-shift: 10px;
+    --item-gap: 20px;
+    --font-size: 0.92rem;
+    --smoothing: 100ms;
+    position: relative;
+    display: flex;
+    justify-content: flex-start;
+  }
+  .line-sidebar--markers {
+    padding-left: calc(var(--marker-length) + var(--marker-gap));
+  }
+  .line-sidebar__list {
+    list-style: none;
+    margin: 0;
+    padding: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--item-gap);
+  }
+  .line-sidebar__item {
+    position: relative;
+    cursor: pointer;
+  }
+  .line-sidebar__item::before {
+    content: '';
+    position: absolute;
+    inset: -6px -48px;
+  }
+  .line-sidebar__label {
+    position: relative;
+    display: inline-flex;
+    align-items: baseline;
+    font-size: var(--font-size);
+    line-height: 1.2;
+    color: color-mix(in srgb, var(--accent-color) calc(var(--effect, 0) * 100%), var(--text-color));
+    transform: translateX(calc(var(--effect, 0) * var(--max-shift)));
+    border-bottom: none;
+  }
+  .line-sidebar__label:hover { border-bottom-color: transparent; }
+  .line-sidebar__index {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    margin-right: 0.6rem;
+    font-size: 0.85em;
+    opacity: calc(0.55 + var(--effect, 0) * 0.45);
+  }
+  .line-sidebar__marker {
+    position: absolute;
+    top: 50%;
+    left: calc(-1 * var(--marker-length) - var(--marker-gap));
+    height: 1px;
+    width: var(--marker-length);
+    background-color: color-mix(in srgb, var(--accent-color) calc(var(--effect, 0) * 100%), var(--marker-color));
+    transform-origin: left center;
+    transform: translateY(-50%) scaleX(calc(0.7 + var(--effect, 0) * 0.5));
+  }
+  .line-sidebar--markers .line-sidebar__item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: calc(100% + var(--item-gap) / 2);
+    left: calc(-1 * var(--marker-length) - var(--marker-gap));
+    height: 1px;
+    width: calc(var(--marker-length) * var(--tick-scale));
+    background-color: var(--marker-color);
+    opacity: 0.5;
+    transform: translateY(-50%);
+  }
+  .line-sidebar--scale-tick .line-sidebar__item:not(:last-child)::after {
+    transform-origin: left center;
+    transform: translateY(-50%) scaleX(calc(0.7 + var(--effect, 0) * 0.6));
+  }
+
+  /* offset de scroll para que las secciones no queden pegadas al borde
+     superior al llegar por click desde el indice */
+  #ciclo, #diferencial, #funcionalidades, #empezar { scroll-margin-top: 24px; }
+  @media (prefers-reduced-motion: no-preference) {
+    html:has(.home-sidenav) { scroll-behavior: smooth; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
+
+<nav class="home-sidenav" aria-label="Secciones de la página">
+  <div class="line-sidebar line-sidebar--markers line-sidebar--scale-tick" id="home-line-sidebar">
+    <ul class="line-sidebar__list">
+      <li class="line-sidebar__item" data-target="ciclo">
+        <a class="line-sidebar__label" href="#ciclo"><span class="line-sidebar__index">01</span>El ciclo</a>
+        <span class="line-sidebar__marker" aria-hidden="true"></span>
+      </li>
+      <li class="line-sidebar__item" data-target="diferencial">
+        <a class="line-sidebar__label" href="#diferencial"><span class="line-sidebar__index">02</span>El diferencial</a>
+        <span class="line-sidebar__marker" aria-hidden="true"></span>
+      </li>
+      <li class="line-sidebar__item" data-target="funcionalidades">
+        <a class="line-sidebar__label" href="#funcionalidades"><span class="line-sidebar__index">03</span>Funcionalidades</a>
+        <span class="line-sidebar__marker" aria-hidden="true"></span>
+      </li>
+      <li class="line-sidebar__item" data-target="empezar">
+        <a class="line-sidebar__label" href="#empezar"><span class="line-sidebar__index">04</span>Empezá ahora</a>
+        <span class="line-sidebar__marker" aria-hidden="true"></span>
+      </li>
+    </ul>
+  </div>
+</nav>
 
 <header class="hero hero-compact hero-rotating">
   <div class="hero-bg-rotate" aria-hidden="true">
@@ -18,7 +162,7 @@
   <div class="hero-peaks" aria-hidden="true"></div>
 </header>
 
-<section class="section reveal" style="padding-bottom: 2.5rem;">
+<section id="ciclo" class="section reveal" style="padding-bottom: 2.5rem;">
   <div class="container-wide">
     <p class="eyebrow">Llegá listo a la montaña</p>
     <h2>Preparate. Disfrutá. Mejorá.</h2>
@@ -48,7 +192,7 @@
   </div>
 </section>
 
-<section class="summary-band diagonal-band reveal">
+<section id="diferencial" class="summary-band diagonal-band reveal">
   <div class="container">
     <p class="eyebrow eyebrow-light">El diferencial</p>
     <h2>No competimos por tus días de nieve</h2>
@@ -62,7 +206,7 @@
   </div>
 </section>
 
-<section class="section reveal" style="padding-bottom: 4.5rem;">
+<section id="funcionalidades" class="section reveal" style="padding-bottom: 4.5rem;">
   <div class="container-wide">
     <p class="eyebrow">Qué incluye hoy</p>
     <h2>Todo lo que necesitás para llegar (y volver) mejor</h2>
@@ -164,7 +308,7 @@
   </div>
 </section>
 
-<section class="finale reveal">
+<section id="empezar" class="finale reveal">
   <div class="finale-bg" aria-hidden="true"></div>
   <div class="finale-overlay" aria-hidden="true"></div>
   <div class="container">
@@ -187,4 +331,102 @@
     <p class="back-link">¿Todavía no tenés cuenta? <a href="/register">Registrate</a></p>
   </div>
 </section>
+
+<script>
+(function () {
+  var root = document.getElementById('home-line-sidebar');
+  if (!root) return;
+
+  var items = Array.prototype.slice.call(root.querySelectorAll('.line-sidebar__item'));
+  var sectionIds = items.map(function (item) { return item.getAttribute('data-target'); });
+  var sections = sectionIds.map(function (id) { return document.getElementById(id); });
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // click -> scroll suave a la seccion (ademas del href="#..." nativo, que
+  // ya funciona sin JS gracias a scroll-margin-top / scroll-behavior)
+  items.forEach(function (item) {
+    var link = item.querySelector('.line-sidebar__label');
+    var target = sections[items.indexOf(item)];
+    if (!link || !target) return;
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+    });
+  });
+
+  // resalte automatico segun la seccion visible (scroll-spy real, no solo hover)
+  var activeIndex = -1;
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        var idx = sections.indexOf(entry.target);
+        if (idx === -1) return;
+        if (entry.isIntersecting) {
+          activeIndex = idx;
+          items.forEach(function (it, i) {
+            it.classList.toggle('is-active', i === idx);
+            it.querySelector('.line-sidebar__label').setAttribute('aria-current', i === idx ? 'true' : 'false');
+          });
+        }
+      });
+    }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+    sections.forEach(function (s) { if (s) io.observe(s); });
+  }
+
+  if (reduceMotion) {
+    // sin animacion: el estado activo alcanza para marcar la seccion actual
+    var applyStatic = function () {
+      items.forEach(function (item, i) {
+        item.style.setProperty('--effect', i === activeIndex ? 0.55 : 0);
+      });
+      requestAnimationFrame(applyStatic);
+    };
+    requestAnimationFrame(applyStatic);
+    return;
+  }
+
+  // loop rAF: suaviza --effect (0..1) por item segun la distancia del mouse
+  // al item (hover) y segun si es la seccion activa (scroll-spy), con un
+  // lerp exponencial independiente del framerate (equivalente a --smoothing).
+  var MAX_DIST = 90; // px: radio de influencia del mouse alrededor de cada item
+  var SMOOTHING_MS = 100; // igual a --smoothing en el CSS
+  var mouse = { y: null, inside: false };
+  var current = items.map(function () { return 0; });
+
+  root.addEventListener('mousemove', function (e) {
+    mouse.y = e.clientY;
+    mouse.inside = true;
+  });
+  root.addEventListener('mouseleave', function () {
+    mouse.inside = false;
+  });
+
+  var lastTime = null;
+  function tick(time) {
+    if (lastTime === null) lastTime = time;
+    var dt = time - lastTime;
+    lastTime = time;
+    var factor = 1 - Math.exp(-dt / SMOOTHING_MS);
+
+    items.forEach(function (item, i) {
+      var hoverEffect = 0;
+      if (mouse.inside) {
+        var rect = item.getBoundingClientRect();
+        var center = rect.top + rect.height / 2;
+        var dist = Math.abs(mouse.y - center);
+        hoverEffect = Math.max(0, 1 - dist / MAX_DIST);
+      }
+      var activeEffect = i === activeIndex ? 0.55 : 0;
+      var target = Math.max(hoverEffect, activeEffect);
+
+      current[i] += (target - current[i]) * factor;
+      if (Math.abs(target - current[i]) < 0.001) current[i] = target;
+      item.style.setProperty('--effect', current[i]);
+    });
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
 {% endblock %}
