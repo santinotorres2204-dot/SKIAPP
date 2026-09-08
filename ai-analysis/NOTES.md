@@ -34,14 +34,15 @@ No se relaja `min_visibility` (default 0.5) para compensar encuadres
 lejanos — bajarlo generaría más falsos positivos como el de los árboles
 del caso de park, no mejor detección real.
 
-## Interpretación por disciplina: peso hacia atrás (carving vs. powder)
+## Interpretación por disciplina: peso hacia atrás (carving, moguls, freeride, powder)
 
 `analyze_ski_video.py` ahora acepta `--discipline` (mismos valores que
-`discipline_tag`) y, solo para **carving** y **powder**, interpreta una
-nueva métrica (`trunk_fore_aft_deg`) con umbrales distintos por disciplina.
-El resto de las disciplinas (freeride, moguls, all_mountain) sigue con el
+`discipline_tag`) y, solo para **carving**, **moguls**, **freeride** y
+**powder**, interpreta una nueva métrica (`trunk_fore_aft_deg`) con umbrales
+distintos por disciplina. **all_mountain** (y **park**) siguen con el
 análisis genérico sin este agregado — no se tocó nada de lo existente para
-ellas.
+ellas. all_mountain queda afuera a propósito: al mezclar terrenos no tiene
+una postura ideal única contra la cual evaluar peso adelante/atrás.
 
 **La métrica** (`_trunk_fore_aft_deg` en el código): ángulo del tronco
 (hombro) respecto a la línea tobillo-cadera, positivo cuando el hombro cae
@@ -66,6 +67,17 @@ certificado):
 - *Carving*: el peso debe ir adelante, presión sobre la lengüeta de la
   bota. Peso atrás es el error técnico más común a corregir → umbrales
   bajos (`BACKWARD_LEAN_THRESHOLDS_DEG["carving"]`).
+- *Moguls*: mismo nivel de exigencia que carving — estar en el asiento
+  trasero en un badenal es una receta para el desastre (se pierde el
+  control de punta justo cuando más se lo necesita para absorber el
+  siguiente badén) → mismos umbrales que carving.
+- *Freeride*: el coaching moderno rechaza explícitamente el mito de
+  "tirate para atrás" en nieve profunda/variable (una idea heredada de los
+  esquís angostos de los 80-90); el objetivo es peso centrado, con presión
+  pareja entre punta y talón. A diferencia de powder, freeride *no* tolera
+  el margen extra de ir más atrás al iniciar el giro → umbrales más
+  parecidos a carving/moguls que a powder, aunque un poco más laxos que
+  carving por lo variable del terreno.
 - *Powder*: se busca ir centrado (no "tirado atrás" como dice la creencia
   popular), pero se admite un centro de masa levemente más neutro/atrás que
   en carving, sobre todo al iniciar el giro, para mantener las puntas
@@ -82,10 +94,10 @@ lenguaje simple del criterio aplicado (ej. *"Este video fue analizado como
 carving, donde se espera peso adelantado... No se detectó un patrón
 sostenido de peso hacia atrás con los umbrales de esta disciplina."*), para
 que quien lea el resultado entienda el porqué, no solo el resultado. Es
-`null` si `discipline_tag` no es carving ni powder (o no se pasó ninguno),
-en cuyo caso el comportamiento es idéntico al de antes de este cambio
-(backward-compatible: sin `--discipline`, no se agrega ni el patrón ni la
-nota).
+`null` si `discipline_tag` no es carving, moguls, freeride ni powder (o no
+se pasó ninguno), en cuyo caso el comportamiento es idéntico al de antes de
+este cambio (backward-compatible: sin `--discipline`, no se agrega ni el
+patrón ni la nota).
 
 **Validado corriendo `--discipline carving` contra `prueba1-4.mp4`** (las
 referencias ya usadas para calibrar el resto del pipeline): el mecanismo
@@ -93,13 +105,19 @@ corre end-to-end sin romper nada de lo existente, produce valores de
 `trunk_fore_aft_deg` con variación real (no degenerados — ej. prueba4: rango
 -77° a +30°, mediana -2.7°) y **no dispara** `peso_hacia_atras` en ninguno
 de los 4 (esperable, son videos de referencia con técnica razonable). Con
-`--discipline powder` sobre los mismos videos tampoco dispara (consistente:
-el umbral de powder es más laxo que el de carving, así que si carving no
-marca, powder tampoco debería). Todavía no hay un video de referencia con
-un "peso atrás" real conocido para confirmar el caso positivo — pendiente
-para cuando haya más material. **Sin calibrar** como el resto de los
-umbrales de este archivo: son placeholders razonables para validar que la
-lógica corre, no valores derivados de un dataset etiquetado.
+`--discipline powder`, `--discipline moguls` y `--discipline freeride` sobre
+los mismos 4 videos tampoco dispara en ningún caso (consistente: los
+umbrales de moguls son iguales a carving y los de freeride/powder son
+iguales o más laxos, así que si carving no marca, el resto tampoco
+debería). No hay videos de referencia etiquetados específicamente como
+moguls o freeride disponibles todavía (los únicos videos del repo son
+`prueba1-4.mp4` y una tanda de park) — se corrió contra los mismos 4 videos
+genéricos solo para confirmar que el mecanismo no rompe nada, mismo criterio
+ya usado para validar carving/powder. Tampoco hay un video de referencia con
+un "peso atrás" real conocido para confirmar el caso positivo en ninguna
+disciplina — pendiente para cuando haya más material. **Sin calibrar** como
+el resto de los umbrales de este archivo: son placeholders razonables para
+validar que la lógica corre, no valores derivados de un dataset etiquetado.
 
 **Limitación abierta**: en algunos frames (ej. prueba2: ~51% del total) el
 offset de rodilla es demasiado chico para confiar en el signo, y se

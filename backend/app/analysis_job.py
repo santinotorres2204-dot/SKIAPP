@@ -24,9 +24,10 @@ ANALYSIS_TIMEOUT_SECONDS = 600
 def _run_mediapipe(video_path: Path, discipline_tag: str | None) -> dict:
     cmd = [str(AI_ANALYSIS_PYTHON), str(AI_ANALYSIS_SCRIPT), str(video_path)]
     if discipline_tag:
-        # Interpretacion especifica por disciplina (por ahora solo carving y
-        # powder la usan; el resto ignora el flag y sigue con el analisis
-        # generico -- ver NOTES.md "Interpretacion por disciplina").
+        # Interpretacion especifica por disciplina (por ahora carving, moguls,
+        # freeride y powder la usan; park y all_mountain ignoran el flag y
+        # siguen con el analisis generico -- ver NOTES.md "Interpretacion por
+        # disciplina").
         cmd += ["--discipline", discipline_tag]
     proc = subprocess.run(
         cmd,
@@ -61,7 +62,7 @@ def run_analysis_job(video_id: int, video_path: Path) -> None:
             db.commit()
             raise
 
-        # discipline_note (carving/powder, ver NOTES.md) no tiene columna propia
+        # discipline_note (carving/moguls/freeride/powder, ver NOTES.md) no tiene columna propia
         # todavia -- se antepone al summary para no perderlo al persistir, en
         # vez de agregar una migracion para este primer paso.
         summary = result.get("summary")

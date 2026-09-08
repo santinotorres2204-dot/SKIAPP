@@ -10,11 +10,11 @@ precision) para detectar:
   - perdida_de_balance           (desplazamiento brusco del centro de masa)
   - rotacion_excesiva_tren_superior (separacion hombros/cadera)
   - inconsistencia_entre_giros   (varianza alta entre giros consecutivos)
-  - peso_hacia_atras             (solo carving/powder, ver --discipline y
-                                   detect_weight_position() -- interpretacion
-                                   del mismo angulo de tronco es distinta
-                                   segun disciplina, el resto de disciplinas
-                                   no lo evalua todavia)
+  - peso_hacia_atras             (solo carving/moguls/freeride/powder, ver
+                                   --discipline y detect_weight_position() --
+                                   interpretacion del mismo angulo de tronco
+                                   es distinta segun disciplina; park y
+                                   all_mountain no lo evaluan todavia)
 
 Salida: JSON con la forma descripta en la spec:
   {
@@ -77,13 +77,19 @@ MIN_VALID_FRAMES_FOR_BALANCE = 20
 
 # Peso hacia atras (trunk_fore_aft_deg > 0), interpretado distinto segun
 # discipline_tag -- ver contexto tecnico en detect_weight_position(). Carving
-# marca peso atras con umbrales bajos (es el error a corregir mas comun);
-# powder solo lo marca si es mucho mas pronunciado, porque un centro de masa
-# levemente mas neutro/atras es esperable ahi (sobre todo al iniciar el giro,
-# para mantener las puntas arriba de la nieve). Placeholders sin calibrar,
-# como el resto de los umbrales de este archivo (ver nota al final).
+# y moguls marcan peso atras con umbrales bajos (es el error a corregir mas
+# comun, y en moguls "estar en el asiento trasero" es igual de grave que en
+# carving); freeride usa umbrales apenas mas laxos que carving/moguls pero
+# lejos de los de powder, porque el coaching moderno rechaza el mito de
+# "tirate para atras" en nieve profunda/variable; powder solo lo marca si es
+# mucho mas pronunciado, porque un centro de masa levemente mas neutro/atras
+# es esperable ahi (sobre todo al iniciar el giro, para mantener las puntas
+# arriba de la nieve). Placeholders sin calibrar, como el resto de los
+# umbrales de este archivo (ver nota al final).
 BACKWARD_LEAN_THRESHOLDS_DEG = {
     "carving": {"baja": 6.0, "media": 10.0, "alta": 15.0},
+    "moguls": {"baja": 6.0, "media": 10.0, "alta": 15.0},
+    "freeride": {"baja": 8.0, "media": 13.0, "alta": 19.0},
     "powder": {"baja": 14.0, "media": 20.0, "alta": 28.0},
 }
 MIN_VALID_FRAMES_FOR_WEIGHT_POSITION = 20
@@ -564,15 +570,28 @@ def detect_weight_position(metrics: list[FrameMetrics], discipline_tag: Optional
       - CARVING: el peso debe ir adelante, presion sobre la lengueta de la
         bota. Peso atras es el error tecnico mas comun a corregir -> se marca
         con umbrales bajos.
+      - MOGULS: mismo nivel de exigencia que carving -- estar en el asiento
+        trasero en badenes es una receta para el desastre (se pierde el
+        control de la punta del esqui justo cuando mas se lo necesita para
+        absorber el siguiente badén) -> mismos umbrales que carving.
+      - FREERIDE: el coaching moderno rechaza explicitamente el mito de
+        "tirate para atras" en nieve profunda/variable (viene de los esquis
+        angostos de los 80-90); el objetivo es peso centrado, con presion
+        pareja entre punta y talon. A diferencia de powder, freeride no
+        tolera el margen extra de "mas atras al iniciar el giro" -> umbrales
+        mas parecidos a carving/moguls que a powder, aunque un poco mas
+        laxos que carving por el terreno variable.
       - POWDER: se busca ir centrado (no "tirado atras" como dice la creencia
         popular), pero se admite un centro de masa levemente mas neutro/atras
         que en carving, sobre todo al iniciar el giro, para mantener las
         puntas arriba de la nieve. Solo se marca si es MUY pronunciado y
         sostenido, mas alla de lo razonable para la disciplina.
 
-    Solo aplica a estas dos disciplinas por ahora (el resto sigue con el
-    analisis generico). "Sostenido" se exige explicitamente: un pico aislado
-    de trunk_fore_aft_deg no alcanza, tiene que superar el umbral en una
+    Solo aplica a estas cuatro disciplinas por ahora (el resto -- park,
+    all_mountain -- sigue con el analisis generico; all_mountain mezcla
+    terrenos y no tiene una postura ideal unica para evaluar contra ella).
+    "Sostenido" se exige explicitamente: un pico aislado de
+    trunk_fore_aft_deg no alcanza, tiene que superar el umbral en una
     proporcion minima de los frames validos (SUSTAINED_BACKWARD_PROPORTION).
 
     Es una aproximacion 2D a partir de pose estimada (angulo del tronco
@@ -646,12 +665,26 @@ PATTERN_DESCRIPTIONS = {
 }
 
 # Explicacion breve de que se espera de cada disciplina, para que el usuario
-# entienda el criterio aplicado (no solo el resultado). Solo estas dos por
-# ahora -- ver detect_weight_position().
+# entienda el criterio aplicado (no solo el resultado). Solo estas cuatro por
+# ahora -- ver detect_weight_position(). all_mountain queda afuera a proposito
+# (mezcla terrenos, no tiene una postura ideal unica).
 DISCIPLINE_EXPECTATIONS = {
     "carving": (
         "peso adelantado (presion sobre la lengueta de la bota) y un tronco "
         "estable y centrado, sin balanceo hacia atras"
+    ),
+    "moguls": (
+        "el mismo nivel de exigencia que en carving: peso adelantado y "
+        "centrado, sin quedar en el asiento trasero, que en badenes hace "
+        "perder el control de la punta del esqui justo cuando mas se lo "
+        "necesita para absorber el siguiente badén"
+    ),
+    "freeride": (
+        "una posicion centrada, con presion pareja entre punta y talon -- el "
+        "coaching moderno rechaza el mito de \"tirate para atras\" en nieve "
+        "profunda/variable (una idea de los esquis angostos de los 80-90), "
+        "asi que a diferencia de powder no se tolera el margen extra de ir "
+        "mas atras al iniciar el giro"
     ),
     "powder": (
         "una posicion centrada -- no \"tirado hacia atras\" como dice la creencia "
@@ -810,8 +843,9 @@ def main() -> None:
                          help="Complejidad del modelo MediaPipe Pose (0=rapido, 2=preciso)")
     parser.add_argument("--discipline", default=None,
                          help="discipline_tag del video (carving, powder, freeride, moguls, all_mountain, park). "
-                              "Solo carving y powder tienen interpretacion especifica por ahora (peso hacia atras); "
-                              "el resto usa el analisis generico sin cambios.")
+                              "carving, moguls, freeride y powder tienen interpretacion especifica por ahora "
+                              "(peso hacia atras); all_mountain y park usan el analisis generico sin cambios "
+                              "(all_mountain mezcla terrenos y no tiene una postura ideal unica).")
     parser.add_argument("--pretty", action="store_true", help="Indentar el JSON de salida")
 
     args = parser.parse_args()
