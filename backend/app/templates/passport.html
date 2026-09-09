@@ -12,9 +12,8 @@
     {% elif error_message %}
     <p class="flash-banner">⚠ {{ error_message }}</p>
     {% endif %}
-    <div class="hero-meta">
-      <span><strong>{{ user.ski_level }}</strong> nivel</span>
-      <span><strong>{{ user.years_skiing }}</strong> años esquiando</span>
+    <p class="hero-meta-primary">{{ user.ski_level | capitalize }} · {{ user.years_skiing }} años esquiando</p>
+    <div class="hero-meta-secondary">
       <span>{{ user.email }}</span>
       <span>Usuario desde {{ user.created_at.strftime("%Y-%m-%d") }}</span>
     </div>

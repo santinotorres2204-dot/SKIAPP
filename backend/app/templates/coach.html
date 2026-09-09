@@ -49,7 +49,7 @@
     flex-direction: column;
     gap: 0.9rem;
   }
-  .msg-row { display: flex; align-items: flex-end; gap: 0.55rem; max-width: 84%; }
+  .msg-row { display: flex; align-items: flex-end; gap: 0.55rem; max-width: 78%; }
   .msg-row.user { align-self: flex-end; }
   .msg-row.assistant { align-self: flex-start; }
   .msg-avatar {
@@ -67,7 +67,7 @@
     letter-spacing: 0.02em;
   }
   .msg-bubble {
-    padding: 0.75rem 1rem;
+    padding: 0.6rem 0.85rem;
     border-radius: 1.15rem;
     font-size: 1.05rem;
     line-height: 1.55;
@@ -110,6 +110,8 @@
   .coach-input {
     flex: 1;
     resize: none;
+    /* altura inicial ~56-64px (Fase 5), crece con autoGrow() hasta max-height */
+    min-height: 3.6rem;
     max-height: 6.5rem;
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 1.4rem;
@@ -124,14 +126,14 @@
   .coach-input:disabled { opacity: 0.5; }
   .coach-send {
     flex-shrink: 0;
-    width: 2.7rem;
-    height: 2.7rem;
+    width: 2.2rem;
+    height: 2.2rem;
     border-radius: 50%;
     border: none;
     background: var(--flare);
     color: #fff;
     cursor: pointer;
-    font-size: 1.05rem;
+    font-size: 0.92rem;
     line-height: 1;
     transition: background-color 0.15s ease;
   }

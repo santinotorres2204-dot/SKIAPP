@@ -192,7 +192,9 @@
     font-size: 0.88rem;
     letter-spacing: 0.18em;
     font-weight: 400;
-    padding: 0.7rem 1.75rem;
+    /* padding vertical pensado para que el boton mida ~52-56px de alto
+       (Fase 5), no solo texto con aire generico. */
+    padding: 0.95rem 1.75rem;
   }
   .btn-quiet-dark:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--flare); color: var(--flare); }
   .btn-quiet {
@@ -284,16 +286,30 @@
   .hero .container-wide { position: relative; z-index: 1; }
   .hero-compact { padding-top: clamp(2.5rem, 8vw, 3.75rem); padding-bottom: clamp(3.5rem, 9vw, 5rem); }
   .hero + .container { padding-top: clamp(2.5rem, 7vw, 3.5rem); }
-  .hero .page-title { color: var(--white); font-size: clamp(2.6rem, 8vw, 4.4rem); }
-  .hero-meta {
+  /* margin-bottom mas grande que el .page-title base (0.9rem): en el hero
+     de perfil el nombre esta seguido de los datos de nivel/años/mail, y
+     necesitan mas separacion (28-32px, Fase 5) para leerse como bloques
+     distintos en vez de una sola masa de texto. */
+  .hero .page-title { color: var(--white); font-size: clamp(2.6rem, 8vw, 4.4rem); margin-bottom: 1.9rem; }
+
+  /* linea primaria: nivel + años agrupados (antes eran 2 spans sueltos del
+     mismo peso que el mail) -- ahora comparten una sola linea destacada. */
+  .hero-meta-primary {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--white);
+    font-weight: 500;
+  }
+  /* linea secundaria: mail y "usuario desde" -- info de referencia, no hace
+     falta que compita visualmente con nivel/años. */
+  .hero-meta-secondary {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem 1.85rem;
-    margin-top: 1.5rem;
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.6);
+    gap: 0.3rem 1.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.45);
   }
-  .hero-meta strong { color: var(--white); font-weight: 500; }
 
   /* .hero-rotating: variante de .hero solo para la home ("/"), con carrusel
      de 4 fotos en crossfade en vez de una unica foto estatica. El degradado
@@ -476,7 +492,12 @@
     color: var(--flare);
     background: rgba(255, 68, 25, 0.14);
   }
+  /* .tag generico usa padding minimo (pensado para status tags en tablas);
+     como chip de achievement, con el font-size ya en 14px (Fase 3), ese
+     padding lo deja en ~29px de alto -- se lo separa a mas aire propio
+     apuntando a ~36-38px, sin tocar el tamaño de letra (Fase 5). */
   .badge-row .tag {
+    padding: 0.4rem 0.75rem;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
   .badge-row .tag-flare:hover {
@@ -728,6 +749,11 @@
     border: none;
     padding: 0;
     cursor: pointer;
+    /* Fase 5: .nav-links pasa a overlay full-screen (position:fixed) en
+       mobile -- sin esto el overlay (mismo z-index) lo tapa visualmente y
+       deja de poder tocarse para cerrar el menu. */
+    position: relative;
+    z-index: 51;
   }
   .nav-toggle span {
     display: block;
@@ -763,22 +789,22 @@
        recortar contenido legitimo mas ancho que la pantalla ahi. */
     html, body { overflow-x: hidden; max-width: 100vw; }
 
-    /* 1) nav: 5 links no entran en una fila -- menu hamburguesa */
+    /* 1) nav: 5 links no entran en una fila -- menu hamburguesa. Fase 5:
+       overlay navy a pantalla completa (position:fixed + inset:0) en vez
+       de un dropdown parcial anclado debajo de la barra -- se ve y se
+       siente como una pantalla propia, no como un popover chico. */
     .site-nav { position: relative; flex-wrap: nowrap; }
     .nav-toggle { display: flex; }
     .nav-links {
       display: none;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
+      position: fixed;
+      inset: 0;
       flex-direction: column;
       align-items: flex-start;
-      justify-content: flex-start;
-      gap: 1rem;
+      justify-content: center;
+      gap: 2rem;
       background: var(--ink);
       padding: 1.25rem clamp(1.25rem, 4vw, 3rem) 1.5rem;
-      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
       z-index: 50;
     }
     .nav-links.is-open { display: flex; }
@@ -789,19 +815,33 @@
        ("Historial de viajes" -> "Historial de" / "Viajes"). El "+" con
        justify-content:space-between del desktop queda pegado al borde
        derecho, lejos del texto -- en mobile se acerca con gap chico. */
+    /* 2c) Fase 5: bajar el alto de cada fila del acordeon (medido en
+       navegador: 77.6px de summary + 56px de separacion entre items =
+       ~133.6px de cadencia). El font-size de 28.8px (Fase 3, titulo de
+       card real) se mantiene -- se prioriza consistencia tipografica en
+       vez de forzar el rango pedido (105-125px) revirtiendo eso. Se baja
+       el padding vertical del summary (1.3rem->1rem) y la separacion
+       entre accordions (3.5rem->2.5rem, ver .acc mas abajo) para acercarse
+       lo mas posible sin tocar la letra: nueva cadencia ~108px. */
     .acc > summary {
       font-size: 1.8rem;
       line-height: 1.25;
-      padding: 1.3rem 0;
+      padding: 1rem 0;
       justify-content: flex-start;
       gap: 0.85rem;
     }
     .acc > summary::after { font-size: 1.8rem; }
+    .acc { margin-top: 2.5rem; }
 
     /* 3) hero de perfil: info debajo del nombre muy pegada a la foto de
        fondo, y los botones de accion entran justos en fila -- se apilan
        en columna, full width, con mas aire respecto al nombre. */
-    .hero-meta { margin-top: 1.1rem; gap: 0.55rem 1.1rem; font-size: 0.82rem; }
+    .hero-meta-secondary { gap: 0.3rem 1.1rem; }
+
+    /* Fase 5: menos aire entre "Rating principal" y "Achievements
+       desbloqueados" en mobile (stackeados en 1 columna, el row-gap de
+       2rem del desktop se siente exagerado ahi) -- ~25% menos. */
+    .summary-grid { gap: 1.5rem 4rem; }
     .cta-row { flex-direction: column; align-items: stretch; }
     .cta-row .btn { text-align: center; }
 
@@ -925,6 +965,9 @@
       navToggle.addEventListener('click', function () {
         var isOpen = navLinks.classList.toggle('is-open');
         navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        // overlay a pantalla completa (Fase 5): sin esto el documento de
+        // atras sigue scrolleando debajo del menu.
+        document.body.style.overflow = isOpen ? 'hidden' : '';
       });
       // Cerrar al navegar (no es estrictamente necesario porque el click en
       // un link ya dispara la carga de otra pagina, pero evita un flash del
@@ -933,6 +976,7 @@
         link.addEventListener('click', function () {
           navLinks.classList.remove('is-open');
           navToggle.setAttribute('aria-expanded', 'false');
+          document.body.style.overflow = '';
         });
       });
     }
