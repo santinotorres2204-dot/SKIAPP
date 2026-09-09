@@ -12,38 +12,101 @@
 
   .mental-header {
     text-align: center;
-    margin-bottom: 32px;
+    margin-bottom: 28px;
+  }
+
+  /* Fondo oscurecido SOLO detras del texto (no una tarjeta blanca grande):
+     el header vive directo sobre la foto fija de fondo del sitio (ramas
+     nevadas), que tiene mucho detalle y arruina el contraste de un texto
+     oscuro/gris puesto directo encima. Mismo patron que .flash-banner
+     (navy translucido + blur), ajustado al contenido en vez de ancho fijo. */
+  .mental-header-inner {
+    display: inline-block;
+    background: rgba(16, 32, 47, 0.62);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    padding: 0.9rem 1.5rem;
+    border-radius: 4px;
   }
 
   .mental-header h1 {
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: #1a1a1a;
+    font-family: 'Bebas Neue', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-size: 1.7rem;
+    color: var(--white);
     margin: 0 0 4px;
-    letter-spacing: -0.5px;
   }
 
   .mental-header .subtitle {
     font-size: 0.85rem;
-    color: #888;
-    font-style: italic;
+    color: rgba(255, 255, 255, 0.75);
   }
 
+  /* Indicador de paso: los puntos solos quedaban decorativos y sin
+     conexion clara con el resto -- se agrega el label de texto
+     ("Paso X de 4", mismo estilo que .eyebrow del resto del sitio) para
+     que se entienda de un vistazo que son progreso, no un carrusel. */
+  .step-label {
+    display: table;
+    margin: 0 auto 0.6rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(16, 32, 47, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    padding: 0.3rem 0.7rem;
+    border-radius: 3px;
+  }
+
+  .step-indicator {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .step-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--line);
+    transition: background 0.3s ease;
+  }
+
+  .step-dot.active { background: var(--flare); }
+  .step-dot.done { background: var(--shadow-2); }
+
+  /* Bordes casi rectos en vez de "ultra redondeados" tipo wellness, para
+     acercarse al lenguaje de señalizacion/placas del resto de la app. */
   .card-section {
-    background: rgba(255,255,255,0.92);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 16px;
   }
 
   .card-section h2 {
-    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
     font-weight: 700;
-    color: #1a1a1a;
-    margin: 0 0 16px;
+    color: var(--shadow);
+    margin: 0 0 14px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.06em;
+  }
+
+  /* appearance:auto (default de <button>) hace que WebKit/Chrome mobile
+     dibujen su propio "chrome" nativo con esquinas redondeadas, IGNORANDO
+     visualmente el border-radius de abajo aunque el valor computado sea
+     4px -- por eso las esquinas seguian viendose como pildora sin esto. */
+  .fear-btn, .technique-btn, .start-exercise-btn, .btn-primary {
+    appearance: none;
+    -webkit-appearance: none;
   }
 
   .fear-grid {
@@ -55,25 +118,25 @@
 
   .fear-btn {
     padding: 14px 10px;
-    border: 2px solid #e0e0e0;
-    border-radius: 12px;
-    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
     cursor: pointer;
+    font-family: 'Inter', sans-serif;
     font-size: 0.85rem;
     font-weight: 600;
-    color: #444;
+    color: var(--shadow);
     text-align: center;
-    transition: all 0.2s;
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 6px;
   }
 
-  .fear-btn .icon { font-size: 1.4rem; }
-
-  .fear-btn:hover { border-color: #e8420a; color: #e8420a; }
-  .fear-btn.selected { border-color: #e8420a; background: #fff4f1; color: #e8420a; }
+  .fear-btn .icon { width: 22px; height: 22px; }
+  .fear-btn:hover { border-color: var(--flare); color: var(--flare-dark); }
+  .fear-btn.selected { border-color: var(--flare); background: rgba(255, 68, 25, 0.07); color: var(--flare-dark); }
 
   .intensity-row {
     display: flex;
@@ -83,14 +146,14 @@
 
   .intensity-row input[type=range] {
     flex: 1;
-    accent-color: #e8420a;
+    accent-color: var(--flare);
     height: 6px;
   }
 
   .intensity-value {
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1.4rem;
-    font-weight: 800;
-    color: #e8420a;
+    color: var(--flare-dark);
     min-width: 28px;
     text-align: center;
   }
@@ -99,7 +162,7 @@
     display: flex;
     justify-content: space-between;
     font-size: 0.72rem;
-    color: #999;
+    color: var(--mist);
     margin-top: 4px;
   }
 
@@ -111,50 +174,56 @@
 
   .technique-btn {
     padding: 16px 12px;
-    border: 2px solid #e0e0e0;
-    border-radius: 12px;
-    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--white);
     cursor: pointer;
+    font-family: 'Inter', sans-serif;
     font-size: 0.82rem;
     font-weight: 600;
-    color: #444;
+    color: var(--shadow);
     text-align: center;
-    transition: all 0.2s;
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 6px;
   }
 
-  .technique-btn .icon { font-size: 1.3rem; }
-  .technique-btn .desc { font-size: 0.72rem; font-weight: 400; color: #999; }
-  .technique-btn:hover { border-color: #2563eb; color: #2563eb; }
-  .technique-btn.selected { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+  .technique-btn .icon { width: 20px; height: 20px; }
+  .technique-btn .desc { font-size: 0.72rem; font-weight: 400; color: var(--mist); }
+  .technique-btn:hover { border-color: var(--shadow-2); color: var(--shadow-2); }
+  .technique-btn.selected { border-color: var(--shadow-2); background: var(--snow-dim); color: var(--shadow-2); }
 
   /* Guided exercise box */
   .exercise-box {
-    background: #0d0d0d;
-    color: #fff;
-    border-radius: 14px;
-    padding: 24px;
+    background: var(--ink);
+    color: var(--white);
+    border-radius: 4px;
+    padding: 22px;
     display: none;
   }
 
   .exercise-box.active { display: block; }
 
   .exercise-box h3 {
-    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
     font-weight: 700;
     margin: 0 0 12px;
-    color: #e8420a;
+    color: var(--flare);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.05em;
   }
+
+  .exercise-box h3 .icon { width: 18px; height: 18px; flex-shrink: 0; }
 
   .exercise-step {
     font-size: 0.9rem;
     line-height: 1.6;
-    color: #ccc;
+    color: rgba(255, 255, 255, 0.78);
     margin-bottom: 12px;
   }
 
@@ -162,7 +231,7 @@
     width: 90px;
     height: 90px;
     border-radius: 50%;
-    background: #e8420a;
+    background: var(--flare);
     margin: 20px auto;
     animation: none;
     display: flex;
@@ -170,9 +239,11 @@
     justify-content: center;
     font-size: 0.75rem;
     font-weight: 700;
-    color: white;
+    color: var(--white);
     text-align: center;
   }
+
+  .breath-circle .check-icon { width: 30px; height: 30px; }
 
   .breath-circle.inhale { animation: inhale 4s ease-in-out; }
   .breath-circle.hold { animation: hold 4s ease-in-out; }
@@ -195,7 +266,7 @@
     text-align: center;
     font-size: 1.1rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--white);
     min-height: 28px;
   }
 
@@ -203,56 +274,54 @@
     display: block;
     width: 100%;
     padding: 12px;
-    background: #e8420a;
-    color: white;
+    background: var(--flare);
+    color: var(--white);
     border: none;
-    border-radius: 10px;
+    border-radius: 4px;
     font-size: 0.9rem;
     font-weight: 700;
     cursor: pointer;
     margin-top: 16px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    transition: opacity 0.2s;
+    letter-spacing: 0.05em;
+    transition: background-color 0.15s ease;
   }
-  .start-exercise-btn:hover { opacity: 0.88; }
+  .start-exercise-btn:hover { background: var(--flare-dark); }
 
   .btn-primary {
     display: block;
     width: 100%;
     padding: 16px;
-    background: #e8420a;
-    color: white;
+    background: var(--flare);
+    color: var(--white);
     border: none;
-    border-radius: 14px;
-    font-size: 1rem;
-    font-weight: 800;
+    border-radius: 4px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.05rem;
+    letter-spacing: 0.05em;
     cursor: pointer;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    transition: opacity 0.2s;
+    transition: background-color 0.15s ease;
   }
 
   .btn-primary:disabled { opacity: 0.4; cursor: default; }
-  .btn-primary:hover:not(:disabled) { opacity: 0.88; }
+  .btn-primary:hover:not(:disabled) { background: var(--flare-dark); }
 
   /* Completion */
   .completion-section { display: none; }
   .completion-section.active { display: block; }
 
-  .result-badge {
-    text-align: center;
-    padding: 24px;
-  }
-
-  .result-badge .emoji { font-size: 3rem; }
+  .result-badge { text-align: center; padding: 24px; }
+  .result-badge .icon-wrap { width: 52px; height: 52px; margin: 0 auto; color: var(--flare-dark); }
+  .result-badge .icon-wrap svg { width: 100%; height: 100%; }
   .result-badge .reduction-text {
-    font-size: 1.3rem;
-    font-weight: 800;
-    color: #1a1a1a;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.02em;
+    color: var(--shadow);
     margin: 12px 0 4px;
   }
-  .result-badge .sub { font-size: 0.85rem; color: #888; }
+  .result-badge .sub { font-size: 0.85rem; color: var(--mist); }
 
   /* History */
   .history-item {
@@ -260,64 +329,52 @@
     align-items: center;
     gap: 12px;
     padding: 12px 0;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--snow-dim);
   }
 
   .history-item:last-child { border-bottom: none; }
 
-  .history-fear {
-    font-size: 1.2rem;
-  }
+  .history-fear { width: 22px; height: 22px; color: var(--mist); flex-shrink: 0; }
+  .history-fear svg { width: 100%; height: 100%; }
 
   .history-info { flex: 1; }
-  .history-info .fear-name { font-size: 0.85rem; font-weight: 700; color: #1a1a1a; text-transform: capitalize; }
-  .history-info .technique-name { font-size: 0.75rem; color: #888; }
+  .history-info .fear-name { font-size: 0.85rem; font-weight: 700; color: var(--shadow); text-transform: capitalize; }
+  .history-info .technique-name { font-size: 0.75rem; color: var(--mist); }
 
+  /* Sin verde: el badge de resultado es informativo (navy/gris) salvo que
+     sea una reduccion grande (>=4 puntos, mismo umbral que el mensaje
+     "Excelente" de completeSession), ahi si usa el bengala del resto de
+     la app -- reservado para lo que realmente importa, no para cada fila. */
   .reduction-pill {
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.78rem;
-    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--line);
+    color: var(--mist);
+    background: none;
+    white-space: nowrap;
   }
-
-  .reduction-positive { background: #d1fae5; color: #065f46; }
-  .reduction-zero { background: #f3f4f6; color: #888; }
-  .reduction-negative { background: #fee2e2; color: #991b1b; }
+  .reduction-pill.is-notable { border-color: var(--flare); color: var(--flare-dark); background: rgba(255, 68, 25, 0.08); }
 
   .empty-history {
     text-align: center;
-    color: #bbb;
+    color: var(--mist);
     padding: 24px;
     font-size: 0.85rem;
-    font-style: italic;
   }
-
-  .step-indicator {
-    display: flex;
-    gap: 6px;
-    justify-content: center;
-    margin-bottom: 24px;
-  }
-
-  .step-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #e0e0e0;
-    transition: background 0.3s;
-  }
-
-  .step-dot.active { background: #e8420a; }
-  .step-dot.done { background: #10b981; }
 </style>
 
 <div class="mental-container">
   <div class="mental-header">
-    <h1>🧠 Preparación Mental</h1>
-    <div class="subtitle">Confianza y control sobre tus miedos en la nieve</div>
+    <div class="mental-header-inner">
+      <h1>Preparación Mental</h1>
+      <div class="subtitle">Confianza y control sobre tus miedos en la nieve</div>
+    </div>
   </div>
 
-  <!-- Step indicators -->
+  <!-- Step indicator -->
+  <div class="step-label" id="stepLabel">Paso 1 de 4</div>
   <div class="step-indicator">
     <div class="step-dot active" id="dot1"></div>
     <div class="step-dot" id="dot2"></div>
@@ -330,16 +387,20 @@
     <h2>¿Qué miedo trabajamos hoy?</h2>
     <div class="fear-grid">
       <button class="fear-btn" onclick="selectFear('velocidad', this)">
-        <span class="icon">💨</span> Velocidad
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10a3 3 0 10-3-3"/><path d="M3 16h13a3 3 0 11-3 3"/></svg>
+        Velocidad
       </button>
       <button class="fear-btn" onclick="selectFear('pendiente', this)">
-        <span class="icon">⛰️</span> Pendiente
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19L11 6l4 6 2-3 4 10"/></svg>
+        Pendiente
       </button>
       <button class="fear-btn" onclick="selectFear('caidas', this)">
-        <span class="icon">🤕</span> Caídas
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"/><line x1="12" y1="10" x2="12" y2="13.5"/><circle cx="12" cy="16" r="0.6" fill="currentColor" stroke="none"/></svg>
+        Caídas
       </button>
       <button class="fear-btn" onclick="selectFear('exposicion', this)">
-        <span class="icon">🌄</span> Altura / Exposición
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.2 10-6.2S22 12 22 12s-3.6 6.2-10 6.2S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>
+        Altura / Exposición
       </button>
     </div>
   </div>
@@ -348,10 +409,10 @@
   <div id="step2" class="card-section" style="display:none">
     <h2>¿Cuánto sentís ese miedo ahora? (antes de la técnica)</h2>
     <div class="intensity-row">
-      <span style="font-size:0.8rem;color:#999">0</span>
+      <span style="font-size:0.8rem;color:var(--mist)">0</span>
       <input type="range" id="intensityBefore" min="0" max="10" value="5"
              oninput="document.getElementById('valBefore').textContent=this.value">
-      <span style="font-size:0.8rem;color:#999">10</span>
+      <span style="font-size:0.8rem;color:var(--mist)">10</span>
       <span class="intensity-value" id="valBefore">5</span>
     </div>
     <div class="intensity-labels"><span>Sin miedo</span><span>Miedo intenso</span></div>
@@ -359,22 +420,22 @@
     <h2 style="margin-top:24px">Elegí una técnica</h2>
     <div class="technique-grid">
       <button class="technique-btn" onclick="selectTechnique('respiracion', this)">
-        <span class="icon">🌬️</span>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/><path d="M2 15c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/></svg>
         Respiración
         <span class="desc">4-4-6 box breathing</span>
       </button>
       <button class="technique-btn" onclick="selectTechnique('visualizacion', this)">
-        <span class="icon">🎯</span>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none"/></svg>
         Visualización
         <span class="desc">Recorrido mental</span>
       </button>
       <button class="technique-btn" onclick="selectTechnique('self_talk', this)">
-        <span class="icon">💬</span>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v10H9l-4 4v-4H4z"/></svg>
         Self-talk
         <span class="desc">Frases de confianza</span>
       </button>
       <button class="technique-btn" onclick="selectTechnique('escalera', this)">
-        <span class="icon">🪜</span>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="3" x2="7" y2="21"/><line x1="17" y1="3" x2="17" y2="21"/><line x1="7" y1="7" x2="17" y2="7"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="17" x2="17" y2="17"/></svg>
         Escalera
         <span class="desc">Exposición gradual</span>
       </button>
@@ -387,7 +448,10 @@
 
     <!-- RESPIRACIÓN -->
     <div class="exercise-box" id="ex-respiracion">
-      <h3>🌬️ Respiración 4-4-6</h3>
+      <h3>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/><path d="M2 15c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/></svg>
+        Respiración 4-4-6
+      </h3>
       <p class="exercise-step">Técnica de regulación del sistema nervioso. Reduce la activación fisiológica del miedo en 2-3 minutos.</p>
       <div class="breath-circle" id="breathCircle">Listo</div>
       <div class="breath-instruction" id="breathInstruction">Presioná inicio cuando estés listo</div>
@@ -396,35 +460,44 @@
 
     <!-- VISUALIZACIÓN -->
     <div class="exercise-box" id="ex-visualizacion">
-      <h3>🎯 Visualización guiada</h3>
+      <h3>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none"/></svg>
+        Visualización guiada
+      </h3>
       <p class="exercise-step">Cerrá los ojos. Respira profundo. Imaginate en la cima de la pista.</p>
       <p class="exercise-step">Sentí el frío del aire. Mirá la nieve. Sos competente, entrenaste para esto.</p>
       <p class="exercise-step">Visualizá el primer viraje: tus rodillas flexionadas, el peso en las puntas, los esquís tallando.</p>
       <p class="exercise-step">Bajás con control. El ritmo es el tuyo. Llegás al final sintiéndote bien.</p>
-      <p class="exercise-step" style="color:#e8420a;font-weight:600">Repetí esto 3 veces antes de cada bajada difícil.</p>
+      <p class="exercise-step" style="color:var(--flare);font-weight:600">Repetí esto 3 veces antes de cada bajada difícil.</p>
     </div>
 
     <!-- SELF TALK -->
     <div class="exercise-box" id="ex-self_talk">
-      <h3>💬 Frases de confianza</h3>
+      <h3>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v10H9l-4 4v-4H4z"/></svg>
+        Frases de confianza
+      </h3>
       <p class="exercise-step">Leé estas frases en voz alta o mentalmente. Elegí 1 o 2 que resuenen con vos:</p>
       <p class="exercise-step">→ <em>"Entrené para esto. Mi cuerpo sabe qué hacer."</em></p>
       <p class="exercise-step">→ <em>"Puedo ir a mi ritmo. El control es mío."</em></p>
       <p class="exercise-step">→ <em>"El miedo es energía. La uso para concentrarme."</em></p>
       <p class="exercise-step">→ <em>"Una cosa a la vez: miro donde quiero ir."</em></p>
       <p class="exercise-step">→ <em>"Ya estuve aquí antes. Confío en mí."</em></p>
-      <p class="exercise-step" style="color:#e8420a;font-weight:600">Elegí una frase ancla y repetila 5 veces antes de arrancar.</p>
+      <p class="exercise-step" style="color:var(--flare);font-weight:600">Elegí una frase ancla y repetila 5 veces antes de arrancar.</p>
     </div>
 
     <!-- ESCALERA DE EXPOSICIÓN -->
     <div class="exercise-box" id="ex-escalera">
-      <h3>🪜 Escalera de Exposición</h3>
+      <h3>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="3" x2="7" y2="21"/><line x1="17" y1="3" x2="17" y2="21"/><line x1="7" y1="7" x2="17" y2="7"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="17" x2="17" y2="17"/></svg>
+        Escalera de Exposición
+      </h3>
       <p class="exercise-step">Exponerse gradualmente reduce el miedo de forma duradera. Hoy no tenés que hacer todo.</p>
-      <p class="exercise-step"><strong style="color:#e8420a">Nivel 1</strong> — Parate en la cima y mirá. Sin presión de bajar.</p>
-      <p class="exercise-step"><strong style="color:#e8420a">Nivel 2</strong> — Bajá los primeros 20 metros a tu ritmo, frenate.</p>
-      <p class="exercise-step"><strong style="color:#e8420a">Nivel 3</strong> — Bajá un tramo completo con foco en el control, no la velocidad.</p>
-      <p class="exercise-step"><strong style="color:#e8420a">Nivel 4</strong> — Repetí el nivel anterior hasta que se sienta cómodo.</p>
-      <p class="exercise-step" style="color:#e8420a;font-weight:600">La exposición repetida + éxito = reducción real del miedo.</p>
+      <p class="exercise-step"><strong style="color:var(--flare)">Nivel 1</strong> — Parate en la cima y mirá. Sin presión de bajar.</p>
+      <p class="exercise-step"><strong style="color:var(--flare)">Nivel 2</strong> — Bajá los primeros 20 metros a tu ritmo, frenate.</p>
+      <p class="exercise-step"><strong style="color:var(--flare)">Nivel 3</strong> — Bajá un tramo completo con foco en el control, no la velocidad.</p>
+      <p class="exercise-step"><strong style="color:var(--flare)">Nivel 4</strong> — Repetí el nivel anterior hasta que se sienta cómodo.</p>
+      <p class="exercise-step" style="color:var(--flare);font-weight:600">La exposición repetida + éxito = reducción real del miedo.</p>
     </div>
 
     <button class="btn-primary" style="margin-top:20px" onclick="goToStep4()">Ya hice el ejercicio →</button>
@@ -435,10 +508,10 @@
     <div id="completionPre">
       <h2>¿Cómo está el miedo ahora? (después de la técnica)</h2>
       <div class="intensity-row">
-        <span style="font-size:0.8rem;color:#999">0</span>
+        <span style="font-size:0.8rem;color:var(--mist)">0</span>
         <input type="range" id="intensityAfter" min="0" max="10" value="3"
                oninput="document.getElementById('valAfter').textContent=this.value">
-        <span style="font-size:0.8rem;color:#999">10</span>
+        <span style="font-size:0.8rem;color:var(--mist)">10</span>
         <span class="intensity-value" id="valAfter">3</span>
       </div>
       <div class="intensity-labels"><span>Sin miedo</span><span>Miedo intenso</span></div>
@@ -447,12 +520,12 @@
 
     <div id="completionResult" style="display:none">
       <div class="result-badge">
-        <div class="emoji" id="resultEmoji">🏔️</div>
+        <div class="icon-wrap" id="resultEmoji"></div>
         <div class="reduction-text" id="resultText">Gran trabajo</div>
         <div class="sub" id="resultSub"></div>
       </div>
       <a href="/passport?user_id={{ user.id }}" style="text-decoration:none">
-        <button class="btn-primary" style="background:#1a1a1a;margin-top:8px">← Volver a mi perfil</button>
+        <button class="btn-primary" style="background:var(--ink);margin-top:8px">← Volver a mi perfil</button>
       </a>
     </div>
   </div>
@@ -473,9 +546,24 @@
   let breathCycle = 0;
   const totalCycles = 3;
 
+  // Iconografia lineal (SVG inline), sin emojis -- mismo estilo que el
+  // resto del sitio (stroke=currentColor, stroke-width 2, esquinas redondas).
   const fearIcons = {
-    velocidad: '💨', pendiente: '⛰️', caidas: '🤕', exposicion: '🌄', otro: '❓'
+    velocidad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h10a3 3 0 10-3-3"/><path d="M3 16h13a3 3 0 11-3 3"/></svg>',
+    pendiente: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 19L11 6l4 6 2-3 4 10"/></svg>',
+    caidas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 16H3z"/><line x1="12" y1="10" x2="12" y2="13.5"/><circle cx="12" cy="16" r="0.6" fill="currentColor" stroke="none"/></svg>',
+    exposicion: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-6.2 10-6.2S22 12 22 12s-3.6 6.2-10 6.2S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>',
+    otro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.3a2.7 2.7 0 015.2.9c0 1.6-2.5 2.1-2.5 3.6"/><circle cx="12" cy="17" r="0.6" fill="currentColor" stroke="none"/></svg>'
   };
+
+  const resultIcons = {
+    excelente: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.5l2.5 5.3 5.8.6-4.3 4 1.2 5.8-5.2-2.9-5.2 2.9 1.2-5.8-4.3-4 5.8-.6z"/></svg>',
+    bien: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-9"/><path d="M15 6h6v6"/></svg>',
+    completado: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M7.5 12.5l3 3 6-7"/></svg>',
+    gracias: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.3-4.4-9.6-9C1 8.4 2.4 5 6 5c2 0 3.4 1 4 2.2C10.6 6 12 5 14 5c3.6 0 5 3.4 3.6 6-2.3 4.6-9.6 9-9.6 9z"/></svg>'
+  };
+
+  const CHECK_ICON = '<svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4 10-10"/></svg>';
 
   const techniqueNames = {
     respiracion: 'Respiración 4-4-6',
@@ -485,6 +573,7 @@
   };
 
   function updateDots(active) {
+    document.getElementById('stepLabel').textContent = 'Paso ' + active + ' de 4';
     for (let i = 1; i <= 4; i++) {
       const dot = document.getElementById('dot' + i);
       if (i < active) { dot.className = 'step-dot done'; }
@@ -558,18 +647,18 @@
     document.getElementById('completionResult').style.display = 'block';
 
     const reduction = data.reduction;
-    let emoji, text, sub;
+    let icon, text, sub;
     if (reduction >= 4) {
-      emoji = '🔥'; text = `¡Excelente! Bajaste ${reduction} puntos`; sub = 'La técnica funcionó muy bien hoy.';
+      icon = resultIcons.excelente; text = `¡Excelente! Bajaste ${reduction} puntos`; sub = 'La técnica funcionó muy bien hoy.';
     } else if (reduction >= 2) {
-      emoji = '💪'; text = `Bien hecho — reducción de ${reduction} puntos`; sub = 'Con práctica va a mejorar aún más.';
+      icon = resultIcons.bien; text = `Bien hecho — reducción de ${reduction} puntos`; sub = 'Con práctica va a mejorar aún más.';
     } else if (reduction >= 0) {
-      emoji = '🧠'; text = 'Sesión completada'; sub = 'No siempre se nota de inmediato. La consistencia es la clave.';
+      icon = resultIcons.completado; text = 'Sesión completada'; sub = 'No siempre se nota de inmediato. La consistencia es la clave.';
     } else {
-      emoji = '🤍'; text = 'Gracias por registrarlo'; sub = 'A veces es un día difícil. Volver a intentarlo ya es un logro.';
+      icon = resultIcons.gracias; text = 'Gracias por registrarlo'; sub = 'A veces es un día difícil. Volver a intentarlo ya es un logro.';
     }
 
-    document.getElementById('resultEmoji').textContent = emoji;
+    document.getElementById('resultEmoji').innerHTML = icon;
     document.getElementById('resultText').textContent = text;
     document.getElementById('resultSub').textContent = sub;
 
@@ -587,7 +676,7 @@
     function runCycle() {
       if (breathCycle >= totalCycles) {
         circle.className = 'breath-circle';
-        circle.textContent = '✓';
+        circle.innerHTML = CHECK_ICON;
         instruction.textContent = '¡Completado! Ya podés continuar.';
         return;
       }
@@ -633,15 +722,16 @@
     container.innerHTML = data.map(s => {
       const reduction = s.reduction;
       let pillClass, pillText;
-      if (reduction === null) { pillClass = 'reduction-zero'; pillText = 'En curso'; }
-      else if (reduction > 0) { pillClass = 'reduction-positive'; pillText = `−${reduction} pts`; }
-      else if (reduction === 0) { pillClass = 'reduction-zero'; pillText = 'Sin cambio'; }
-      else { pillClass = 'reduction-negative'; pillText = `+${Math.abs(reduction)} pts`; }
+      if (reduction === null) { pillClass = ''; pillText = 'En curso'; }
+      else if (reduction >= 4) { pillClass = 'is-notable'; pillText = `−${reduction} pts`; }
+      else if (reduction > 0) { pillClass = ''; pillText = `−${reduction} pts`; }
+      else if (reduction === 0) { pillClass = ''; pillText = 'Sin cambio'; }
+      else { pillClass = ''; pillText = `+${Math.abs(reduction)} pts`; }
 
       const dateStr = s.created_at ? new Date(s.created_at).toLocaleDateString('es-AR', {day:'numeric', month:'short'}) : '';
       return `
         <div class="history-item">
-          <div class="history-fear">${fearIcons[s.fear_type] || '❓'}</div>
+          <div class="history-fear">${fearIcons[s.fear_type] || fearIcons.otro}</div>
           <div class="history-info">
             <div class="fear-name">${s.fear_type} · ${dateStr}</div>
             <div class="technique-name">${techniqueNames[s.technique_used] || s.technique_used}</div>
