@@ -98,8 +98,12 @@
 {% if not has_instructor_evaluation %}
   <p><em>Guardá tu evaluación arriba para ver el resultado de la IA.</em></p>
 {% elif video.analysis_result %}
+  <video id="video-player-{{ video.id }}" controls preload="metadata" style="display:block; width:100%; max-width:480px; background:#000; margin-bottom:1rem;">
+    <source src="{{ video.file_url }}">
+    Tu navegador no soporta la reproducción de video. <a href="{{ video.file_url }}">Descargar el archivo</a>.
+  </video>
   {% if pattern_rows %}
-  <p>Confianza por patrón detectado (en vez de un único score agregado):</p>
+  <p>Confianza por patrón detectado (en vez de un único score agregado). Los timestamps saltan el video de arriba al momento exacto:</p>
   <table>
     <thead><tr><th>Patrón</th><th>Severidad</th><th>Sample size</th><th>Ocurrencias (timestamps)</th></tr></thead>
     <tbody>
@@ -113,10 +117,10 @@
         <ul>
         {% for occ in p.occurrences %}
           <li>
-          {% if occ.direction is defined %}
-            {{ occ.direction }}: {{ occ.t_start }}–{{ occ.t_end }} (pico {{ occ.t_peak }})
+          {% if occ.seconds is not none %}
+            <button type="button" class="link-quiet" onclick="seekVideo({{ video.id }}, {{ occ.seconds }})" style="background:none; border:none; padding:0; font:inherit; color:var(--flare-dark); text-decoration:underline; cursor:pointer;">{{ occ.label }}</button>
           {% else %}
-            {{ occ.t }}
+            {{ occ.label }}
           {% endif %}
           </li>
         {% endfor %}
@@ -135,6 +139,14 @@
   {% if video.analysis_result.summary %}
   <p class="summary-box">{{ video.analysis_result.summary }}</p>
   {% endif %}
+  <script>
+    function seekVideo(videoId, seconds) {
+      var video = document.getElementById('video-player-' + videoId);
+      if (!video || typeof seconds !== 'number') return;
+      video.currentTime = seconds;
+      if (video.paused) video.play().catch(function () {});
+    }
+  </script>
   <p><small>Score agregado (legacy): {{ video.analysis_result.confidence_score }}/100</small></p>
   <p>Meta (diagnóstico agregado, no keypoints crudos):</p>
   <pre>{{ video.analysis_result.raw_pose_data | tojson(indent=2) }}</pre>

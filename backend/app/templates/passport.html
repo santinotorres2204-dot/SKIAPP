@@ -104,24 +104,43 @@
               <td data-label="Resumen del análisis">
                 {% if v.analysis_status == "processed" and v.analysis_result %}
                   {% set pattern_rows = video_pattern_rows.get(v.id, []) %}
-                  {% if pattern_rows %}
-                  <ul class="pattern-confidence-list">
-                    {% for p in pattern_rows %}
-                    <li>
-                      {{ p.label }}: {{ p.severity or "no detectado" }}
-                      <span class="tag tag-quiet">{{ p.sample_size }} {{ p.sample_unit }}</span>
-                    </li>
-                    {% endfor %}
-                  </ul>
-                  {% else %}
-                  No se detectaron patrones.
-                  {% endif %}
-                  <small>(score agregado: {{ v.analysis_result.confidence_score }}/100)</small>
-                  {% if v.analysis_result.summary %}
-                  <br>
-                  <span class="clamp-text" data-clamped="true">{{ v.analysis_result.summary }}</span>
-                  <button type="button" class="link-toggle" onclick="toggleClamp(this)">ver más</button>
-                  {% endif %}
+                  <p class="analysis-summary">{{ video_user_summaries.get(v.id, "") }}</p>
+                  <details class="analysis-detail">
+                    <summary>Ver informe detallado</summary>
+                    <div class="analysis-detail-body">
+                      <video id="video-player-{{ v.id }}" controls preload="metadata" class="review-video">
+                        <source src="{{ v.file_url }}">
+                        Tu navegador no soporta la reproducción de video. <a href="{{ v.file_url }}">Descargar el archivo</a>.
+                      </video>
+                      {% if pattern_rows %}
+                      <ul class="pattern-confidence-list">
+                        {% for p in pattern_rows %}
+                        <li>
+                          {{ p.label }}: {{ p.severity or "no detectado" }}
+                          <span class="tag tag-quiet">{{ p.sample_size }} {{ p.sample_unit }}</span>
+                          {% if p.occurrences %}
+                          <div class="occurrence-list">
+                            {% for occ in p.occurrences %}
+                              {% if occ.seconds is not none %}
+                              <button type="button" class="timestamp-link" onclick="seekVideo({{ v.id }}, {{ occ.seconds }})">{{ occ.label }}</button>
+                              {% else %}
+                              <span class="tag tag-quiet">{{ occ.label }}</span>
+                              {% endif %}
+                            {% endfor %}
+                          </div>
+                          {% endif %}
+                        </li>
+                        {% endfor %}
+                      </ul>
+                      {% else %}
+                      <p>No se detectaron patrones.</p>
+                      {% endif %}
+                      <small>(score agregado: {{ v.analysis_result.confidence_score }}/100)</small>
+                      {% if v.analysis_result.summary %}
+                      <p class="technical-summary">{{ v.analysis_result.summary }}</p>
+                      {% endif %}
+                    </div>
+                  </details>
                 {% elif v.analysis_status == "failed" %}
                   El análisis no se pudo completar.
                 {% else %}

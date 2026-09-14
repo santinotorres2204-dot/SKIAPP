@@ -22,7 +22,7 @@ from app.models import (
     VideoUpload,
 )
 from app.models.enums import Discipline, SkiLevel, SportType, TerrainTag
-from app.pattern_display import describe_detected_patterns
+from app.pattern_display import build_user_summary, describe_detected_patterns
 from app.routers.day_logs import create_day_log
 from app.routers.freeride_runs import create_freeride_run
 from app.routers.trick_cards import create_trick_card
@@ -183,6 +183,14 @@ def passport(request: Request, user_id: int, db: Session = Depends(get_db)):
         for v in videos
         if v.analysis_result
     }
+    # Capa 1 (resumen simple, ver rediseno de "Mis videos"): reemplaza el
+    # parrafo tecnico de analysis_result.summary, que ahora solo se muestra
+    # en la capa 2 (informe detallado).
+    video_user_summaries = {
+        v.id: build_user_summary(v.analysis_result.detected_patterns, v.analysis_result.confidence_score)
+        for v in videos
+        if v.analysis_result
+    }
     # "Rating principal" para la tarjeta resumen: la disciplina con mejor
     # score (no hay un concepto de "disciplina favorita" en el modelo).
     top_rating = max(ratings, key=lambda r: r.score, default=None)
@@ -197,6 +205,7 @@ def passport(request: Request, user_id: int, db: Session = Depends(get_db)):
             "trips": trips,
             "videos": videos,
             "video_pattern_rows": video_pattern_rows,
+            "video_user_summaries": video_user_summaries,
             "ratings": ratings,
             "top_rating": top_rating,
             "training_plans": training_plans_view,

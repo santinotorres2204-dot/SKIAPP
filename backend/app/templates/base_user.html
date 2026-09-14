@@ -461,6 +461,36 @@
   .pattern-confidence-list li { margin-bottom: 0.2rem; font-size: 0.9rem; }
   .pattern-confidence-list .tag { margin-left: 0.3rem; font-size: 0.78rem; padding: 0.05rem 0.4rem; }
 
+  /* resultado de analisis en dos capas (resumen simple + informe detallado
+     colapsado con video embebido y timestamps clickeables) */
+  .analysis-summary { margin: 0 0 0.4rem; font-size: 0.95rem; color: var(--ink); }
+  .analysis-detail { margin-top: 0.4rem; }
+  .analysis-detail > summary {
+    cursor: pointer;
+    font-size: 0.88rem;
+    color: var(--shadow-2);
+    text-decoration: underline;
+    list-style: none;
+  }
+  .analysis-detail > summary::-webkit-details-marker { display: none; }
+  .analysis-detail > summary:hover { color: var(--flare-dark); }
+  .analysis-detail-body { margin-top: 0.75rem; }
+  .analysis-detail-body .review-video { max-width: 420px; }
+  .occurrence-list { margin: 0.25rem 0 0.4rem; padding-left: 1rem; }
+  .timestamp-link {
+    display: inline-block;
+    margin: 0 0.3rem 0.3rem 0;
+    background: none;
+    border: 1px solid var(--shadow-2);
+    padding: 0.1rem 0.45rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    color: var(--shadow-2);
+    cursor: pointer;
+  }
+  .timestamp-link:hover { border-color: var(--flare); color: var(--flare-dark); }
+  .technical-summary { font-size: 0.85rem; color: var(--mist); margin-top: 0.6rem; }
+
   /* animacion de entrada al hacer scroll (activada por IntersectionObserver) */
   .js .reveal {
     opacity: 0;
@@ -958,6 +988,17 @@
     var isClamped = text.getAttribute('data-clamped') !== 'false';
     text.setAttribute('data-clamped', isClamped ? 'false' : 'true');
     btn.textContent = isClamped ? 'ver menos' : 'ver más';
+  }
+
+  // Salta el <video> embebido en el informe detallado de un analisis al
+  // segundo exacto de un patron detectado (ver rediseno "Mis videos" /
+  // pattern_display.py: los timestamps ya existian internamente, esto los
+  // expone al usuario por primera vez).
+  function seekVideo(videoId, seconds) {
+    var video = document.getElementById('video-player-' + videoId);
+    if (!video || typeof seconds !== 'number') return;
+    video.currentTime = seconds;
+    if (video.paused) video.play().catch(function () {});
   }
 
   document.addEventListener('DOMContentLoaded', function () {
