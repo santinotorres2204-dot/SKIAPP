@@ -3,6 +3,7 @@ from app.models.assessment_result import AssessmentResult
 from app.models.chat_message import ChatMessage
 from app.models.day_log import DayLog
 from app.models.freeride_run import FreerideRun
+from app.models.instructor_evaluation import InstructorEvaluation
 from app.models.mental_session import MentalSession
 from app.models.run import Run
 from app.models.season_review import SeasonReview
@@ -30,4 +31,5 @@ __all__ = [
     "MentalSession",
     "TrickCard",
     "FreerideRun",
+    "InstructorEvaluation",
 ]

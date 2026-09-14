@@ -103,7 +103,20 @@
               </td>
               <td data-label="Resumen del análisis">
                 {% if v.analysis_status == "processed" and v.analysis_result %}
-                  Confidence: {{ v.analysis_result.confidence_score }}/100
+                  {% set pattern_rows = video_pattern_rows.get(v.id, []) %}
+                  {% if pattern_rows %}
+                  <ul class="pattern-confidence-list">
+                    {% for p in pattern_rows %}
+                    <li>
+                      {{ p.label }}: {{ p.severity or "no detectado" }}
+                      <span class="tag tag-quiet">{{ p.sample_size }} {{ p.sample_unit }}</span>
+                    </li>
+                    {% endfor %}
+                  </ul>
+                  {% else %}
+                  No se detectaron patrones.
+                  {% endif %}
+                  <small>(score agregado: {{ v.analysis_result.confidence_score }}/100)</small>
                   {% if v.analysis_result.summary %}
                   <br>
                   <span class="clamp-text" data-clamped="true">{{ v.analysis_result.summary }}</span>

@@ -20,21 +20,94 @@
 </p>
 {% endif %}
 
-<h3>Resultado de análisis (MediaPipe)</h3>
-{% if video.analysis_result %}
-  <p>Confidence score: <strong>{{ video.analysis_result.confidence_score }}</strong></p>
-  {% if video.analysis_result.summary %}
-  <p class="summary-box">{{ video.analysis_result.summary }}</p>
-  {% endif %}
-  {% if video.analysis_result.detected_patterns %}
+{#
+  Flujo instructor-antes-que-IA: mientras no exista una evaluacion de
+  instructor guardada, esta pagina no debe mostrar nada del resultado de la
+  IA (ver admin.video_detail -- ni siquiera llega al contexto del template).
+  Se completa la propia evaluacion primero, a ciegas, y recien despues se
+  ven ambos resultados lado a lado.
+#}
+<h3>Mi evaluación (instructor)</h3>
+{% if not has_instructor_evaluation %}
+<p>
+  Completá tu propia evaluación de estos 3 patrones a mano, <strong>antes de ver
+  el resultado de la IA</strong>. El resultado de la IA (y el resto de esta
+  página) aparece recién después de guardar.
+</p>
+<form method="post" action="/admin/videos/{{ video.id }}/instructor-evaluation">
+  <fieldset>
+    <legend>Asimetría izquierda/derecha</legend>
+    <label>Severidad:
+      <select name="asimetria_severity">
+        <option value="">No detectado</option>
+        {% for s in severity_options %}
+        <option value="{{ s.value }}">{{ s.value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Sample size (giros observados): <input type="number" name="asimetria_sample_size" min="0"></label>
+  </fieldset>
+  <fieldset>
+    <legend>Pérdida de balance</legend>
+    <label>Severidad:
+      <select name="balance_severity">
+        <option value="">No detectado</option>
+        {% for s in severity_options %}
+        <option value="{{ s.value }}">{{ s.value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Sample size (giros observados): <input type="number" name="balance_sample_size" min="0"></label>
+  </fieldset>
+  <fieldset>
+    <legend>Inconsistencia entre giros</legend>
+    <label>Severidad:
+      <select name="inconsistencia_severity">
+        <option value="">No detectado</option>
+        {% for s in severity_options %}
+        <option value="{{ s.value }}">{{ s.value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Sample size (giros observados): <input type="number" name="inconsistencia_sample_size" min="0"></label>
+  </fieldset>
+  <br>
+  <label>Notas (opcional):<br>
+    <textarea name="notes" rows="4" style="width:100%; font-family: inherit;"></textarea>
+  </label>
+  <br><br>
+  <button type="submit">Guardar mi evaluación</button>
+</form>
+{% else %}
+{% set e = video.instructor_evaluation %}
+<table>
+  <thead><tr><th>Patrón</th><th>Severidad</th><th>Sample size</th></tr></thead>
+  <tbody>
+    <tr><td>Asimetría izquierda/derecha</td><td>{{ e.asimetria_severity or "No detectado" }}</td><td>{{ e.asimetria_sample_size if e.asimetria_sample_size is not none else "-" }}</td></tr>
+    <tr><td>Pérdida de balance</td><td>{{ e.balance_severity or "No detectado" }}</td><td>{{ e.balance_sample_size if e.balance_sample_size is not none else "-" }}</td></tr>
+    <tr><td>Inconsistencia entre giros</td><td>{{ e.inconsistencia_severity or "No detectado" }}</td><td>{{ e.inconsistencia_sample_size if e.inconsistencia_sample_size is not none else "-" }}</td></tr>
+  </tbody>
+</table>
+{% if e.notes %}
+<p class="summary-box">{{ e.notes }}</p>
+{% endif %}
+<p><em>Evaluado el {{ e.created_at.strftime("%Y-%m-%d %H:%M") }}.</em></p>
+{% endif %}
+
+<h3>Resultado de análisis (IA)</h3>
+{% if not has_instructor_evaluation %}
+  <p><em>Guardá tu evaluación arriba para ver el resultado de la IA.</em></p>
+{% elif video.analysis_result %}
+  {% if pattern_rows %}
+  <p>Confianza por patrón detectado (en vez de un único score agregado):</p>
   <table>
     <thead><tr><th>Patrón</th><th>Severidad</th><th>Sample size</th><th>Ocurrencias (timestamps)</th></tr></thead>
     <tbody>
-    {% for p in video.analysis_result.detected_patterns %}
+    {% for p in pattern_rows %}
     <tr>
-      <td>{{ p.pattern }}</td>
-      <td>{{ p.severity }}</td>
-      <td>{{ p.sample_size }}</td>
+      <td>{{ p.label }}</td>
+      <td>{{ p.severity if p.severity is not none else "informativo" }}</td>
+      <td>{{ p.sample_size }} {{ p.sample_unit }}</td>
       <td>
         {% if p.occurrences %}
         <ul>
@@ -59,10 +132,44 @@
   {% else %}
   <p>No se detectaron patrones.</p>
   {% endif %}
+  {% if video.analysis_result.summary %}
+  <p class="summary-box">{{ video.analysis_result.summary }}</p>
+  {% endif %}
+  <p><small>Score agregado (legacy): {{ video.analysis_result.confidence_score }}/100</small></p>
   <p>Meta (diagnóstico agregado, no keypoints crudos):</p>
   <pre>{{ video.analysis_result.raw_pose_data | tojson(indent=2) }}</pre>
+
+  <h3>Comparación instructor vs IA</h3>
+  <table>
+    <thead><tr><th>Patrón</th><th>IA</th><th>Instructor</th><th>¿Coinciden?</th></tr></thead>
+    <tbody>
+    {% for row in comparison_rows %}
+    <tr>
+      <td>{{ row.label }}</td>
+      <td><span class="badge {{ row.ai.css_class }}">{{ row.ai.text }}</span>{% if row.ai.sample %} <small>({{ row.ai.sample }})</small>{% endif %}</td>
+      <td><span class="badge {{ row.instructor.css_class }}">{{ row.instructor.text }}</span>{% if row.instructor.sample %} <small>({{ row.instructor.sample }})</small>{% endif %}</td>
+      <td>{% if row.agree is none %}—{% elif row.agree %}Sí{% else %}No{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
 {% else %}
   <p><em>Todavía no hay resultado de análisis para este video (estado: {{ video.analysis_status }}).</em></p>
+
+  <h3>Comparación instructor vs IA</h3>
+  <table>
+    <thead><tr><th>Patrón</th><th>IA</th><th>Instructor</th><th>¿Coinciden?</th></tr></thead>
+    <tbody>
+    {% for row in comparison_rows %}
+    <tr>
+      <td>{{ row.label }}</td>
+      <td><span class="badge {{ row.ai.css_class }}">{{ row.ai.text }}</span></td>
+      <td><span class="badge {{ row.instructor.css_class }}">{{ row.instructor.text }}</span>{% if row.instructor.sample %} <small>({{ row.instructor.sample }})</small>{% endif %}</td>
+      <td>—</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
 {% endif %}
 
 {% if prompt %}
@@ -92,6 +199,7 @@ function copyTrainingPrompt() {
 </script>
 {% endif %}
 
+{% if has_instructor_evaluation %}
 <h3>Training plans cargados</h3>
 {% if video.analysis_result and video.analysis_result.training_plans %}
   <ul>
@@ -126,5 +234,6 @@ function copyTrainingPrompt() {
   <p>Este usuario todavía no tiene ningún viaje cargado — no se puede asociar un training plan.</p>
   {% endif %}
 </fieldset>
+{% endif %}
 {% endif %}
 {% endblock %}

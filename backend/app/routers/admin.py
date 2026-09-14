@@ -6,8 +6,10 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import AnalysisResult, SeasonReview, SkiRating, TrainingPlan, Trip, VideoUpload
-from app.models.enums import Discipline
+from app.instructor_comparison import compare_ai_vs_instructor
+from app.models import AnalysisResult, InstructorEvaluation, SeasonReview, SkiRating, TrainingPlan, Trip, VideoUpload
+from app.models.enums import Discipline, PatternSeverity
+from app.pattern_display import describe_detected_patterns
 from app.prompt_builder import build_training_prompt
 from app.routers.ski_ratings import upsert_ski_rating_row
 from app.storage import save_season_review_video
@@ -47,6 +49,7 @@ def video_detail(request: Request, video_id: int, db: Session = Depends(get_db))
             joinedload(VideoUpload.user),
             joinedload(VideoUpload.trip),
             joinedload(VideoUpload.analysis_result).joinedload(AnalysisResult.training_plans),
+            joinedload(VideoUpload.instructor_evaluation),
         )
         .filter(VideoUpload.id == video_id)
         .one_or_none()
@@ -56,11 +59,92 @@ def video_detail(request: Request, video_id: int, db: Session = Depends(get_db))
 
     trips = db.query(Trip).filter(Trip.user_id == video.user_id).order_by(Trip.created_at.desc()).all()
 
-    prompt = build_training_prompt(video, video.analysis_result) if video.analysis_result else None
+    # Flujo instructor-antes-que-IA: mientras no exista una InstructorEvaluation
+    # para este video, el template no recibe nada del resultado de la IA (ni
+    # patrones ni prompt), asi que no hay forma de que se filtre a la pagina
+    # antes de que el instructor guarde su propia evaluacion a mano.
+    has_instructor_evaluation = video.instructor_evaluation is not None
+    pattern_rows = []
+    prompt = None
+    comparison_rows = []
+    if has_instructor_evaluation:
+        if video.analysis_result:
+            pattern_rows = describe_detected_patterns(video.analysis_result.detected_patterns)
+            prompt = build_training_prompt(video, video.analysis_result)
+        comparison_rows = compare_ai_vs_instructor(video.analysis_result, video.instructor_evaluation)
 
     return templates.TemplateResponse(
-        request, "admin/video_detail.html", {"video": video, "trips": trips, "prompt": prompt}
+        request,
+        "admin/video_detail.html",
+        {
+            "video": video,
+            "trips": trips,
+            "prompt": prompt,
+            "pattern_rows": pattern_rows,
+            "comparison_rows": comparison_rows,
+            "has_instructor_evaluation": has_instructor_evaluation,
+            "severity_options": list(PatternSeverity),
+        },
     )
+
+
+@router.post("/videos/{video_id}/instructor-evaluation")
+def create_instructor_evaluation(
+    video_id: int,
+    # str en vez de PatternSeverity: un <select> con la opcion "no detectado"
+    # manda "", que el enum no puede parsear -- se convierte a mano abajo.
+    asimetria_severity: str = Form(default=""),
+    asimetria_sample_size: str = Form(default=""),
+    balance_severity: str = Form(default=""),
+    balance_sample_size: str = Form(default=""),
+    inconsistencia_severity: str = Form(default=""),
+    inconsistencia_sample_size: str = Form(default=""),
+    notes: str = Form(default=""),
+    db: Session = Depends(get_db),
+):
+    video = db.get(VideoUpload, video_id)
+    if video is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Video no encontrado")
+    if video.instructor_evaluation is not None:
+        # Ya se guardo una evaluacion para este video -- no se pisa (mismo
+        # criterio que el uno-a-uno de AnalysisResult): el instructor ya vio
+        # el resultado de la IA a esta altura, resubmitear no tendria sentido
+        # para el proposito del flujo (evaluar "a ciegas").
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Este video ya tiene una evaluacion de instructor")
+
+    def _parse_severity(value: str, field_name: str) -> str | None:
+        if not value:
+            return None
+        try:
+            return PatternSeverity(value).value
+        except ValueError:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=f"Severidad invalida en {field_name}")
+
+    def _parse_sample_size(value: str, field_name: str) -> int | None:
+        if not value:
+            return None
+        try:
+            parsed = int(value)
+        except ValueError:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=f"Sample size invalido en {field_name}")
+        if parsed < 0:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=f"Sample size invalido en {field_name}")
+        return parsed
+
+    evaluation = InstructorEvaluation(
+        video_id=video_id,
+        asimetria_severity=_parse_severity(asimetria_severity, "asimetria"),
+        asimetria_sample_size=_parse_sample_size(asimetria_sample_size, "asimetria"),
+        balance_severity=_parse_severity(balance_severity, "perdida de balance"),
+        balance_sample_size=_parse_sample_size(balance_sample_size, "perdida de balance"),
+        inconsistencia_severity=_parse_severity(inconsistencia_severity, "inconsistencia"),
+        inconsistencia_sample_size=_parse_sample_size(inconsistencia_sample_size, "inconsistencia"),
+        notes=notes or None,
+    )
+    db.add(evaluation)
+    db.commit()
+
+    return RedirectResponse(url=f"/admin/videos/{video_id}", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.post("/videos/{video_id}/training-plan")

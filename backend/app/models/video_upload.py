@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -36,11 +36,18 @@ class VideoUpload(Base):
     sport_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     analysis_status: Mapped[str] = mapped_column(String(20), nullable=False, default=AnalysisStatus.PENDING.value)
+    # Vision futura (dataset para mejorar el modelo, ver auditoria): todavia no
+    # se pide en ningun formulario ni se usa en ningun lado, solo el campo
+    # existe para no tener que migrar de nuevo cuando se construya ese flujo.
+    consent_for_improvement: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
 
     user = relationship("User", back_populates="video_uploads")
     trip = relationship("Trip", back_populates="video_uploads")
     analysis_result = relationship(
         "AnalysisResult", back_populates="video", uselist=False, cascade="all, delete-orphan"
+    )
+    instructor_evaluation = relationship(
+        "InstructorEvaluation", back_populates="video", uselist=False, cascade="all, delete-orphan"
     )
     trick_cards = relationship("TrickCard", back_populates="video", cascade="all, delete-orphan")
     freeride_runs = relationship("FreerideRun", back_populates="video", cascade="all, delete-orphan")

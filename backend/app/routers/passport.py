@@ -22,6 +22,7 @@ from app.models import (
     VideoUpload,
 )
 from app.models.enums import Discipline, SkiLevel, SportType, TerrainTag
+from app.pattern_display import describe_detected_patterns
 from app.routers.day_logs import create_day_log
 from app.routers.freeride_runs import create_freeride_run
 from app.routers.trick_cards import create_trick_card
@@ -174,6 +175,14 @@ def passport(request: Request, user_id: int, db: Session = Depends(get_db)):
                 "pattern_rows": compare_analysis_patterns(before_analysis, after_analysis),
             }
         )
+    # Confianza por patron (en vez de un unico confidence_score global) para
+    # la tabla de "Mis videos" -- keyed por video.id porque el template itera
+    # sobre `videos` directamente, no sobre una vista ya armada.
+    video_pattern_rows = {
+        v.id: describe_detected_patterns(v.analysis_result.detected_patterns)
+        for v in videos
+        if v.analysis_result
+    }
     # "Rating principal" para la tarjeta resumen: la disciplina con mejor
     # score (no hay un concepto de "disciplina favorita" en el modelo).
     top_rating = max(ratings, key=lambda r: r.score, default=None)
@@ -187,6 +196,7 @@ def passport(request: Request, user_id: int, db: Session = Depends(get_db)):
             "user": user,
             "trips": trips,
             "videos": videos,
+            "video_pattern_rows": video_pattern_rows,
             "ratings": ratings,
             "top_rating": top_rating,
             "training_plans": training_plans_view,

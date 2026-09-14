@@ -11,6 +11,10 @@ PATTERN_LABELS = {
     "perdida_de_balance": "Perdida de balance",
     "rotacion_excesiva_tren_superior": "Rotacion excesiva del tren superior",
     "inconsistencia_entre_giros": "Inconsistencia entre giros consecutivos",
+    "peso_hacia_atras": "Peso hacia atras",
+    "salto_detectado": "Salto detectado",
+    "aterrizaje_inestable": "Aterrizaje inestable",
+    "posible_caida": "Posible caida",
 }
 
 

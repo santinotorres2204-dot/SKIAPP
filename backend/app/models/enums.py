@@ -54,3 +54,14 @@ class AnalysisStatus(str, enum.Enum):
 class ChatRole(str, enum.Enum):
     USER = "user"
     ASSISTANT = "assistant"
+
+
+class PatternSeverity(str, enum.Enum):
+    """Mismas 3 clases que ya usa la deteccion heuristica (ver
+    ai-analysis/analyze_ski_video.py, _severity_from_thresholds) -- se
+    reusan aca para que la evaluacion manual del instructor (InstructorEvaluation)
+    sea directamente comparable contra el severity que devuelve la IA."""
+
+    BAJA = "baja"
+    MEDIA = "media"
+    ALTA = "alta"
