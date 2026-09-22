@@ -3,7 +3,8 @@
 {% block content %}
 {% set next_trip = trips | selectattr("status", "equalto", "preparing") | list | first %}
 
-<header class="hero">
+<header class="hero hero-parallax">
+  <div class="hero-bg-photo" aria-hidden="true"></div>
   <div class="container-wide">
     <p class="eyebrow eyebrow-light">Ski Passport</p>
     <h1 class="page-title">{{ user.name }}</h1>
@@ -30,20 +31,20 @@
   <div class="hero-peaks" aria-hidden="true"></div>
 </header>
 
-<section class="summary-band reveal">
+<section class="summary-band summary-band--cut reveal">
   <div class="container-wide summary-grid">
-    <div class="summary-block">
+    <div class="summary-block reveal">
       <p class="eyebrow">Rating principal</p>
       {% if top_rating %}
-      <p class="summary-stat">{{ top_rating.discipline }}<span class="summary-stat-value">{{ top_rating.score }}</span></p>
+      <p class="summary-stat">{{ top_rating.discipline }}<span class="summary-stat-value count-up" data-count-to="{{ top_rating.score }}">{{ top_rating.score }}</span></p>
       <p class="summary-sub">
-        Confidence {{ top_rating.confidence_score }}/100{% if top_rating.coach_verified %} · verificado por coach{% endif %}
+        Confidence <span class="count-up" data-count-to="{{ top_rating.confidence_score }}">{{ top_rating.confidence_score }}</span>/100{% if top_rating.coach_verified %} · verificado por coach{% endif %}
       </p>
       {% else %}
       <p class="empty">Todavía no tenés ningún rating cargado.</p>
       {% endif %}
     </div>
-    <div class="summary-block">
+    <div class="summary-block reveal">
       <p class="eyebrow">Achievements desbloqueados</p>
       {% if earned_achievements %}
       <div class="badge-row">

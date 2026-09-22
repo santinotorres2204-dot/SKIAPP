@@ -24,6 +24,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Fase 7: anime.js (via CDN, un solo <script>) -- motor de animacion para
+     el stagger con easing "spring"/elastico del reveal, el conteo de
+     numeros y los rebotes de tilt/botones en touch. defer para no bloquear
+     el parseo; se usa exclusivamente dentro de DOMContentLoaded (mas abajo),
+     que ya espera a que los scripts deferred terminen. Si la red no lo trae
+     (CDN caido, o la PWA instalada abierta offline sin haberlo cacheado
+     antes: el service worker de este sitio -- ver sw.js -- solo cachea
+     assets propios bajo /static/, no CDNs externos) cada animacion tiene su
+     propio fallback a CSS/clases lisas, ver hasAnime en el script. -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
 <style>
   :root {
     --snow: #f7f7f5;
@@ -38,6 +48,18 @@
     --flare-dark: #d9330f;
     --caution: #ffcc00; /* amarillo señal de pista -- solo para el detalle "cartel" de las feature-card, deliberadamente distinto del naranja */
     --success: #1a7a4c; /* verde reservado solo para confirmaciones de exito, no se mezcla con el resto de la paleta */
+    /* Fase 8: jerarquia de contraste sobre fondo oscuro (hero con foto,
+       summary-band negro, franjas oscuras tipo finale/diagonal-band). Antes
+       cada seccion improvisaba su propia opacidad de blanco (0.45, 0.5,
+       0.55, 0.6, 0.65, 0.72, 0.78 -- siete valores distintos sin ningun
+       criterio), y algun texto que no es titulo ni accion (el renglon de
+       nivel/años del hero de perfil, por ejemplo) quedaba en blanco puro
+       sin necesidad. Un solo token para "texto secundario sobre oscuro":
+       blanco 100% (var(--white)) queda reservado solo para titulos
+       principales y textos de accion (botones, links de nav, el nombre de
+       usuario) -- todo lo demas (eyebrows, ledes, metadata, estados vacios)
+       usa esto. */
+    --on-dark-secondary: rgba(255, 255, 255, 0.72);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -112,7 +134,7 @@
     color: var(--mist);
     margin: 0 0 0.6rem;
   }
-  .eyebrow-light { color: rgba(255, 255, 255, 0.55); }
+  .eyebrow-light { color: var(--on-dark-secondary); }
 
   .page-title { font-size: clamp(2.5rem, 9vw, 2.875rem); margin-bottom: 0.9rem; }
 
@@ -262,7 +284,7 @@
     letter-spacing: 0.1em;
     text-transform: uppercase;
     font-size: 0.82rem;
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--on-dark-secondary);
     text-align: right;
   }
   .hero-ridge {
@@ -283,6 +305,41 @@
     background: var(--snow);
     clip-path: polygon(0% 100%, 0% 62%, 6% 44%, 12% 70%, 19% 32%, 27% 60%, 35% 24%, 43% 58%, 51% 18%, 59% 54%, 67% 28%, 75% 62%, 83% 20%, 91% 48%, 100% 30%, 100% 100%);
   }
+  /* Fase 6: parallax en fotos de fondo -- capa separada solo con la foto
+     (mismo stack gradiente+ruido+foto que .hero, pero aislada en su propio
+     elemento) para poder trasladarla en Y via JS a menor velocidad que el
+     resto del scroll (initParallax en el script), sin mover el overlay ni
+     el texto encima. Modificador opuesto (.hero-parallax apaga el
+     background-image propio de .hero) para no duplicar la foto visualmente
+     y para no tocar el .hero "plano" que siguen usando otras pantallas
+     (register, etc.) sin esta capa extra. */
+  .hero-parallax { background-image: none; }
+  .hero-bg-photo {
+    position: absolute;
+    inset: 0;
+    /* Fase 8, punto 2: glow ambiental frio -- mismo navy de la paleta
+       (--shadow-2) que el glow del summary-band, en "screen" para sumar luz
+       (bloom) en vez de tintar mas oscuro. Va COMO CAPA MAS ARRIBA (screen
+       sobre el degradado oscuro + ruido + foto ya compuestos), no debajo:
+       probado debajo del degradado oscuro (normal) el bloom quedaba casi
+       invisible -- ese degradado ya tapa el 33-55% de la zona inferior con
+       navy solido, y un screen-blend por debajo de eso no llega a notarse.
+       Arriba, el screen si perfora esa oscuridad de forma visible. Vive en
+       esta capa (no en .hero base) porque es la que efectivamente se ve en
+       el passport (.hero-parallax apaga el background-image de .hero);
+       tambien se traslada con el parallax, lo cual suma a la sensacion de
+       profundidad en vez de restarle. */
+    background-image:
+      radial-gradient(ellipse 70% 55% at 50% 88%, rgba(56, 89, 133, 0.85) 0%, rgba(56, 89, 133, 0.35) 42%, transparent 72%),
+      linear-gradient(180deg, rgba(15, 27, 46, 0.9) 0%, rgba(15, 27, 46, 0.32) 48%, rgba(15, 27, 46, 0.55) 100%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+      url("/static/images/hero-mountain.jpg");
+    background-size: cover, cover, 140px 140px, cover;
+    background-position: center, center, center, center 62%;
+    background-repeat: no-repeat, no-repeat, repeat, no-repeat;
+    background-blend-mode: screen, normal, overlay, normal;
+    will-change: transform;
+  }
   .hero .container-wide { position: relative; z-index: 1; }
   .hero-compact { padding-top: clamp(2.5rem, 8vw, 3.75rem); padding-bottom: clamp(3.5rem, 9vw, 5rem); }
   .hero + .container { padding-top: clamp(2.5rem, 7vw, 3.5rem); }
@@ -293,22 +350,28 @@
   .hero .page-title { color: var(--white); font-size: clamp(2.6rem, 8vw, 4.4rem); margin-bottom: 1.9rem; }
 
   /* linea primaria: nivel + años agrupados (antes eran 2 spans sueltos del
-     mismo peso que el mail) -- ahora comparten una sola linea destacada. */
+     mismo peso que el mail) -- ahora comparten una sola linea destacada.
+     Fase 8: era blanco puro, pero no es titulo ni accion -- pasa a
+     --on-dark-secondary como el resto del texto de apoyo del hero. */
   .hero-meta-primary {
     margin: 0;
     font-size: 0.95rem;
-    color: var(--white);
+    color: var(--on-dark-secondary);
     font-weight: 500;
   }
   /* linea secundaria: mail y "usuario desde" -- info de referencia, no hace
-     falta que compita visualmente con nivel/años. */
+     falta que compita visualmente con nivel/años. Fase 8: mismo token que
+     la linea primaria (el sistema es de dos niveles: blanco para
+     titulo/accion, --on-dark-secondary para todo lo demas) -- el tamaño de
+     letra ya menor (0.78rem vs 0.95rem) alcanza para diferenciarla sin
+     necesitar una tercera opacidad ad-hoc. */
   .hero-meta-secondary {
     display: flex;
     flex-wrap: wrap;
     gap: 0.3rem 1.5rem;
     margin-top: 0.5rem;
     font-size: 0.78rem;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--on-dark-secondary);
   }
 
   /* .hero-rotating: variante de .hero solo para la home ("/"), con carrusel
@@ -322,7 +385,7 @@
        3. Marek Piwnicki (@marekpiwnicki) -- unsplash.com/photos/E909Oe4N3pM
        4. Ryan Klaus (@ryankphoto) -- unsplash.com/photos/TliweUwl4Bw */
   .hero-rotating { background-image: none; }
-  .hero-bg-rotate { position: absolute; inset: 0; }
+  .hero-bg-rotate { position: absolute; inset: 0; will-change: transform; }
   .hero-bg-slide {
     position: absolute;
     inset: 0;
@@ -502,6 +565,27 @@
     .js .reveal { opacity: 1; transform: none; transition: none; }
   }
 
+  /* variante para filas de tabla (<tr>): solo opacidad, sin transform --
+     los transforms sobre display:table-row son inconsistentes entre
+     navegadores (Safari en particular), asi que las filas que el JS taggea
+     dentro de un acordeon cerrado (ver cascadeReveal en el script) usan este
+     fade en vez de .reveal. */
+  .js .reveal-row { opacity: 0; transition: opacity 0.6s ease; }
+  .js .reveal-row.is-visible { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    .js .reveal-row { opacity: 1; transition: none; }
+  }
+
+  /* Fase 7: cuando anime.js esta disponible (ver hasAnime en el script), el
+     stagger de .reveal/.reveal-row lo anima anime.js frame a frame via
+     estilos inline -- si la transicion CSS de arriba sigue activa al mismo
+     tiempo, los dos motores compiten sobre opacity/transform y se ve un
+     tironeo. .anime-ready (agregada al <html> solo si hasAnime) apaga esa
+     transicion para dejarle el control entero a anime.js; el estado de
+     reposo oculto (opacity:0 etc, mas arriba) no cambia. */
+  .anime-ready .reveal,
+  .anime-ready .reveal-row { transition: none; }
+
   /* tarjeta resumen (debajo del hero): panel de datos oscuro, alto contraste con el resto de la pagina */
   .summary-band {
     background: #0d0d0d;
@@ -510,7 +594,10 @@
   }
   .summary-grid { display: flex; flex-wrap: wrap; gap: 2rem 4rem; }
   .summary-block { flex: 1 1 260px; }
-  .summary-band .eyebrow { color: rgba(255, 255, 255, 0.5); }
+  /* Fase 6: cascada individual por bloque (mismo criterio que .cycle-grid). */
+  .summary-grid .reveal:nth-child(1) { transition-delay: 0s; }
+  .summary-grid .reveal:nth-child(2) { transition-delay: 0.12s; }
+  .summary-band .eyebrow { color: var(--on-dark-secondary); }
   .summary-stat {
     font-family: 'Bebas Neue', sans-serif;
     letter-spacing: 0.03em;
@@ -521,7 +608,7 @@
   }
   .summary-stat-value { color: var(--flare); margin-left: 0.5rem; }
   .summary-band .summary-sub,
-  .summary-band .empty { color: rgba(255, 255, 255, 0.55); }
+  .summary-band .empty { color: var(--on-dark-secondary); }
   .badge-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
   .summary-band .tag-flare {
     color: var(--flare);
@@ -539,10 +626,15 @@
     transform: scale(1.06);
     box-shadow: 0 6px 16px rgba(255, 68, 25, 0.28);
   }
+  /* Fase 7: estado "presionado" en touch (initCardPressMobile) -- mismo
+     principio que .feature-card/.plan-block.is-pressed. */
+  .badge-row .tag-flare.is-pressed {
+    box-shadow: 0 2px 6px rgba(255, 68, 25, 0.2);
+  }
 
   /* home ("/"): texto claro para h2/lede cuando caen dentro del summary-band oscuro */
   .summary-band h2 { color: var(--white); margin-bottom: 1.25rem; }
-  .summary-band .lede { color: rgba(255, 255, 255, 0.72); }
+  .summary-band .lede { color: var(--on-dark-secondary); }
 
   /* home ("/"): "El diferencial" como cinta diagonal (parallelogram), no una
      franja recta -- se corta con clip-path y se monta sobre las secciones
@@ -558,6 +650,47 @@
   }
   .diagonal-band .container { background: none; padding-top: 0; padding-bottom: 0; }
   .diagonal-band .lede { margin-left: auto; margin-right: auto; }
+
+  /* Fase 6: romper la rigidez del summary-band "plano" (usado hoy en el
+     passport) -- corte en angulo sutil solo en el borde inferior (la home ya
+     tiene su propia variante recortada en los dos lados, .diagonal-band) mas
+     una leve asimetria vertical entre los dos bloques, para que no se sienta
+     como dos cajas identicas en fila. No toca .summary-band base: otras
+     pantallas lo siguen usando tal cual, sin corte. */
+  .summary-band--cut {
+    position: relative;
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 2.2vw), 0 100%);
+    margin-bottom: -2.2vw;
+    padding-bottom: calc(clamp(3.25rem, 9vw, 5rem) + 2.2vw);
+  }
+  .summary-band--cut .summary-block:nth-child(2) { margin-top: 1.4rem; }
+
+  /* Fase 8, punto 2: glow ambiental frio detras de la zona de rating --
+     radial-gradient difuso con el navy que ya tenemos (--shadow-2, ni un
+     color nuevo) centrado cerca de "Rating principal" para sumar
+     profundidad cinematografica al panel negro. Contenido dentro de la
+     propia caja de .summary-band--cut (inset:0) para que el clip-path de
+     arriba lo recorte igual que al resto del contenido, sin necesidad de
+     que sangre fuera de la seccion. Sin filter:blur -- el degradado del
+     propio radial-gradient (varias paradas de color) ya da el efecto
+     difuso sin el costo de un blur real, mas pesado en mobile. */
+  .summary-band--cut::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 55% 65% at 28% 20%, rgba(28, 51, 80, 0.55) 0%, rgba(28, 51, 80, 0.18) 45%, transparent 75%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .summary-band--cut .container-wide { position: relative; z-index: 1; }
+  @media (max-width: 700px) {
+    .summary-band--cut {
+      clip-path: none;
+      margin-bottom: 0;
+      padding-bottom: clamp(3.25rem, 9vw, 5rem);
+    }
+    .summary-band--cut .summary-block:nth-child(2) { margin-top: 0; }
+  }
   /* home ("/"): ciclo Preparate / Disfruta / Mejora -- tamanos y altura
      asimetricos en vez de 3 cajas identicas en fila. */
   .cycle-grid {
@@ -587,6 +720,12 @@
   .cycle-step:nth-child(1) .cycle-number { font-size: 3.4rem; }
   .cycle-step h3 { font-size: 1.1rem; margin: 0 0 0.5rem; }
   .cycle-step p { color: var(--mist); font-size: 1.05rem; margin: 0; }
+  /* Fase 6: cascada individual por paso (cada .cycle-step es tambien su
+     propio .reveal, ademas de la seccion entera -- mismo criterio anidado
+     que .feature-grid .reveal mas abajo). */
+  .cycle-grid .reveal:nth-child(1) { transition-delay: 0s; }
+  .cycle-grid .reveal:nth-child(2) { transition-delay: 0.1s; }
+  .cycle-grid .reveal:nth-child(3) { transition-delay: 0.2s; }
   @media (max-width: 700px) {
     .cycle-step, .cycle-step:nth-child(1), .cycle-step:nth-child(2), .cycle-step:nth-child(3) {
       margin-top: 0;
@@ -609,6 +748,18 @@
   .feature-card { border: 1px solid var(--line); background: var(--white); padding: 1.5rem 1.6rem; }
   .feature-card h3 { font-size: 1rem; margin: 0 0 0.6rem; }
   .feature-card p { color: var(--mist); font-size: 0.88rem; margin: 0; }
+
+  /* Fase 7: elevacion de reposo (antes ninguna) + estado "presionado" para
+     el efecto de prensado touch (ver initCardPressMobile) -- en desktop el
+     tilt (initTiltDesktop) pisa esto con su propio box-shadow dinamico
+     mientras hay hover y lo libera al salir, volviendo a esta base. */
+  .feature-card, .plan-block {
+    box-shadow: 0 10px 24px rgba(18, 35, 58, 0.1);
+    transition: box-shadow 0.2s ease;
+  }
+  .feature-card.is-pressed, .plan-block.is-pressed {
+    box-shadow: 0 3px 8px rgba(18, 35, 58, 0.14);
+  }
 
   /* home ("/"): variante "cartel de pista" en las 8 feature-card.
      Cinta de peligro (rayas negro/amarillo) + rombo de advertencia con
@@ -696,15 +847,15 @@
     z-index: 1;
     background: none;
   }
-  .finale .eyebrow { color: rgba(255, 255, 255, 0.6); }
+  .finale .eyebrow { color: var(--on-dark-secondary); }
   .finale h2 { color: var(--white); }
-  .finale .lede { color: rgba(255, 255, 255, 0.78); }
-  .finale .field label { color: rgba(255, 255, 255, 0.6); }
+  .finale .lede { color: var(--on-dark-secondary); }
+  .finale .field label { color: var(--on-dark-secondary); }
   .finale input {
     color: var(--white);
     border-bottom-color: rgba(255, 255, 255, 0.35);
   }
-  .finale .back-link { color: rgba(255, 255, 255, 0.65); }
+  .finale .back-link { color: var(--on-dark-secondary); }
   .finale .back-link a { color: var(--white); }
 
   /* secciones plegables: titulos grandes tipo portada, mucho aire entre secciones */
@@ -751,7 +902,7 @@
     padding: 1.1rem clamp(1.25rem, 4vw, 3rem);
     background: var(--ink);
   }
-  .site-nav .site-mark { padding: 0; color: rgba(255, 255, 255, 0.65); }
+  .site-nav .site-mark { padding: 0; color: var(--on-dark-secondary); }
   .site-nav .site-mark:hover { color: var(--flare); }
   .nav-links {
     display: flex;
@@ -893,7 +1044,7 @@
       text-align: left;
       margin-top: 1.5rem;
       padding: 0 clamp(1.25rem, 4vw, 3rem);
-      color: rgba(255, 255, 255, 0.65);
+      color: var(--on-dark-secondary);
     }
 
     /* 4) cards de "que incluye hoy": el texto descriptivo a tamaño
@@ -1044,22 +1195,318 @@
       }
     });
 
-    var revealEls = document.querySelectorAll('.reveal');
+    // Fase 7: flags compartidas por todas las animaciones de mas abajo.
+    // canHoverFine separa el trato desktop (mouse real: tilt siguiendo
+    // cursor, magnetismo de botones) del trato touch (sin cursor: prensado
+    // con rebote) -- se decide una sola vez al cargar, igual que ya hacia
+    // initTilt en la Fase 6. hasAnime gatea todo lo que depende de anime.js
+    // (CDN unico <script defer> en el <head>): si prefers-reduced-motion
+    // esta activo, o el script no cargo (CDN caido, o esta PWA instalada
+    // abierta offline sin haberlo cacheado antes -- el service worker, ver
+    // sw.js, solo cachea assets propios bajo /static/, no CDNs externos),
+    // cada funcion de abajo cae a su fallback en CSS/clases lisas (el mismo
+    // comportamiento que ya existia antes de esta fase).
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var canHoverFine = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    var hasAnime = !reduceMotion && typeof anime !== 'undefined';
+    if (hasAnime) document.documentElement.classList.add('anime-ready');
+
+    // Fase 6/7: revelado progresivo generalizado. Ademas del reveal por
+    // scroll de siempre (IntersectionObserver, ver mas abajo), el contenido
+    // que vive dentro de un <details> del passport arranca oculto por el
+    // propio <details> cerrado -- un elemento con display:none nunca
+    // "intersecta", asi que el observer nunca lo ve. Para que tambien
+    // aparezca en cascada al abrir la seccion (no todo de golpe) se taggea
+    // como reveal/reveal-row todo lo escaneable de cada .acc-body (filas de
+    // tabla, items de lista, bloques de plan, tarjetas de season review) y
+    // la cascada se dispara en el evento "toggle" en vez de por scroll.
+    // Filas de tabla usan .reveal-row (solo opacidad) en vez de .reveal: un
+    // transform sobre display:table-row es inconsistente entre navegadores.
+    document.querySelectorAll('.acc-body').forEach(function (body) {
+      body.querySelectorAll('tbody tr').forEach(function (el) { el.classList.add('reveal-row'); });
+      body.querySelectorAll('.achievement-list > li, .plan-list > li, fieldset').forEach(function (el) {
+        el.classList.add('reveal');
+      });
+    });
+
+    // Fase 7: stagger con curva "spring" (anime.js) para grupos de reveal --
+    // grilla de funcionalidades, resumen del passport y cualquier seccion de
+    // acordeon al abrirse. rich = items que se mueven+escalan (cards, items
+    // de lista, bloques): admiten el rebote elastico. row = filas de tabla,
+    // solo opacidad (ver .reveal-row arriba): un fade simple, un rebote en
+    // opacidad no se percibe y en cambio se ve raro. Sin anime.js (CDN
+    // caido/offline) o con reduced-motion cae al cascadeo por setTimeout de
+    // siempre, sin animacion "rica" pero funcional.
+    function revealBatch(els) {
+      if (!els.length) return;
+      if (hasAnime) {
+        var rich = els.filter(function (el) { return !el.classList.contains('reveal-row'); });
+        var rows = els.filter(function (el) { return el.classList.contains('reveal-row'); });
+        if (rich.length) {
+          anime({
+            targets: rich,
+            opacity: [0, 1],
+            translateY: [32, 0],
+            scale: [0.94, 1],
+            easing: 'spring(1, 80, 10, 0)',
+            delay: anime.stagger(70)
+          });
+        }
+        if (rows.length) {
+          anime({
+            targets: rows,
+            opacity: [0, 1],
+            duration: 420,
+            easing: 'easeOutQuad',
+            delay: anime.stagger(45)
+          });
+        }
+        els.forEach(function (el) { el.classList.add('is-visible'); });
+      } else {
+        var step = 55, maxDelay = 440;
+        els.forEach(function (el, i) {
+          var delay = Math.min(i * step, maxDelay);
+          setTimeout(function () { el.classList.add('is-visible'); }, delay);
+        });
+      }
+    }
+
+    function cascadeReveal(container) {
+      var els = Array.prototype.slice.call(
+        container.querySelectorAll('.reveal:not(.is-visible), .reveal-row:not(.is-visible)')
+      );
+      revealBatch(els);
+    }
+    document.querySelectorAll('details.acc').forEach(function (det) {
+      det.addEventListener('toggle', function () {
+        if (det.open) cascadeReveal(det);
+      });
+    });
+
+    var revealEls = document.querySelectorAll('.reveal, .reveal-row');
     if (revealEls.length) {
       if ('IntersectionObserver' in window) {
         var io = new IntersectionObserver(function (entries) {
+          var batch = [];
           entries.forEach(function (entry) {
             if (entry.isIntersecting) {
-              entry.target.classList.add('is-visible');
+              batch.push(entry.target);
               io.unobserve(entry.target);
             }
           });
+          revealBatch(batch);
         }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
         revealEls.forEach(function (el) { io.observe(el); });
       } else {
         revealEls.forEach(function (el) { el.classList.add('is-visible'); });
       }
     }
+
+    // Fase 7: numeros animados (rating principal, confidence score) --
+    // cuentan desde 0 hasta su valor final al entrar en pantalla. Funciona
+    // igual en mobile y desktop (scroll/IntersectionObserver, no depende del
+    // mouse). Sin anime.js o con reduced-motion se deja el valor final que
+    // ya vino renderizado por el server (ver data-count-to en el template),
+    // sin resetear a 0 ni animar nada.
+    (function initCountUp() {
+      var els = Array.prototype.slice.call(document.querySelectorAll('.count-up'));
+      if (!els.length || !hasAnime) return;
+      els.forEach(function (el) { el.textContent = '0'; });
+
+      function animateCount(el) {
+        var target = parseFloat(el.getAttribute('data-count-to'));
+        if (isNaN(target)) return;
+        var obj = { val: 0 };
+        anime({
+          targets: obj,
+          val: target,
+          duration: 1200,
+          delay: 350,
+          easing: 'easeOutExpo',
+          round: 1,
+          update: function () { el.textContent = Math.round(obj.val); }
+        });
+      }
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              animateCount(entry.target);
+              io.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.4 });
+        els.forEach(function (el) { io.observe(el); });
+      } else {
+        els.forEach(animateCount);
+      }
+    })();
+
+    // Fase 6/7: tilt 3D en cards (feature-card, plan-block, achievement
+    // chips) -- solo desktop con cursor de precision (hover:hover and
+    // pointer:fine). Inclinacion calculada en base a la posicion del mouse
+    // relativa al centro de cada card (perspective + rotateX/rotateY + una
+    // pizca de translateZ para que se sienta que se levanta de la
+    // superficie), con una transicion corta mientras se sigue el cursor y
+    // una mas larga al salir (efecto "resorte"). Intensidad subida en esta
+    // fase (antes maxTilt 7/12, translateZ 6) a pedido del usuario.
+    var CARD_TILT_TARGETS = [
+      { selector: '.feature-card', maxTilt: 11 },
+      { selector: '.plan-block', maxTilt: 11 },
+      { selector: '.badge-row .tag-flare', maxTilt: 18 }
+    ];
+    (function initTiltDesktop() {
+      if (reduceMotion || !canHoverFine) return;
+      CARD_TILT_TARGETS.forEach(function (cfg) {
+        document.querySelectorAll(cfg.selector).forEach(function (el) {
+          var raf = null;
+          el.addEventListener('mouseenter', function () {
+            el.style.willChange = 'transform, box-shadow';
+            el.style.transition = 'transform 0.1s ease-out, box-shadow 0.1s ease-out';
+          });
+          el.addEventListener('mousemove', function (e) {
+            if (raf) return;
+            raf = requestAnimationFrame(function () {
+              raf = null;
+              var rect = el.getBoundingClientRect();
+              var px = (e.clientX - rect.left) / rect.width;
+              var py = (e.clientY - rect.top) / rect.height;
+              var rotateY = (px - 0.5) * 2 * cfg.maxTilt;
+              var rotateX = (0.5 - py) * 2 * cfg.maxTilt;
+              el.style.transform = 'perspective(700px) rotateX(' + rotateX.toFixed(2) + 'deg) rotateY(' + rotateY.toFixed(2) + 'deg) translateZ(10px)';
+              el.style.boxShadow = (-rotateY * 2).toFixed(1) + 'px ' + (16 + Math.abs(rotateX) * 2).toFixed(1) + 'px 32px rgba(18, 35, 58, 0.32)';
+            });
+          });
+          el.addEventListener('mouseleave', function () {
+            if (raf) { cancelAnimationFrame(raf); raf = null; }
+            el.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease';
+            el.style.transform = '';
+            el.style.boxShadow = '';
+            el.style.willChange = '';
+          });
+        });
+      });
+    })();
+
+    // Fase 7: equivalente touch del tilt -- en vez de seguir el dedo (no hay
+    // cursor), la card se "hunde" al tocar (scale down + sombra que se
+    // achica, ver .is-pressed en el CSS) y rebota con resorte al soltar.
+    // Mismo criterio de feedback fisico que el tilt de desktop, pensado para
+    // esta app como PWA de uso mayormente mobile.
+    (function initCardPressMobile() {
+      if (reduceMotion || canHoverFine) return;
+      var selectors = CARD_TILT_TARGETS.map(function (cfg) { return cfg.selector; }).join(', ');
+      document.querySelectorAll(selectors).forEach(function (el) {
+        function press() {
+          el.classList.add('is-pressed');
+          if (hasAnime) anime.set(el, { scale: 0.95 });
+          else { el.style.transition = 'transform 0.12s ease-out'; el.style.transform = 'scale(0.95)'; }
+        }
+        function release() {
+          el.classList.remove('is-pressed');
+          if (hasAnime) anime({ targets: el, scale: 1, easing: 'spring(1, 200, 12, 0)' });
+          else { el.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'; el.style.transform = ''; }
+        }
+        el.addEventListener('touchstart', press, { passive: true });
+        el.addEventListener('touchend', release, { passive: true });
+        el.addEventListener('touchcancel', release, { passive: true });
+      });
+    })();
+
+    // Fase 6/7: parallax en fotos de fondo del hero (home y passport) -- la
+    // capa con la foto (.hero-bg-rotate / .hero-bg-photo, separada del
+    // overlay de gradiente/texto) se traduce en Y a una fraccion del scroll,
+    // mas lenta que el resto del contenido, para dar sensacion de
+    // profundidad real en vez de una imagen pegada plana. rAF-throttled para
+    // no recalcular en cada evento de scroll. Funciona igual en mobile y
+    // desktop (no depende del mouse). Intensidad subida notablemente en
+    // esta fase (antes SPEED 0.12/SCALE 1.2, se sentia "casi imperceptible"
+    // segun el usuario) -- SCALE sube en la misma proporcion que SPEED para
+    // seguir cubriendo el traslado sin revelar huecos en los bordes.
+    (function initParallax() {
+      if (reduceMotion) return;
+      var layers = Array.prototype.slice.call(document.querySelectorAll('.hero-bg-rotate, .hero-bg-photo'));
+      if (!layers.length) return;
+
+      var SPEED = 0.35;
+      var SCALE = 1.5;
+      var ticking = false;
+
+      function update() {
+        ticking = false;
+        var vh = window.innerHeight;
+        layers.forEach(function (layer) {
+          var rect = layer.parentElement.getBoundingClientRect();
+          var delta = (rect.top + rect.height / 2 - vh / 2) * SPEED;
+          layer.style.transform = 'translate3d(0, ' + delta.toFixed(1) + 'px, 0) scale(' + SCALE + ')';
+        });
+      }
+      function onScroll() {
+        if (!ticking) { ticking = true; requestAnimationFrame(update); }
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      update();
+    })();
+
+    // Fase 7: botones con reaccion -- desktop: magnetismo sutil hacia el
+    // cursor cuando esta cerca (radio de influencia, tira proporcional a la
+    // distancia, tope maximo para no despegarse demasiado del lugar). Se
+    // sigue con anime.set (instantaneo, pero via el tracking interno de
+    // transform de anime.js) mientras el cursor esta cerca, y se suelta con
+    // un resorte real (anime spring) al alejarse -- por eso todo el
+    // movimiento pasa por anime.js y no por estilos manuales, para que el
+    // "set" instantaneo y el resorte final compartan el mismo estado interno
+    // sin saltos.
+    (function initMagneticButtonsDesktop() {
+      if (reduceMotion || !canHoverFine || !hasAnime) return;
+      var buttons = Array.prototype.slice.call(document.querySelectorAll('.btn'));
+      if (!buttons.length) return;
+      var RADIUS = 90, STRENGTH = 0.4, MAX_OFFSET = 16;
+      var raf = null;
+      window.addEventListener('mousemove', function (e) {
+        if (raf) return;
+        raf = requestAnimationFrame(function () {
+          raf = null;
+          buttons.forEach(function (btn) {
+            var rect = btn.getBoundingClientRect();
+            var dx = e.clientX - (rect.left + rect.width / 2);
+            var dy = e.clientY - (rect.top + rect.height / 2);
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < RADIUS) {
+              var pull = (1 - dist / RADIUS) * STRENGTH;
+              var ox = Math.max(-MAX_OFFSET, Math.min(MAX_OFFSET, dx * pull));
+              var oy = Math.max(-MAX_OFFSET, Math.min(MAX_OFFSET, dy * pull));
+              btn.dataset.magActive = '1';
+              anime.set(btn, { translateX: ox, translateY: oy });
+            } else if (btn.dataset.magActive === '1') {
+              btn.dataset.magActive = '0';
+              anime({ targets: btn, translateX: 0, translateY: 0, easing: 'spring(1, 120, 12, 0)' });
+            }
+          });
+        });
+      }, { passive: true });
+    })();
+
+    // Fase 7: equivalente touch de los botones -- en vez de magnetismo (no
+    // hay cursor que se acerque), resorte de compresion al tocar y soltar,
+    // mismo principio que initCardPressMobile.
+    (function initButtonPressMobile() {
+      if (reduceMotion || canHoverFine) return;
+      document.querySelectorAll('.btn').forEach(function (btn) {
+        function press() {
+          if (hasAnime) anime.set(btn, { scale: 0.93 });
+          else { btn.style.transition = 'transform 0.12s ease-out'; btn.style.transform = 'scale(0.93)'; }
+        }
+        function release() {
+          if (hasAnime) anime({ targets: btn, scale: 1, easing: 'spring(1, 200, 10, 0)' });
+          else { btn.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'; btn.style.transform = ''; }
+        }
+        btn.addEventListener('touchstart', press, { passive: true });
+        btn.addEventListener('touchend', release, { passive: true });
+        btn.addEventListener('touchcancel', release, { passive: true });
+      });
+    })();
 
     // Mensajes de validacion nativa (HTML5) en español y mas claros que el
     // globo por defecto del navegador ("Please fill out this field" o
