@@ -31,42 +31,70 @@
   <div class="hero-peaks" aria-hidden="true"></div>
 </header>
 
-<!-- Fase 1-3 (sprint Passport): la Ski Card deja de ser una fila mas
-     dentro de un acordeon (ver mas abajo, esa entrada del acordeon ya no
-     existe) y pasa a ser el segundo momento fuerte de la pagina, con
-     composicion tipo "carta de jugador" -- ver docs/baseline-passport.md
-     para la propuesta completa. Mismo dato que siempre (top_rating/
-     ratings/earned_achievements), cero cambio de backend. -->
+<!-- Fase 1-3 (sprint Passport, revision "una carta por disciplina"): la
+     Ski Card deja de ser una fila mas dentro de un acordeon (ver mas
+     abajo, esa entrada ya no existe) y pasa a ser un carrusel con una
+     carta completa por cada disciplina con rating real -- sin cartas
+     vacias para disciplinas sin datos (Fase 1 de esta revision). Orden
+     por score descendente, la de mayor rating primero (mismo criterio
+     que "principal" de siempre). Mismo dato que siempre (ratings/
+     earned_achievements), cero cambio de backend -- el orden se resuelve
+     con el filtro "sort" de Jinja, no con una query nueva. -->
 <section class="ski-card-zone">
   <div class="container-wide">
-    {% set other_ratings = ratings | rejectattr("id", "equalto", top_rating.id) | list if top_rating else [] %}
+    {% set sorted_ratings = ratings | sort(attribute="score", reverse=true) %}
+    {% if sorted_ratings %}
+    <div class="ski-card-carousel" data-count="{{ sorted_ratings | length }}">
+      <div class="ski-card-flip">
+        <div class="ski-card-viewport">
+          <div class="ski-card-track">
+            {% for r in sorted_ratings %}
+            <div class="ski-card" data-index="{{ loop.index0 }}">
+              <div class="ski-card-avatar" aria-hidden="true">{{ user.name[0] | upper }}</div>
+              <p class="ski-card-discipline">{{ r.discipline }}</p>
+              <p class="ski-card-rating" data-count-to="{{ r.score }}">{{ r.score }}</p>
+              <p class="ski-card-confidence">
+                Confidence <span class="ski-card-confidence-value" data-count-to="{{ r.confidence_score }}">{{ r.confidence_score }}</span>/100
+                {% if r.coach_verified %}<span class="ski-card-verified">&check; verificado por coach</span>{% endif %}
+              </p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      {% if sorted_ratings | length > 1 %}
+      <!-- Fase 1 de esta revision: sin UI de navegacion cuando hay una
+           sola carta -- nada que navegar. Las flechas se ocultan (no se
+           muestran deshabilitadas) del lado que no tiene mas cartas; eso
+           lo resuelve JS al armar el carrusel, no CSS estatico, porque
+           depende de en que carta estas parado. -->
+      <button type="button" class="ski-card-arrow ski-card-arrow--prev" aria-label="Disciplina anterior">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 6 9 12 15 18"/></svg>
+      </button>
+      <button type="button" class="ski-card-arrow ski-card-arrow--next" aria-label="Disciplina siguiente">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>
+      </button>
+      <div class="ski-card-dots" role="tablist" aria-label="Disciplinas">
+        {% for r in sorted_ratings %}
+        <button type="button" class="ski-card-dot{{ ' is-active' if loop.first else '' }}" data-index="{{ loop.index0 }}" aria-label="{{ r.discipline }}"></button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
     <div class="ski-card-flip">
       <div class="ski-card">
         <div class="ski-card-avatar" aria-hidden="true">{{ user.name[0] | upper }}</div>
-        {% if top_rating %}
-        <p class="ski-card-discipline">{{ top_rating.discipline }}</p>
-        <p class="ski-card-rating" data-count-to="{{ top_rating.score }}">{{ top_rating.score }}</p>
-        <p class="ski-card-confidence">
-          Confidence <span class="ski-card-confidence-value" data-count-to="{{ top_rating.confidence_score }}">{{ top_rating.confidence_score }}</span>/100
-          {% if top_rating.coach_verified %}<span class="ski-card-verified">&check; verificado por coach</span>{% endif %}
-        </p>
-        {% if other_ratings %}
-        <div class="ski-card-stats">
-          {% for r in other_ratings %}
-          <div class="ski-card-stat">
-            <span class="ski-card-stat-label">{{ r.discipline }}</span>
-            <span class="ski-card-stat-value" data-count-to="{{ r.score }}">{{ r.score }}</span>
-          </div>
-          {% endfor %}
-        </div>
-        {% endif %}
-        {% else %}
         <p class="empty">Todavía no tenés ningún rating cargado. <a href="/passport/{{ user.id }}/videos/new">Subí tu primer video</a> para generar tu Ski Card.</p>
-        {% endif %}
       </div>
     </div>
+    {% endif %}
 
     {% if earned_achievements %}
+    <!-- los achievements no estan atados a una disciplina en el dato que
+         ya existe -- la franja sigue siendo una sola, fuera del carrusel,
+         no se duplica por carta (confirmado en la Fase 1 de esta revision). -->
     <div class="ski-card-achievements reveal">
       <div class="badge-row">
         {% for a in earned_achievements[:3] %}

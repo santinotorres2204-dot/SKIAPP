@@ -741,12 +741,22 @@
     padding: clamp(3rem, 8vw, 4.5rem) 0;
   }
 
-  /* contenedor del giro: perspective separada del elemento que gira (la
-     carta), mismo valor 700px que ya usa el tilt de CARD_TILT_TARGETS
-     (Fase 2.5) para que la profundidad no salte entre el giro de entrada
-     y el tilt al pasar el mouse despues. Oculta por default solo si hay
-     JS (.js) -- sin JS, o con reduced-motion, la carta esta siempre
-     visible y de frente, sin depender de que el giro corra. */
+  /* contenedor del giro: perspective separada del elemento que gira,
+     mismo valor 700px que ya usa el tilt de CARD_TILT_TARGETS (Fase 2.5)
+     para que la profundidad no salte entre el giro de entrada y el tilt
+     al pasar el mouse despues. Oculta por default solo si hay JS (.js)
+     -- sin JS, o con reduced-motion, la carta esta siempre visible y de
+     frente, sin depender de que el giro corra.
+
+     Fase 1-3 (revision "una carta por disciplina"): el giro sigue siendo
+     de LA COLECCION, no de cada carta -- envuelve el viewport+track
+     completo (ver mas abajo), no una carta individual. Como en reposo
+     solo la primera carta (+ el peek de la siguiente) es visible dentro
+     del viewport recortado, rotar el contenedor entero se ve identico a
+     rotar "la carta" sin necesitar aislar un elemento especial. Deslizar
+     a otras cartas despues NO vuelve a disparar este giro (Fase 2:
+     pelearia contra el gesto activo del usuario) -- eso lo maneja
+     .ski-card-track por su cuenta via transform propio. */
   .ski-card-flip { perspective: 700px; }
   .js .ski-card-flip { opacity: 0; }
   .js .ski-card-flip.is-visible { opacity: 1; }
@@ -754,7 +764,21 @@
     .js .ski-card-flip { opacity: 1; }
   }
 
-  /* la carta en si: acotada en ancho (objeto, no banda full-width),
+  /* Fase 1-3 (revision multi-carta): contenedor centrado del carrusel --
+     el ancho fija cuanto "peek" se ve de las cartas vecinas (ver
+     .ski-card-viewport). arrows/dots son hijos directos, posicionados en
+     el espacio libre alrededor del viewport (no superpuestos). */
+  .ski-card-carousel { position: relative; max-width: 342px; margin: 0 auto; }
+  /* Fase 2.5: touch-action:pan-y le deja el paneo vertical al navegador
+     de forma nativa (scroll de pagina normal) y solo lo horizontal pasa
+     por el JS del swipe -- validado en el prototipo: sin esto, un dedo
+     que solo queria scrollear la pagina puede terminar peleando con el
+     drag del carrusel. */
+  .ski-card-viewport { overflow: hidden; position: relative; touch-action: pan-y; }
+  .ski-card-track { display: flex; will-change: transform; }
+
+  /* la carta en si: ahora un item del track (ancho fijo, no bloque
+     centrado con margin:auto como en la version de una sola carta),
      esquinas cortadas (mismo lenguaje anguloso del resto del sitio, no
      redondeadas). El sheen (Fase 2.5: background-blend-mode, no
      mix-blend-mode -- evita el riesgo de aislamiento de stacking context
@@ -762,11 +786,13 @@
      background-image, con la banda de luz posicionada por --sheen-x/-y
      (custom properties que actualiza el mismo handler de mousemove que ya
      calcula el tilt en desktop, o la animacion de barrido unico en
-     mobile). */
+     mobile). Cada carta lleva su PROPIO --sheen-x/-y (ver JS) para que
+     mostrar/ocultar una no afecte a las demas. */
   .ski-card {
     position: relative;
-    max-width: 340px;
-    margin: 0 auto;
+    flex: 0 0 290px;
+    width: 290px;
+    margin-right: 16px;
     padding: 2.5rem 1.75rem 2rem;
     background-image:
       linear-gradient(165deg, var(--shadow-2) 0%, var(--ink) 100%),
@@ -782,9 +808,75 @@
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
     clip-path: polygon(0 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 0 100%);
     text-align: center;
+    /* Fase 2 (revision): peek -- la carta que no esta activa se ve mas
+       chica y apagada, reforzando foco. JS interpola estos dos valores
+       en tiempo real durante el drag (ver initSkiCardCarousel); estos son
+       solo los valores de reposo para cuando no hay JS/con reduced-motion
+       (siempre a full, ninguna carta "a medias" sin poder interactuar). */
+    opacity: 1;
+    transform: scale(1);
   }
+  .ski-card:last-child { margin-right: 0; }
   .ski-card .empty { color: var(--on-dark-secondary); font-size: 0.95rem; }
   .ski-card .empty a { color: var(--white); }
+
+  /* flechas desktop: siempre visibles cuando aplican (Fase 2 -- una
+     flecha que solo aparece en hover es invisible para quien no la
+     descubrio, e inutilizable por teclado), quietas por default, suben a
+     opacidad completa en hover/focus. Viven en el espacio libre a los
+     costados del carrusel (el contenedor .container-wide es mas ancho
+     que los 342px del viewport), no superpuestas a la carta. Ocultas por
+     completo (display:none via JS, no "deshabilitadas") del lado sin mas
+     cartas -- ver initSkiCardCarousel. Solo desktop: mismo criterio que
+     el resto del sitio (canHoverFine), en mobile el swipe ya cubre esto. */
+  .ski-card-arrow {
+    display: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--on-dark-secondary);
+    opacity: 0.55;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+  .ski-card-arrow:hover, .ski-card-arrow:focus-visible { opacity: 1; }
+  .ski-card-arrow svg { width: 100%; height: 100%; }
+  .ski-card-arrow--prev { right: 100%; margin-right: 0.75rem; }
+  .ski-card-arrow--next { left: 100%; margin-left: 0.75rem; }
+  @media (hover: hover) and (pointer: fine) {
+    .ski-card-arrow { display: flex; }
+  }
+
+  /* puntos: sin naranja a proposito (Fase 2 -- ya hay dos usos acotados
+     en este sprint, un tercero rompe la disciplina de "acotado"). Activo
+     = blanco relleno y mas grande; inactivo = contorno tenue. */
+  .ski-card-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-top: 1.25rem;
+  }
+  .ski-card-dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: 1px solid var(--on-dark-secondary);
+    background: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+  }
+  .ski-card-dot.is-active {
+    width: 10px;
+    height: 10px;
+    background: var(--white);
+    border-color: var(--white);
+  }
 
   /* avatar: monograma tipografico (inicial del nombre), no una silueta de
      esquiador -- decision de Fase 1. Blanco/snow, no naranja: el naranja
@@ -829,29 +921,6 @@
     color: var(--on-dark-secondary);
   }
   .ski-card-verified { display: inline-block; margin-left: 0.4rem; color: var(--flare); }
-
-  .ski-card-stats {
-    margin-top: 1.75rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.14);
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.25rem 0.5rem;
-  }
-  .ski-card-stat-label {
-    display: block;
-    font-size: 0.72rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--on-dark-secondary);
-    margin-bottom: 0.2rem;
-  }
-  .ski-card-stat-value {
-    display: block;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.4rem;
-    color: var(--white);
-  }
 
   /* franja de achievements: fuera de la carta a proposito (Fase 1 -- la
      carta queda enfocada solo en rating). Reusa .tag-flare tal cual, sin
@@ -1286,10 +1355,6 @@
        especifica). clip logra el mismo recorte horizontal sin activar el bug. */
     html, body { overflow-x: clip; max-width: 100vw; }
 
-    /* Fase 1-3 (sprint Passport): grilla de disciplinas secundarias de la
-       Ski Card, 3 columnas en desktop no entran comodas en mobile. */
-    .ski-card-stats { grid-template-columns: repeat(2, 1fr); }
-
     /* 1) nav: 5 links no entran en una fila -- menu hamburguesa. Fase 5:
        overlay navy a pantalla completa (position:fixed + inset:0) en vez
        de un dropdown parcial anclado debajo de la barra -- se ve y se
@@ -1674,44 +1739,44 @@
       }
     })();
 
-    // Fase 1-3 (sprint Passport): giro de entrada de la Ski Card. No reusa
-    // .reveal a proposito (Fase 2): una carta rigida no rebota con el
-    // spring elastico del resto del sitio, y la metafora de "carta que se
-    // da vuelta" pide rotateY, no solo opacity/translateY. perspective
-    // 700px = mismo valor que CARD_TILT_TARGETS mas abajo, para que la
+    // Fase 1-3 (sprint Passport, revision "una carta por disciplina"):
+    // giro de entrada DE LA COLECCION (no de cada carta -- Fase 1 de esta
+    // revision, confirmado en Fase 2: deslizar a otra carta no debe pelear
+    // contra el gesto activo del usuario). No reusa .reveal a proposito
+    // (Fase 2 original): una carta rigida no rebota con el spring
+    // elastico del resto del sitio, y la metafora de "carta que se da
+    // vuelta" pide rotateY, no solo opacity/translateY. perspective 700px
+    // = mismo valor que CARD_TILT_TARGETS mas abajo, para que la
     // profundidad no salte entre el giro y el tilt al pasar el mouse.
     // Dispara una sola vez (io.unobserve tras el primer trigger, mismo
-    // criterio que .reveal -- confirmado en Fase 2.5 a pedido del
-    // usuario: sin esto, volver a scrollear la carta a la vista la haria
-    // girar de nuevo).
+    // criterio que .reveal).
     //
-    // Los numeros de adentro NO llevan la clase .count-up (a proposito,
+    // Los numeros de cada carta NO llevan la clase .count-up (a proposito,
     // Fase 2.5): si la llevaran, el observer generico de arriba tambien
-    // los agarraria y podrian contar dos veces. Disparan desde el
-    // callback "complete" del giro, nunca por su cuenta -- asi nunca hay
-    // numeros cambiando sobre una carta que todavia esta de canto.
-    (function initSkiCardFlip() {
+    // los agarraria y podrian contar dos veces. Cada carta cuenta la
+    // PRIMERA VEZ que se muestra (ya sea la primera por el giro, o
+    // cualquier otra la primera vez que se desliza hasta ella -- Fase 1
+    // de esta revision) -- nunca de nuevo si volves a visitarla.
+    (function initSkiCardCarousel() {
       var flipWrap = document.querySelector('.ski-card-flip');
-      var card = document.querySelector('.ski-card');
-      if (!flipWrap || !card) return;
+      var track = document.querySelector('.ski-card-track');
+      if (!flipWrap) return;
+      var cards = Array.prototype.slice.call(flipWrap.querySelectorAll('.ski-card'));
+      if (!cards.length) return;
 
-      var mainStat = card.querySelector('.ski-card-rating');
-      var subStats = Array.prototype.slice.call(card.querySelectorAll('.ski-card-stat-value'));
-      var confidenceEl = card.querySelector('.ski-card-confidence-value');
+      var seen = cards.map(function () { return false; });
+      var activeIndex = 0;
 
       function landingPunch(el) {
         if (!hasAnime || !el) return;
         anime({ targets: el, scale: [1, 1.15, 1], duration: 220, easing: 'easeOutQuad' });
       }
 
-      // Fase 2.5: barrido unico del sheen en mobile (sin cursor no hay
-      // sheen continuo posible) -- coordinado para arrancar justo despues
-      // del golpe del numero principal, via anime.js animando las custom
-      // properties --sheen-x/-y (mismo mecanismo de "update por frame"
-      // que ya usa el conteo, no CSS @keyframes -- evita depender de
-      // soporte de @property para animar custom properties).
-      function sheenSweepMobile() {
-        if (!hasAnime || canHoverFine) return;
+      // Fase 2.5: barrido unico del sheen en mobile, por carta -- sin
+      // cursor no hay sheen continuo posible. Coordinado para arrancar
+      // justo despues del golpe del numero principal de ESA carta.
+      function sheenSweepMobile(card) {
+        if (!hasAnime || canHoverFine || !card) return;
         var obj = { x: -20 };
         anime({
           targets: obj,
@@ -1725,10 +1790,14 @@
         });
       }
 
-      function runCounts() {
-        subStats.forEach(function (el) {
-          animateCountTo(el, parseFloat(el.getAttribute('data-count-to')));
-        });
+      // dispara el conteo/golpe/sheen de una carta la primera vez que se
+      // activa -- no hace nada si ya se vio (Fase 1 de esta revision).
+      function activateCard(i) {
+        var card = cards[i];
+        if (!card || seen[i]) return;
+        seen[i] = true;
+        var mainStat = card.querySelector('.ski-card-rating');
+        var confidenceEl = card.querySelector('.ski-card-confidence-value');
         if (confidenceEl) {
           animateCountTo(confidenceEl, parseFloat(confidenceEl.getAttribute('data-count-to')));
         }
@@ -1736,45 +1805,219 @@
           animateCountTo(mainStat, parseFloat(mainStat.getAttribute('data-count-to')), {
             complete: function () {
               landingPunch(mainStat);
-              sheenSweepMobile();
+              sheenSweepMobile(card);
             }
           });
         } else {
-          sheenSweepMobile();
+          sheenSweepMobile(card);
         }
       }
 
-      function reveal() {
+      function revealCollection() {
         if (!hasAnime) {
           flipWrap.classList.add('is-visible');
-          runCounts();
+          activateCard(0);
           return;
         }
         anime({
-          targets: card,
+          targets: flipWrap,
           rotateY: [72, 0],
           translateY: [28, 0],
           opacity: [0, 1],
           duration: 900,
           easing: 'easeOutQuart',
-          complete: runCounts
+          complete: function () { activateCard(0); }
         });
         flipWrap.classList.add('is-visible');
       }
 
       if (reduceMotion || !('IntersectionObserver' in window)) {
-        reveal();
-        return;
+        revealCollection();
+      } else {
+        var ioFlip = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              revealCollection();
+              ioFlip.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+        ioFlip.observe(flipWrap);
       }
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) {
-            reveal();
-            io.unobserve(entry.target);
+
+      // -- carrusel: solo tiene sentido con 2+ cartas (Fase 1 de esta
+      // revision -- con una sola no se renderiza ninguna UI de navegacion). --
+      var carousel = document.querySelector('.ski-card-carousel');
+      var viewport = document.querySelector('.ski-card-viewport');
+      if (!carousel || !viewport || !track || cards.length < 2) return;
+
+      var dots = Array.prototype.slice.call(carousel.querySelectorAll('.ski-card-dot'));
+      var prevArrow = carousel.querySelector('.ski-card-arrow--prev');
+      var nextArrow = carousel.querySelector('.ski-card-arrow--next');
+      var trackX = 0, trackProgress = 0;
+
+      function getStep() {
+        var c0 = cards[0];
+        return c0.offsetWidth + (parseFloat(getComputedStyle(c0).marginRight) || 0);
+      }
+      function getPeek() {
+        return (viewport.clientWidth - cards[0].offsetWidth) / 2;
+      }
+      // posicion de reposo de la carta i: centrada (peek simetrico) salvo
+      // en los extremos, donde se pega al borde (Fase 2: "en los bordes,
+      // peek solo del lado que corresponde") -- clamp resuelve los dos
+      // casos con la misma formula, sin ifs por indice.
+      function restX(i) {
+        var step = getStep();
+        var peek = getPeek();
+        var totalW = (cards.length - 1) * step + cards[0].offsetWidth;
+        var minX = Math.min(0, viewport.clientWidth - totalW);
+        var x = peek - i * step;
+        return Math.max(minX, Math.min(0, x));
+      }
+      // escala/opacidad de cada carta segun su distancia (continua, no
+      // discreta) al foco actual -- Fase 2: se interpola en tiempo real
+      // durante el drag, no salta de golpe.
+      function applyPeekVisuals(progress) {
+        cards.forEach(function (card, i) {
+          var dist = Math.min(1, Math.abs(i - progress));
+          card.style.transform = 'scale(' + (1 - dist * 0.15).toFixed(3) + ')';
+          card.style.opacity = (1 - dist * 0.4).toFixed(3);
+        });
+      }
+      // Fase 4 QA: sin esto, el tilt de desktop (CARD_TILT_TARGETS, mas
+      // abajo -- corre sobre TODAS las .ski-card, no solo la activa) se
+      // activa con el mouse en el sliver visible de una carta peek, y al
+      // salir el mouse la deja pegada a escala 1 (el mouseleave del tilt
+      // resetea su propio transform, pisando el scale(0.85) del peek).
+      // Medido: mover el mouse en linea recta desde el centro de la carta
+      // activa hasta la flecha "next" -- el camino mas obvio para navegar
+      // en desktop -- ya cruza ese sliver. No es un caso raro, por eso se
+      // corrige aca en vez de dejarlo como limitacion conocida. Fix de
+      // bajo acople: la carta peek no es interactiva (pointer-events:none)
+      // hasta que sea la activa -- correcto ademas semanticamente (no
+      // tiene sentido poder clickear contenido de una carta que no se ve
+      // completa), y de paso el tilt nunca la recibe porque nunca la toca
+      // un evento de mouse. Solo se actualiza en reposo (setup y al
+      // terminar settle()), no en cada frame del drag -- no hace falta,
+      // nadie hace hover durante una animacion de ~350ms.
+      function updateInteractivity(activeIdx) {
+        cards.forEach(function (card, i) {
+          card.style.pointerEvents = i === activeIdx ? '' : 'none';
+        });
+      }
+      function updateDots(i) {
+        dots.forEach(function (d, di) { d.classList.toggle('is-active', di === i); });
+      }
+      function updateArrows(i) {
+        if (prevArrow) prevArrow.style.display = i === 0 ? 'none' : '';
+        if (nextArrow) nextArrow.style.display = i === cards.length - 1 ? 'none' : '';
+      }
+
+      // asentamiento: spring(1, 150, 15, 0) validado en Fase 2.5 (~350-
+      // 400ms percibido, resorte propio para esta distancia larga, no el
+      // de botones/reveal del resto del sitio). Sin anime.js (CDN caido o
+      // reduced-motion, ambos colapsan en hasAnime) -- unico camino sin
+      // motion, mismo criterio que el resto del sitio: salto directo.
+      function settle(targetIndex) {
+        activeIndex = Math.max(0, Math.min(cards.length - 1, targetIndex));
+        var x = restX(activeIndex);
+        updateDots(activeIndex);
+        updateArrows(activeIndex);
+        if (!hasAnime) {
+          trackX = x; trackProgress = activeIndex;
+          track.style.transform = 'translateX(' + x + 'px)';
+          applyPeekVisuals(activeIndex);
+          updateInteractivity(activeIndex);
+          activateCard(activeIndex);
+          return;
+        }
+        var state = { x: trackX, p: trackProgress };
+        anime({
+          targets: state,
+          x: x,
+          p: activeIndex,
+          easing: 'spring(1, 150, 15, 0)',
+          update: function () {
+            trackX = state.x; trackProgress = state.p;
+            track.style.transform = 'translateX(' + trackX + 'px)';
+            applyPeekVisuals(trackProgress);
+          },
+          complete: function () {
+            trackX = x; trackProgress = activeIndex;
+            track.style.transform = 'translateX(' + x + 'px)';
+            applyPeekVisuals(activeIndex);
+            updateInteractivity(activeIndex);
+            activateCard(activeIndex);
+            anime({ targets: cards[activeIndex], scale: [1, 1.03, 1], duration: 150, easing: 'easeOutQuad' });
           }
         });
-      }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
-      io.observe(flipWrap);
+      }
+
+      // posicion inicial correcta desde el primer paint, sin esperar al
+      // giro (el giro solo anima rotateY/opacity/translateY del wrapper
+      // completo, no la posicion del track).
+      trackX = restX(0); trackProgress = 0;
+      track.style.transform = 'translateX(' + trackX + 'px)';
+      applyPeekVisuals(0);
+      updateDots(0);
+      updateArrows(0);
+      updateInteractivity(0);
+
+      // Fase 2.5: bloqueo de direccion + touch-action:pan-y (en el CSS de
+      // .ski-card-viewport) -- validado con gestos tactiles reales que
+      // esto no reabre el bug de scroll: un arrastre vertical nunca llama
+      // preventDefault y el navegador scrollea la pagina normal.
+      var dragStartX = 0, dragStartY = 0, dragStartTime = 0, dragBaseX = 0, locked = null;
+      viewport.addEventListener('touchstart', function (e) {
+        var t = e.touches[0];
+        dragStartX = t.clientX; dragStartY = t.clientY; dragStartTime = Date.now();
+        dragBaseX = trackX; locked = null;
+      }, { passive: true });
+      viewport.addEventListener('touchmove', function (e) {
+        var t = e.touches[0];
+        var dx = t.clientX - dragStartX;
+        var dy = t.clientY - dragStartY;
+        if (locked === null) {
+          if (Math.abs(dx) > 8 || Math.abs(dy) > 8) locked = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+        }
+        if (locked !== 'h') return;
+        e.preventDefault();
+        var resist = ((activeIndex === 0 && dx > 0) || (activeIndex === cards.length - 1 && dx < 0)) ? 0.3 : 1;
+        trackX = dragBaseX + dx * resist;
+        track.style.transform = 'translateX(' + trackX + 'px)';
+        trackProgress = (getPeek() - trackX) / getStep();
+        applyPeekVisuals(trackProgress);
+      }, { passive: false });
+      viewport.addEventListener('touchend', function () {
+        if (locked !== 'h') { locked = null; return; }
+        locked = null;
+        var dt = Math.max(1, Date.now() - dragStartTime);
+        var step = getStep();
+        var dx = trackX - dragBaseX;
+        var velocity = Math.abs(dx) / dt;
+        var widthFrac = Math.abs(dx) / step;
+        var target = activeIndex;
+        if (widthFrac > 0.3 || velocity > 0.5) {
+          if (dx < 0 && activeIndex < cards.length - 1) target = activeIndex + 1;
+          else if (dx > 0 && activeIndex > 0) target = activeIndex - 1;
+        }
+        settle(target);
+      }, { passive: true });
+
+      if (prevArrow) prevArrow.addEventListener('click', function () { settle(activeIndex - 1); });
+      if (nextArrow) nextArrow.addEventListener('click', function () { settle(activeIndex + 1); });
+      dots.forEach(function (dot, i) {
+        dot.addEventListener('click', function () { settle(i); });
+      });
+
+      // navegacion por teclado (flechas) -- gratis con la estructura que
+      // ya hay, buena practica de accesibilidad (Fase 2).
+      carousel.setAttribute('tabindex', '0');
+      carousel.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowLeft') settle(activeIndex - 1);
+        else if (e.key === 'ArrowRight') settle(activeIndex + 1);
+      });
     })();
 
     // Fase 1-3 (sprint Passport): trazo de las etiquetas de grupo del
