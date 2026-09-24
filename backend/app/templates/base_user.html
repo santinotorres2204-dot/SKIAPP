@@ -973,7 +973,15 @@
        fondo de mas abajo (que saca la causa concreta de este overflow).
        Solo en mobile: en desktop nunca hizo falta y no hay riesgo de
        recortar contenido legitimo mas ancho que la pantalla ahi. */
-    html, body { overflow-x: hidden; max-width: 100vw; }
+    /* overflow-x: hidden (no clip) rompía el scroll por completo en Chrome/
+       Android: al combinarse con cualquier elemento con transform activo
+       (el propio .reveal de la animacion de entrada, transform: translateY
+       antes de revelarse -- ver arriba) el motor deja de reconocer el
+       documento como scrolleable y ni wheel ni touch mueven la pagina
+       (scrollTo/scrollBy por JS seguian funcionando, asi que no era un
+       problema de layout sino de un bug real del navegador con esta combinacion
+       especifica). clip logra el mismo recorte horizontal sin activar el bug. */
+    html, body { overflow-x: clip; max-width: 100vw; }
 
     /* 1) nav: 5 links no entran en una fila -- menu hamburguesa. Fase 5:
        overlay navy a pantalla completa (position:fixed + inset:0) en vez
