@@ -31,31 +31,53 @@
   <div class="hero-peaks" aria-hidden="true"></div>
 </header>
 
-<section class="summary-band summary-band--cut reveal">
-  <div class="container-wide summary-grid">
-    <div class="summary-block reveal">
-      <p class="eyebrow">Rating principal</p>
-      {% if top_rating %}
-      <p class="summary-stat">{{ top_rating.discipline }}<span class="summary-stat-value count-up" data-count-to="{{ top_rating.score }}">{{ top_rating.score }}</span></p>
-      <p class="summary-sub">
-        Confidence <span class="count-up" data-count-to="{{ top_rating.confidence_score }}">{{ top_rating.confidence_score }}</span>/100{% if top_rating.coach_verified %} · verificado por coach{% endif %}
-      </p>
-      {% else %}
-      <p class="empty">Todavía no tenés ningún rating cargado.</p>
-      {% endif %}
-    </div>
-    <div class="summary-block reveal">
-      <p class="eyebrow">Achievements desbloqueados</p>
-      {% if earned_achievements %}
-      <div class="badge-row">
-      {% for a in earned_achievements %}
-        <span class="tag tag-flare">{{ a.title }}</span>
-      {% endfor %}
+<!-- Fase 1-3 (sprint Passport): la Ski Card deja de ser una fila mas
+     dentro de un acordeon (ver mas abajo, esa entrada del acordeon ya no
+     existe) y pasa a ser el segundo momento fuerte de la pagina, con
+     composicion tipo "carta de jugador" -- ver docs/baseline-passport.md
+     para la propuesta completa. Mismo dato que siempre (top_rating/
+     ratings/earned_achievements), cero cambio de backend. -->
+<section class="ski-card-zone">
+  <div class="container-wide">
+    {% set other_ratings = ratings | rejectattr("id", "equalto", top_rating.id) | list if top_rating else [] %}
+    <div class="ski-card-flip">
+      <div class="ski-card">
+        <div class="ski-card-avatar" aria-hidden="true">{{ user.name[0] | upper }}</div>
+        {% if top_rating %}
+        <p class="ski-card-discipline">{{ top_rating.discipline }}</p>
+        <p class="ski-card-rating" data-count-to="{{ top_rating.score }}">{{ top_rating.score }}</p>
+        <p class="ski-card-confidence">
+          Confidence <span class="ski-card-confidence-value" data-count-to="{{ top_rating.confidence_score }}">{{ top_rating.confidence_score }}</span>/100
+          {% if top_rating.coach_verified %}<span class="ski-card-verified">&check; verificado por coach</span>{% endif %}
+        </p>
+        {% if other_ratings %}
+        <div class="ski-card-stats">
+          {% for r in other_ratings %}
+          <div class="ski-card-stat">
+            <span class="ski-card-stat-label">{{ r.discipline }}</span>
+            <span class="ski-card-stat-value" data-count-to="{{ r.score }}">{{ r.score }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% else %}
+        <p class="empty">Todavía no tenés ningún rating cargado. <a href="/passport/{{ user.id }}/videos/new">Subí tu primer video</a> para generar tu Ski Card.</p>
+        {% endif %}
       </div>
-      {% else %}
-      <p class="empty">Todavía no desbloqueaste ningún logro.</p>
-      {% endif %}
     </div>
+
+    {% if earned_achievements %}
+    <div class="ski-card-achievements reveal">
+      <div class="badge-row">
+        {% for a in earned_achievements[:3] %}
+        <span class="tag tag-flare">{{ a.title }}</span>
+        {% endfor %}
+        {% if earned_achievements | length > 3 %}
+        <span class="tag">+{{ earned_achievements | length - 3 }} m&aacute;s</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
   </div>
 </section>
 
@@ -63,6 +85,7 @@
   <div class="container-wide">
     <div class="accordion">
 
+      <p class="eyebrow acc-group-label">Actividad</p>
       <details class="acc reveal">
         <summary>Historial de viajes</summary>
         <div class="acc-body">
@@ -167,6 +190,7 @@
         </div>
       </details>
 
+      <p class="eyebrow acc-group-label">Progreso t&eacute;cnico</p>
       <details class="acc reveal">
         <summary>Trick Cards</summary>
         <div class="acc-body">
@@ -223,105 +247,10 @@
         </div>
       </details>
 
-      <details class="acc reveal">
-        <summary>Ski Card</summary>
-        <div class="acc-body">
-          {% if ratings %}
-          <table>
-            <thead><tr><th>Disciplina</th><th>Rating</th><th>Confidence score</th><th>Verificado por coach</th></tr></thead>
-            <tbody>
-            {% for r in ratings %}
-            <tr>
-              <td data-label="Disciplina">{{ r.discipline }}</td>
-              <td data-label="Rating">{{ r.score }}</td>
-              <td data-label="Confidence score">{{ r.confidence_score }}</td>
-              <td data-label="Verificado por coach">{{ "Sí" if r.coach_verified else "No" }}</td>
-            </tr>
-            {% endfor %}
-            </tbody>
-          </table>
-          {% else %}
-          <p class="empty">Todavía no tenés ningún rating cargado.</p>
-          {% endif %}
-        </div>
-      </details>
-
-      <details class="acc reveal">
-        <summary>Achievements</summary>
-        <div class="acc-body">
-          <ul class="achievement-list">
-          {% for a in achievements %}
-            <li class="achievement {{ 'earned' if a.earned else '' }}">
-              <div class="achievement-title-row">
-                <div class="achievement-title">{{ a.title }}</div>
-                {% if not a.earned %}<span class="tag achievement-lock">🔒 Bloqueado</span>{% endif %}
-              </div>
-              <div class="achievement-desc">{{ a.description }}</div>
-            </li>
-          {% endfor %}
-          </ul>
-        </div>
-      </details>
-
-      <details class="acc reveal">
-        <summary>Planes de entrenamiento</summary>
-        <div class="acc-body">
-          {% if training_plans %}
-          <ul class="plan-list">
-          {% for item in training_plans %}
-            <li>
-              <strong>{{ item.plan.trip.destination if item.plan.trip else "Sin viaje asociado" }}</strong>
-              ({{ item.plan.created_at.strftime("%Y-%m-%d") }})
-              <div class="plan-blocks">
-              {% for blk in item.blocks %}
-                <div class="plan-block">
-                  {% if blk.title %}<div class="plan-block-title">{{ blk.title }}</div>{% endif %}
-                  <ul>
-                  {% for line in blk.lines %}
-                    <li>{{ line }}</li>
-                  {% endfor %}
-                  </ul>
-                </div>
-              {% endfor %}
-              </div>
-            </li>
-          {% endfor %}
-          </ul>
-          {% else %}
-          <p class="empty">Todavía no tenés ningún plan de entrenamiento cargado.</p>
-          {% endif %}
-        </div>
-      </details>
-
-      <details class="acc reveal">
-        <summary>Physical Assessment</summary>
-        <div class="acc-body">
-          {% if latest_assessment %}
-          <p class="eyebrow">Último test — {{ latest_assessment.completed_at.strftime("%Y-%m-%d") }}</p>
-          <table>
-            <thead><tr><th>Wall Sit</th><th>Single Leg Squat</th><th>Jump Squat</th><th>Plank</th><th>Lateral Bound</th></tr></thead>
-            <tbody>
-              <tr>
-                <td data-label="Wall Sit">{{ latest_assessment.wall_sit_seconds }} s</td>
-                <td data-label="Single Leg Squat">{{ latest_assessment.single_leg_squat_left }} / {{ latest_assessment.single_leg_squat_right }} reps (izq/der)</td>
-                <td data-label="Jump Squat">{{ latest_assessment.jump_squat_reps }} reps</td>
-                <td data-label="Plank">{{ latest_assessment.plank_seconds }} s</td>
-                <td data-label="Lateral Bound">{{ latest_assessment.lateral_bound_reps }} reps</td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="cta-row">
-            <a class="btn btn-quiet" href="/assessment?user_id={{ user.id }}">Nuevo assessment</a>
-          </div>
-          {% else %}
-          <p class="empty">
-            Aún no completaste ningún Physical Assessment.
-            <a href="/assessment?user_id={{ user.id }}">&rarr; Hacer mi primer test</a>
-          </p>
-          {% endif %}
-        </div>
-      </details>
-
+      <!-- Fase 1-3 (sprint Passport): "Ski Card" ya no es una entrada de
+           acordeon -- ese dato ahora vive en la carta de arriba. Season
+           Review se mueve aca (antes estaba al final) porque tematicamente
+           es progreso tecnico, no preparacion -- ver docs/baseline-passport.md. -->
       <details class="acc reveal">
         <summary>Season Review</summary>
         <div class="acc-body">
@@ -387,6 +316,83 @@
           {% else %}
           <p class="empty">Todavía no tenés ningún Season Review.</p>
           {% endif %}
+        </div>
+      </details>
+
+      <p class="eyebrow acc-group-label">Preparaci&oacute;n</p>
+      <details class="acc reveal">
+        <summary>Planes de entrenamiento</summary>
+        <div class="acc-body">
+          {% if training_plans %}
+          <ul class="plan-list">
+          {% for item in training_plans %}
+            <li>
+              <strong>{{ item.plan.trip.destination if item.plan.trip else "Sin viaje asociado" }}</strong>
+              ({{ item.plan.created_at.strftime("%Y-%m-%d") }})
+              <div class="plan-blocks">
+              {% for blk in item.blocks %}
+                <div class="plan-block">
+                  {% if blk.title %}<div class="plan-block-title">{{ blk.title }}</div>{% endif %}
+                  <ul>
+                  {% for line in blk.lines %}
+                    <li>{{ line }}</li>
+                  {% endfor %}
+                  </ul>
+                </div>
+              {% endfor %}
+              </div>
+            </li>
+          {% endfor %}
+          </ul>
+          {% else %}
+          <p class="empty">Todavía no tenés ningún plan de entrenamiento cargado.</p>
+          {% endif %}
+        </div>
+      </details>
+
+      <details class="acc reveal">
+        <summary>Physical Assessment</summary>
+        <div class="acc-body">
+          {% if latest_assessment %}
+          <p class="eyebrow">Último test — {{ latest_assessment.completed_at.strftime("%Y-%m-%d") }}</p>
+          <table>
+            <thead><tr><th>Wall Sit</th><th>Single Leg Squat</th><th>Jump Squat</th><th>Plank</th><th>Lateral Bound</th></tr></thead>
+            <tbody>
+              <tr>
+                <td data-label="Wall Sit">{{ latest_assessment.wall_sit_seconds }} s</td>
+                <td data-label="Single Leg Squat">{{ latest_assessment.single_leg_squat_left }} / {{ latest_assessment.single_leg_squat_right }} reps (izq/der)</td>
+                <td data-label="Jump Squat">{{ latest_assessment.jump_squat_reps }} reps</td>
+                <td data-label="Plank">{{ latest_assessment.plank_seconds }} s</td>
+                <td data-label="Lateral Bound">{{ latest_assessment.lateral_bound_reps }} reps</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="cta-row">
+            <a class="btn btn-quiet" href="/assessment?user_id={{ user.id }}">Nuevo assessment</a>
+          </div>
+          {% else %}
+          <p class="empty">
+            Aún no completaste ningún Physical Assessment.
+            <a href="/assessment?user_id={{ user.id }}">&rarr; Hacer mi primer test</a>
+          </p>
+          {% endif %}
+        </div>
+      </details>
+
+      <details class="acc reveal">
+        <summary>Achievements</summary>
+        <div class="acc-body">
+          <ul class="achievement-list">
+          {% for a in achievements %}
+            <li class="achievement {{ 'earned' if a.earned else '' }}">
+              <div class="achievement-title-row">
+                <div class="achievement-title">{{ a.title }}</div>
+                {% if not a.earned %}<span class="tag achievement-lock">🔒 Bloqueado</span>{% endif %}
+              </div>
+              <div class="achievement-desc">{{ a.description }}</div>
+            </li>
+          {% endfor %}
+          </ul>
         </div>
       </details>
 

@@ -716,6 +716,179 @@
   .anime-ready .reveal,
   .anime-ready .reveal-row { transition: none; }
 
+  /* ==================================================================
+     Fase 1-3 (sprint Passport): Ski Card como carta de jugador. Ver
+     docs/baseline-passport.md para la propuesta completa. Reemplaza el
+     rol que tenia .summary-band en esta pagina -- esa clase sigue 100%
+     intacta, la sigue usando "El diferencial" de la home (fuera de
+     alcance de este sprint), por eso esto es una seccion nueva
+     (.ski-card-zone) y no una modificacion de .summary-band.
+     ================================================================== */
+
+  /* fondo: mismo lenguaje de profundidad del Hero (gradiente + textura de
+     ruido, mismo SVG data-uri que .hero) pero sin foto -- es una clase
+     propia, no .hero/.hero-parallax (esas son compartidas con
+     register.html, fuera de alcance). */
+  .ski-card-zone {
+    position: relative;
+    background-color: var(--ink);
+    background-image:
+      radial-gradient(ellipse 75% 55% at 50% 0%, rgba(56, 89, 133, 0.4) 0%, transparent 70%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: cover, 140px 140px;
+    background-repeat: no-repeat, repeat;
+    background-blend-mode: screen, overlay;
+    padding: clamp(3rem, 8vw, 4.5rem) 0;
+  }
+
+  /* contenedor del giro: perspective separada del elemento que gira (la
+     carta), mismo valor 700px que ya usa el tilt de CARD_TILT_TARGETS
+     (Fase 2.5) para que la profundidad no salte entre el giro de entrada
+     y el tilt al pasar el mouse despues. Oculta por default solo si hay
+     JS (.js) -- sin JS, o con reduced-motion, la carta esta siempre
+     visible y de frente, sin depender de que el giro corra. */
+  .ski-card-flip { perspective: 700px; }
+  .js .ski-card-flip { opacity: 0; }
+  .js .ski-card-flip.is-visible { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    .js .ski-card-flip { opacity: 1; }
+  }
+
+  /* la carta en si: acotada en ancho (objeto, no banda full-width),
+     esquinas cortadas (mismo lenguaje anguloso del resto del sitio, no
+     redondeadas). El sheen (Fase 2.5: background-blend-mode, no
+     mix-blend-mode -- evita el riesgo de aislamiento de stacking context
+     que tendria un pseudo-elemento) es una capa mas de su propio
+     background-image, con la banda de luz posicionada por --sheen-x/-y
+     (custom properties que actualiza el mismo handler de mousemove que ya
+     calcula el tilt en desktop, o la animacion de barrido unico en
+     mobile). */
+  .ski-card {
+    position: relative;
+    max-width: 340px;
+    margin: 0 auto;
+    padding: 2.5rem 1.75rem 2rem;
+    background-image:
+      linear-gradient(165deg, var(--shadow-2) 0%, var(--ink) 100%),
+      linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.4) 50%, transparent 65%);
+    background-blend-mode: normal, screen;
+    background-size: 100% 100%, 250% 250%;
+    background-position: 0 0, var(--sheen-x, -100%) var(--sheen-y, -100%);
+    /* el fondo de .ski-card-zone es un navy muy cercano al de la propia
+       carta -- sin borde, el corte de esquina no se distingue. El borde
+       claro tambien suma al concepto de "carta que atrapa luz" (linea
+       fina como un canto metalico/foil). */
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+    clip-path: polygon(0 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 0 100%);
+    text-align: center;
+  }
+  .ski-card .empty { color: var(--on-dark-secondary); font-size: 0.95rem; }
+  .ski-card .empty a { color: var(--white); }
+
+  /* avatar: monograma tipografico (inicial del nombre), no una silueta de
+     esquiador -- decision de Fase 1. Blanco/snow, no naranja: el naranja
+     de este sprint queda acotado al check de verificado y a los badges de
+     achievements (ver mas abajo), el avatar no es ninguna de las dos
+     cosas. */
+  .ski-card-avatar {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+    background: var(--snow);
+    color: var(--ink);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.9rem;
+  }
+
+  .ski-card-discipline {
+    margin: 0 0 0.2rem;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    color: var(--on-dark-secondary);
+  }
+  /* display:inline-block: el golpe de escala (Fase 2/2.5, al aterrizar el
+     conteo) no debe correr el layout del resto de la carta. */
+  .ski-card-rating {
+    margin: 0;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3.2rem, 12vw, 4.2rem);
+    line-height: 1;
+    color: var(--white);
+    display: inline-block;
+  }
+  .ski-card-confidence {
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+    color: var(--on-dark-secondary);
+  }
+  .ski-card-verified { display: inline-block; margin-left: 0.4rem; color: var(--flare); }
+
+  .ski-card-stats {
+    margin-top: 1.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem 0.5rem;
+  }
+  .ski-card-stat-label {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--on-dark-secondary);
+    margin-bottom: 0.2rem;
+  }
+  .ski-card-stat-value {
+    display: block;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    color: var(--white);
+  }
+
+  /* franja de achievements: fuera de la carta a proposito (Fase 1 -- la
+     carta queda enfocada solo en rating). Reusa .tag-flare tal cual, sin
+     modificarlo -- son los mismos badges que van a aparecer en el
+     acordeon de Achievements mas abajo, deben verse y comportarse
+     identicos en los dos lugares (mismo tilt/press que ya tienen via
+     CARD_TILT_TARGETS, sin tocar nada ahi). */
+  .ski-card-achievements { margin-top: 2rem; text-align: center; }
+  .ski-card-achievements .badge-row { justify-content: center; }
+
+  /* etiquetas de grupo del acordeon (Actividad / Progreso tecnico /
+     Preparacion): texto estatico (Fase 2, revisado) -- solo el trazo
+     debajo se dibuja de 0 a 100% de ancho al entrar, via su propia
+     clase/observer chico, sin sumarse al .reveal generico. */
+  .acc-group-label {
+    position: relative;
+    display: inline-block;
+    margin: 3.5rem 0 1.25rem;
+    padding-bottom: 0.5rem;
+  }
+  .acc-group-label::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--line);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .acc-group-label.is-visible::after { transform: scaleX(1); }
+  @media (prefers-reduced-motion: reduce) {
+    .acc-group-label::after { transform: scaleX(1); }
+  }
+
   /* tarjeta resumen (debajo del hero): panel de datos oscuro, alto contraste con el resto de la pagina */
   .summary-band {
     background: #0d0d0d;
@@ -1113,6 +1286,10 @@
        especifica). clip logra el mismo recorte horizontal sin activar el bug. */
     html, body { overflow-x: clip; max-width: 100vw; }
 
+    /* Fase 1-3 (sprint Passport): grilla de disciplinas secundarias de la
+       Ski Card, 3 columnas en desktop no entran comodas en mobile. */
+    .ski-card-stats { grid-template-columns: repeat(2, 1fr); }
+
     /* 1) nav: 5 links no entran en una fila -- menu hamburguesa. Fase 5:
        overlay navy a pantalla completa (position:fixed + inset:0) en vez
        de un dropdown parcial anclado debajo de la barra -- se ve y se
@@ -1446,38 +1623,181 @@
     // mouse). Sin anime.js o con reduced-motion se deja el valor final que
     // ya vino renderizado por el server (ver data-count-to en el template),
     // sin resetear a 0 ni animar nada.
+    //
+    // Fase 1-3 (sprint Passport), Fase 2.5: la logica de conteo se separa
+    // a una funcion compartida (animateCountTo) para que la Ski Card la
+    // pueda usar tambien, disparada desde el giro de la carta en vez de
+    // por su propio IntersectionObserver -- ver initSkiCardFlip mas abajo.
+    // El guard de hasAnime vive ADENTRO de la funcion (no en cada
+    // llamador): si no hay anime.js o hay reduced-motion, no resetea a 0
+    // ni anima nada, deja el valor final que ya vino del server.
+    function animateCountTo(el, target, opts) {
+      opts = opts || {};
+      if (!el || isNaN(target)) return;
+      if (!hasAnime) {
+        if (opts.complete) opts.complete();
+        return;
+      }
+      var obj = { val: opts.from != null ? opts.from : 0 };
+      anime({
+        targets: obj,
+        val: target,
+        duration: opts.duration || 1200,
+        delay: opts.delay || 0,
+        easing: opts.easing || 'easeOutExpo',
+        round: 1,
+        update: function () { el.textContent = Math.round(obj.val); },
+        complete: opts.complete
+      });
+    }
+
     (function initCountUp() {
       var els = Array.prototype.slice.call(document.querySelectorAll('.count-up'));
       if (!els.length || !hasAnime) return;
       els.forEach(function (el) { el.textContent = '0'; });
 
-      function animateCount(el) {
-        var target = parseFloat(el.getAttribute('data-count-to'));
-        if (isNaN(target)) return;
-        var obj = { val: 0 };
-        anime({
-          targets: obj,
-          val: target,
-          duration: 1200,
-          delay: 350,
-          easing: 'easeOutExpo',
-          round: 1,
-          update: function () { el.textContent = Math.round(obj.val); }
-        });
+      function trigger(el) {
+        animateCountTo(el, parseFloat(el.getAttribute('data-count-to')), { delay: 350 });
       }
       if ('IntersectionObserver' in window) {
         var io = new IntersectionObserver(function (entries) {
           entries.forEach(function (entry) {
             if (entry.isIntersecting) {
-              animateCount(entry.target);
+              trigger(entry.target);
               io.unobserve(entry.target);
             }
           });
         }, { threshold: 0.4 });
         els.forEach(function (el) { io.observe(el); });
       } else {
-        els.forEach(animateCount);
+        els.forEach(trigger);
       }
+    })();
+
+    // Fase 1-3 (sprint Passport): giro de entrada de la Ski Card. No reusa
+    // .reveal a proposito (Fase 2): una carta rigida no rebota con el
+    // spring elastico del resto del sitio, y la metafora de "carta que se
+    // da vuelta" pide rotateY, no solo opacity/translateY. perspective
+    // 700px = mismo valor que CARD_TILT_TARGETS mas abajo, para que la
+    // profundidad no salte entre el giro y el tilt al pasar el mouse.
+    // Dispara una sola vez (io.unobserve tras el primer trigger, mismo
+    // criterio que .reveal -- confirmado en Fase 2.5 a pedido del
+    // usuario: sin esto, volver a scrollear la carta a la vista la haria
+    // girar de nuevo).
+    //
+    // Los numeros de adentro NO llevan la clase .count-up (a proposito,
+    // Fase 2.5): si la llevaran, el observer generico de arriba tambien
+    // los agarraria y podrian contar dos veces. Disparan desde el
+    // callback "complete" del giro, nunca por su cuenta -- asi nunca hay
+    // numeros cambiando sobre una carta que todavia esta de canto.
+    (function initSkiCardFlip() {
+      var flipWrap = document.querySelector('.ski-card-flip');
+      var card = document.querySelector('.ski-card');
+      if (!flipWrap || !card) return;
+
+      var mainStat = card.querySelector('.ski-card-rating');
+      var subStats = Array.prototype.slice.call(card.querySelectorAll('.ski-card-stat-value'));
+      var confidenceEl = card.querySelector('.ski-card-confidence-value');
+
+      function landingPunch(el) {
+        if (!hasAnime || !el) return;
+        anime({ targets: el, scale: [1, 1.15, 1], duration: 220, easing: 'easeOutQuad' });
+      }
+
+      // Fase 2.5: barrido unico del sheen en mobile (sin cursor no hay
+      // sheen continuo posible) -- coordinado para arrancar justo despues
+      // del golpe del numero principal, via anime.js animando las custom
+      // properties --sheen-x/-y (mismo mecanismo de "update por frame"
+      // que ya usa el conteo, no CSS @keyframes -- evita depender de
+      // soporte de @property para animar custom properties).
+      function sheenSweepMobile() {
+        if (!hasAnime || canHoverFine) return;
+        var obj = { x: -20 };
+        anime({
+          targets: obj,
+          x: 120,
+          duration: 900,
+          easing: 'easeInOutQuad',
+          update: function () {
+            card.style.setProperty('--sheen-x', obj.x + '%');
+            card.style.setProperty('--sheen-y', (obj.x * 0.6) + '%');
+          }
+        });
+      }
+
+      function runCounts() {
+        subStats.forEach(function (el) {
+          animateCountTo(el, parseFloat(el.getAttribute('data-count-to')));
+        });
+        if (confidenceEl) {
+          animateCountTo(confidenceEl, parseFloat(confidenceEl.getAttribute('data-count-to')));
+        }
+        if (mainStat) {
+          animateCountTo(mainStat, parseFloat(mainStat.getAttribute('data-count-to')), {
+            complete: function () {
+              landingPunch(mainStat);
+              sheenSweepMobile();
+            }
+          });
+        } else {
+          sheenSweepMobile();
+        }
+      }
+
+      function reveal() {
+        if (!hasAnime) {
+          flipWrap.classList.add('is-visible');
+          runCounts();
+          return;
+        }
+        anime({
+          targets: card,
+          rotateY: [72, 0],
+          translateY: [28, 0],
+          opacity: [0, 1],
+          duration: 900,
+          easing: 'easeOutQuart',
+          complete: runCounts
+        });
+        flipWrap.classList.add('is-visible');
+      }
+
+      if (reduceMotion || !('IntersectionObserver' in window)) {
+        reveal();
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            reveal();
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+      io.observe(flipWrap);
+    })();
+
+    // Fase 1-3 (sprint Passport): trazo de las etiquetas de grupo del
+    // acordeon (Actividad/Progreso tecnico/Preparacion) -- se dibuja de 0
+    // a 100% de ancho al entrar en pantalla. Observer propio, chico,
+    // separado del .reveal generico a proposito (Fase 2: la etiqueta en
+    // si no lleva opacity/transform, solo el trazo se dibuja).
+    (function initAccGroupLabels() {
+      var labels = Array.prototype.slice.call(document.querySelectorAll('.acc-group-label'));
+      if (!labels.length) return;
+      if (reduceMotion || !('IntersectionObserver' in window)) {
+        labels.forEach(function (el) { el.classList.add('is-visible'); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.4 });
+      labels.forEach(function (el) { io.observe(el); });
     })();
 
     // Fase 6/7: tilt 3D en cards (feature-card, plan-block, achievement
@@ -1491,7 +1811,13 @@
     var CARD_TILT_TARGETS = [
       { selector: '.feature-card', maxTilt: 11 },
       { selector: '.plan-block', maxTilt: 11 },
-      { selector: '.badge-row .tag-flare', maxTilt: 18 }
+      { selector: '.badge-row .tag-flare', maxTilt: 18 },
+      // Fase 1-3 (sprint Passport): misma elevacion que .feature-card/
+      // .plan-block (Fase 1 aprobada) -- suma tilt Y press gratis via este
+      // mismo array. sheen:true prende el brillo que sigue al cursor
+      // (Fase 2/2.5, --sheen-x/-y via background-blend-mode), exclusivo
+      // de la Ski Card -- ninguna otra card del sitio lo necesita.
+      { selector: '.ski-card', maxTilt: 11, sheen: true }
     ];
     (function initTiltDesktop() {
       if (reduceMotion || !canHoverFine) return;
@@ -1513,6 +1839,10 @@
               var rotateX = (0.5 - py) * 2 * cfg.maxTilt;
               el.style.transform = 'perspective(700px) rotateX(' + rotateX.toFixed(2) + 'deg) rotateY(' + rotateY.toFixed(2) + 'deg) translateZ(10px)';
               el.style.boxShadow = (-rotateY * 2).toFixed(1) + 'px ' + (16 + Math.abs(rotateX) * 2).toFixed(1) + 'px 32px rgba(18, 35, 58, 0.32)';
+              if (cfg.sheen) {
+                el.style.setProperty('--sheen-x', (px * 180 - 40).toFixed(1) + '%');
+                el.style.setProperty('--sheen-y', (py * 180 - 40).toFixed(1) + '%');
+              }
             });
           });
           el.addEventListener('mouseleave', function () {
@@ -1521,6 +1851,10 @@
             el.style.transform = '';
             el.style.boxShadow = '';
             el.style.willChange = '';
+            if (cfg.sheen) {
+              el.style.setProperty('--sheen-x', '-100%');
+              el.style.setProperty('--sheen-y', '-100%');
+            }
           });
         });
       });
