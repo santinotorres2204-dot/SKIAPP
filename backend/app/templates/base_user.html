@@ -407,6 +407,136 @@
     .hero-bg-slide { animation: none; opacity: 0; }
     .hero-bg-slide:first-child { opacity: 1; }
   }
+
+  /* Fase 9 (rediseno Hero + transicion "El ciclo", exclusivo de home --
+     docs/baseline.md tiene la propuesta completa de las Fases 1-3). Todo lo
+     de abajo usa clases nuevas que no existen en ningun otro template, o
+     esta explicitamente scopeado bajo .hero-rotating (solo index.html) --
+     nada de esto toca .hero-peaks/.hero-ridge, que index.html ahora
+     directamente no renderiza mas (ver chequeo tecnico Fase 2.5: esas dos
+     clases siguen intactas para passport.html/register.html). */
+  .hero-stack { position: relative; z-index: 1; }
+  .hero-copy { max-width: 46ch; }
+  /* .lede es compartida por todo el sitio (color --mist por defecto) --
+     scopeada a .hero-rotating para no afectar ningun otro .hero (hoy
+     ninguno mas tiene un .lede adentro, pero se scopea igual por las
+     dudas, mismo criterio que el resto de esta seccion). */
+  .hero-rotating .lede { color: var(--on-dark-secondary); margin-bottom: 1.5rem; }
+
+  /* chip opcional (Fase 2, baja prioridad): un solo dato estructural, no de
+     usuario -- la ruta "/" no tiene datos reales que mostrar sin tocar
+     backend (fuera de alcance de este sprint), asi que el naranja se usa
+     aca de forma puntual e informativa, no decorativa. */
+  .hero-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1.75rem;
+    padding-left: 0.75rem;
+    border-left: 2px solid var(--flare);
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+    color: var(--on-dark-secondary);
+  }
+  .hero-chip-icon { width: 16px; height: 16px; flex-shrink: 0; color: var(--flare); }
+
+  /* atajo discreto para quien ya tiene cuenta (ver Fase 1, ajuste 2): fade
+     simple por fuera del sistema .reveal a proposito -- no debe competir ni
+     en tiempo ni en movimiento con el titular. Sin JS: el href="#empezar"
+     ya hereda el scroll-behavior:smooth que esta pagina define mas abajo
+     (html:has(.home-sidenav)), y #empezar ya tiene su propio
+     scroll-margin-top. No se le agrega autofocus a nada -- eso fue
+     exactamente el bug de scroll que se arreglo antes de este sprint.
+
+     Fase 4 QA: con texto claro directo sobre el fondo, el link quedaba
+     sobre zonas variables (las 4 fotos del carrusel + el degradado de la
+     silueta-puente, que ademas se desplaza con el parallax) -- en reposo
+     cae justo donde ese degradado ya paso a --snow y el texto se vuelve
+     invisible. En vez de ajustar la posicion a mano (fragil: cualquier
+     cambio de contenido arriba lo vuelve a correr de lugar), se le da el
+     mismo scrim que ya usa .flash-banner mas abajo para este mismo
+     problema (texto que necesita legibilidad garantizada sobre foto
+     variable) -- sin el borde naranja de .flash-banner, ese acento sigue
+     acotado a los 2 usos aprobados en Fase 1. */
+  .hero-login-hint {
+    display: block;
+    width: fit-content;
+    margin-top: 0.75rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(13, 13, 13, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    font-size: 0.85rem;
+    color: var(--on-dark-secondary);
+    opacity: 0;
+    animation: hero-login-hint-in 0.6s ease 0.5s forwards;
+  }
+  .hero-login-hint-action { color: var(--white); font-weight: 600; }
+  .hero-login-hint:hover { border-bottom-color: var(--on-dark-secondary); }
+  @keyframes hero-login-hint-in { to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-login-hint { opacity: 1; animation: none; }
+  }
+
+  /* indicador de scroll: unico en CSS puro (no anime.js) para que no
+     dependa del CDN -- ver Fase 2. Entra ultimo (delay mas largo que el
+     resto del grupo) y loopea un bob sutil hasta que el usuario empieza a
+     scrollear. Naranja: es un CTA de navegacion real, no decoracion (uno de
+     los dos usos acotados de --flare aprobados en Fase 1). Sin tilt ni
+     magnetismo: no lleva la clase .btn a proposito (initMagneticButtonsDesktop
+     apunta a .btn), y el feedback de touch es un simple :active en vez de
+     sumarse al array compartido de tilt/press (ese es solo para cards). */
+  .hero-scroll-cue {
+    position: absolute;
+    left: 50%;
+    bottom: clamp(1.25rem, 4vw, 2rem);
+    z-index: 2;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--flare);
+    opacity: 0;
+    border-bottom: none;
+    transition: transform 0.15s ease;
+    animation: hero-scroll-cue-in 0.6s ease 0.9s forwards, hero-scroll-cue-bob 1.8s ease-in-out 1.5s infinite;
+  }
+  .hero-scroll-cue svg { width: 100%; height: 100%; }
+  .hero-scroll-cue:hover { border-bottom: none; }
+  .hero-scroll-cue:active { transform: translateX(-50%) scale(0.88); }
+  @keyframes hero-scroll-cue-in { to { opacity: 1; transform: translateX(-50%); } }
+  @keyframes hero-scroll-cue-bob {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(7px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-scroll-cue { opacity: 1; animation: none; transform: translateX(-50%); }
+  }
+
+  /* silueta-puente: degrade fijo (NO animado -- ver Fase 2) de navy oscuro
+     arriba, fundiendose con la foto, a --snow abajo, empalmando con el
+     fondo blanco de "El ciclo". El unico movimiento es el parallax
+     (initParallax, mas rapido que la foto -- ver data-parallax-speed en el
+     markup). Sobredimensionada en alto y con bottom negativo a proposito:
+     es una forma solida via clip-path (no una foto con bordes), asi que
+     alcanza con el colchon de altura para que el traslado nunca descubra
+     el borde inferior -- no necesita el truco de scale() que usa la foto. */
+  .hero-summit-bridge {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -30px;
+    height: clamp(150px, 26vw, 230px);
+    will-change: transform;
+    background: linear-gradient(180deg, rgba(18, 35, 58, 0.88) 0%, rgba(18, 35, 58, 0.6) 42%, var(--snow-dim) 88%, var(--snow) 100%);
+    clip-path: polygon(
+      0% 100%, 0% 52%, 7% 28%, 13% 46%, 21% 14%, 29% 40%, 35% 8%, 43% 36%,
+      51% 18%, 57% 44%, 65% 11%, 73% 38%, 79% 20%, 87% 46%, 93% 17%, 100% 33%,
+      100% 100%
+    );
+  }
+
   .hero-overlay {
     position: absolute;
     inset: 0;
@@ -1431,22 +1561,35 @@
     // esta fase (antes SPEED 0.12/SCALE 1.2, se sentia "casi imperceptible"
     // segun el usuario) -- SCALE sube en la misma proporcion que SPEED para
     // seguir cubriendo el traslado sin revelar huecos en los bordes.
+    // Fase 9: se suma [data-parallax-speed] al selector (superset, no
+    // reemplazo -- validado en el chequeo tecnico de esa fase) para poder
+    // darle a una capa nueva (la silueta-puente del home) una velocidad
+    // distinta a la de la foto, sin tocar el comportamiento de
+    // .hero-bg-rotate/.hero-bg-photo en ningun otro template: si el
+    // elemento no trae data-parallax-speed/scale, cae en las mismas
+    // constantes de siempre.
     (function initParallax() {
       if (reduceMotion) return;
-      var layers = Array.prototype.slice.call(document.querySelectorAll('.hero-bg-rotate, .hero-bg-photo'));
+      var layers = Array.prototype.slice.call(
+        document.querySelectorAll('.hero-bg-rotate, .hero-bg-photo, [data-parallax-speed]')
+      );
       if (!layers.length) return;
 
-      var SPEED = 0.35;
-      var SCALE = 1.5;
+      var DEFAULT_SPEED = 0.35;
+      var DEFAULT_SCALE = 1.5;
       var ticking = false;
 
       function update() {
         ticking = false;
         var vh = window.innerHeight;
         layers.forEach(function (layer) {
+          var speed = layer.dataset.parallaxSpeed ? parseFloat(layer.dataset.parallaxSpeed) : DEFAULT_SPEED;
+          var scale = layer.dataset.parallaxScale ? parseFloat(layer.dataset.parallaxScale) : DEFAULT_SCALE;
           var rect = layer.parentElement.getBoundingClientRect();
-          var delta = (rect.top + rect.height / 2 - vh / 2) * SPEED;
-          layer.style.transform = 'translate3d(0, ' + delta.toFixed(1) + 'px, 0) scale(' + SCALE + ')';
+          var delta = (rect.top + rect.height / 2 - vh / 2) * speed;
+          var transform = 'translate3d(0, ' + delta.toFixed(1) + 'px, 0)';
+          if (scale !== 1) transform += ' scale(' + scale + ')';
+          layer.style.transform = transform;
         });
       }
       function onScroll() {

@@ -154,12 +154,35 @@
     <div class="hero-bg-slide"></div>
   </div>
   <div class="hero-overlay" aria-hidden="true"></div>
-  <div class="container-wide">
-    <p class="eyebrow eyebrow-light">Bienvenido de vuelta</p>
-    <h1 class="page-title">Entrá a tu perfil</h1>
+
+  <div class="container-wide hero-stack">
+    <div class="hero-copy reveal">
+      <h1 class="page-title">Llegá a la montaña<br>ya preparado</h1>
+      <p class="lede">Análisis de video con IA, plan físico y técnico antes de tu viaje.</p>
+    </div>
+    <p class="hero-chip reveal">
+      <svg class="hero-chip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3l2.5 6.5L21 11l-5 4.2 1.4 6.8L12 18.5 6.6 22 8 15.2 3 11l6.5-1.5L12 3z"/>
+      </svg>
+      5 disciplinas &middot; 1 ciclo por temporada
+    </p>
+    <a href="#empezar" class="hero-login-hint">&iquest;Ya ten&eacute;s cuenta? <span class="hero-login-hint-action">Entr&aacute;</span></a>
   </div>
-  <div class="hero-ridge" aria-hidden="true"></div>
-  <div class="hero-peaks" aria-hidden="true"></div>
+
+  <a href="#ciclo" class="hero-scroll-cue" aria-label="Ver m&aacute;s">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  </a>
+
+  <!-- Fase 9: silueta-puente exclusiva de home -- reemplaza a .hero-ridge/
+       .hero-peaks SOLO ACA (esos dos divs se sacan de este template), sin
+       tocar esa regla compartida con passport.html/register.html (ver
+       chequeo tecnico Fase 2.5). data-parallax-speed/scale: ver
+       initParallax en base_user.html -- se mueve mas rapido que la foto de
+       fondo (0.5 vs 0.35) para leerse como la capa mas cercana, sin scale
+       (es una forma solida por clip-path, no una foto con bordes). -->
+  <div class="hero-summit-bridge" data-parallax-speed="0.5" data-parallax-scale="1" aria-hidden="true"></div>
 </header>
 
 <section id="ciclo" class="section reveal" style="padding-bottom: 2.5rem;">
