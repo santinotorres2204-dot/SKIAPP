@@ -1,0 +1,42 @@
+[
+  {
+    "name": "C1_amplitud_duracion_por_giro",
+    "predicted_start_t": 0.0,
+    "delta_vs_ground_truth_s": -4.0,
+    "frames_arranque_dejados_pasar": 33,
+    "frames_carving_real_descartados": 0,
+    "corta_un_giro_a_la_mitad": null
+  },
+  {
+    "name": "C2_alternancia_consistente",
+    "predicted_start_t": 0.0,
+    "delta_vs_ground_truth_s": -4.0,
+    "frames_arranque_dejados_pasar": 33,
+    "frames_carving_real_descartados": 0,
+    "corta_un_giro_a_la_mitad": null
+  },
+  {
+    "name": "C3_rolling_std_lean_sostenido",
+    "predicted_start_t": 8.74,
+    "delta_vs_ground_truth_s": 4.74,
+    "frames_arranque_dejados_pasar": 0,
+    "frames_carving_real_descartados": 24,
+    "corta_un_giro_a_la_mitad": 5
+  },
+  {
+    "name": "C4_amplitud_frame_sostenida",
+    "predicted_start_t": 7.49,
+    "delta_vs_ground_truth_s": 3.49,
+    "frames_arranque_dejados_pasar": 0,
+    "frames_carving_real_descartados": 14,
+    "corta_un_giro_a_la_mitad": 5
+  },
+  {
+    "name": "C5_min_giros_consecutivos_validos",
+    "predicted_start_t": 3.37,
+    "delta_vs_ground_truth_s": -0.63,
+    "frames_arranque_dejados_pasar": 6,
+    "frames_carving_real_descartados": 0,
+    "corta_un_giro_a_la_mitad": null
+  }
+]

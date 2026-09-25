@@ -1,0 +1,156 @@
+{
+  "video": "C:/Users/santi/ski-app/backend/media/videos/1/1783043e34d74c4dafd21f4f81eb1dfe.mp4",
+  "label": "video16",
+  "n_frames": 9,
+  "n_turns": 1,
+  "candidates": {
+    "A_z_actual": {
+      "name": "A_z_actual",
+      "n": 9,
+      "mean": 15.09,
+      "std": 22.81,
+      "median": 3.43,
+      "max": 71.67,
+      "mean_severity": null,
+      "proportion_over_baja": 0.222,
+      "sustained_fires_at_baja": false,
+      "top5": [
+        {
+          "idx": 4,
+          "t": "00:02.40",
+          "value": -71.7
+        },
+        {
+          "idx": 5,
+          "t": "00:02.53",
+          "value": -38.2
+        },
+        {
+          "idx": 1,
+          "t": "00:02.00",
+          "value": -9.2
+        },
+        {
+          "idx": 2,
+          "t": "00:02.13",
+          "value": 4.7
+        },
+        {
+          "idx": 0,
+          "t": "00:01.87",
+          "value": 3.4
+        }
+      ]
+    },
+    "B_xy_simple": {
+      "name": "B_xy_simple",
+      "n": 9,
+      "mean": 10.43,
+      "std": 8.12,
+      "median": 10.05,
+      "max": 23.29,
+      "mean_severity": null,
+      "proportion_over_baja": 0.222,
+      "sustained_fires_at_baja": false,
+      "top5": [
+        {
+          "idx": 8,
+          "t": "00:15.21",
+          "value": 23.3
+        },
+        {
+          "idx": 6,
+          "t": "00:02.67",
+          "value": 21.8
+        },
+        {
+          "idx": 4,
+          "t": "00:02.40",
+          "value": -16.9
+        },
+        {
+          "idx": 1,
+          "t": "00:02.00",
+          "value": 10.6
+        },
+        {
+          "idx": 7,
+          "t": "00:02.80",
+          "value": -10.0
+        }
+      ]
+    },
+    "C_xy_traveldir": {
+      "name": "C_xy_traveldir",
+      "n": 8,
+      "mean": 11.62,
+      "std": 7.83,
+      "median": 10.33,
+      "max": 23.29,
+      "mean_severity": null,
+      "proportion_over_baja": 0.25,
+      "sustained_fires_at_baja": false,
+      "top5": [
+        {
+          "idx": 8,
+          "t": "00:15.21",
+          "value": 23.3
+        },
+        {
+          "idx": 6,
+          "t": "00:02.67",
+          "value": 21.8
+        },
+        {
+          "idx": 4,
+          "t": "00:02.40",
+          "value": -16.9
+        },
+        {
+          "idx": 1,
+          "t": "00:02.00",
+          "value": 10.6
+        },
+        {
+          "idx": 7,
+          "t": "00:02.80",
+          "value": -10.0
+        }
+      ]
+    },
+    "A_z_actual_smoothed5": {
+      "name": "A_z_actual_smoothed5",
+      "n": 9,
+      "mean": 11.98,
+      "std": 9.36,
+      "median": 14.04,
+      "max": 22.36,
+      "mean_severity": null,
+      "proportion_over_baja": 0.444,
+      "sustained_fires_at_baja": true
+    },
+    "B_xy_simple_smoothed5": {
+      "name": "B_xy_simple_smoothed5",
+      "n": 9,
+      "mean": 3.41,
+      "std": 2.7,
+      "median": 3.03,
+      "max": 8.28,
+      "mean_severity": null,
+      "proportion_over_baja": 0.0,
+      "sustained_fires_at_baja": false
+    },
+    "C_xy_traveldir_smoothed5": {
+      "name": "C_xy_traveldir_smoothed5",
+      "n": 9,
+      "mean": 3.39,
+      "std": 2.68,
+      "median": 2.91,
+      "max": 8.28,
+      "mean_severity": null,
+      "proportion_over_baja": 0.0,
+      "sustained_fires_at_baja": false
+    }
+  },
+  "n_none_traveldir": 1
+}

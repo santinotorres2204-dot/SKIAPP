@@ -67,13 +67,39 @@ MIN_TURN_DURATION_SEC = 0.4     # duracion minima para contar un giro como tal
 # prototipo es tener la logica corriendo end-to-end y poder ajustarlos
 # mirando videos reales, tal como pide la spec (seccion 6 / 9).
 ASYMMETRY_THRESHOLDS = {"baja": 0.12, "media": 0.22, "alta": 0.35}       # diff relativa
-ROTATION_THRESHOLDS_DEG = {"baja": 20.0, "media": 30.0, "alta": 40.0}    # grados promedio
+# Sprint "confiabilidad de carving" (ver rotation-metric-decision.md):
+# umbrales por-FRAME sobre la nueva formula (x,y) -- antes eran umbrales
+# sobre un promedio de video entero con la formula vieja (x,z). Bajaron de
+# escala (20/30/40 -> 15/25/35) porque el propio valor tipico de la
+# metrica bajo al sacar la contribucion ruidosa de Z (medido en 4 videos
+# de referencia: medias entre 4-10 grados, lejos de estos umbrales) --
+# no es un ajuste arbitrario para "que dispare menos", es la consecuencia
+# directa de cambiar la formula de fondo. Sin calibrar con un dataset
+# etiquetado (ninguno de los 4 videos de referencia tiene rotacion
+# excesiva real conocida) -- mismo caveat que ya tienen los umbrales de
+# peso_hacia_atras.
+ROTATION_THRESHOLDS_DEG = {"baja": 15.0, "media": 25.0, "alta": 35.0}    # grados, por-frame
+SUSTAINED_ROTATION_PROPORTION = 0.35  # mismo criterio/valor que SUSTAINED_BACKWARD_PROPORTION
 INCONSISTENCY_CV_THRESHOLDS = {"baja": 0.25, "media": 0.40, "alta": 0.60}  # coef. variacion
 BALANCE_LOSS_PROPORTION_THRESHOLDS = {"baja": 0.02, "media": 0.05, "alta": 0.09}
 
 MIN_TURNS_FOR_ASYMMETRY = 2   # por lado
 MIN_TURNS_FOR_INCONSISTENCY = 3
 MIN_VALID_FRAMES_FOR_BALANCE = 20
+MIN_VALID_FRAMES_FOR_ROTATION = 20
+
+# Sprint "confiabilidad de carving", punto 2 (ver activity-filter-decision.md
+# para la comparacion completa de candidatos medidos contra un ground truth
+# marcado a mano): filtro de "actividad valida" antes de evaluar patrones --
+# saca de en medio tramos como el arranque cerca del telesilla, que hoy se
+# mezclaban sin distincion con la secuencia real de carving. La señal
+# elegida (giros consecutivos que cumplen amplitud+duracion minima) fue la
+# unica de 5 candidatas medidas que se acerco al ground truth (0.63s de
+# diferencia) sin cortar un giro real a la mitad -- las otras 4 quedan
+# documentadas con su resultado medido, no descartadas sin mas.
+VALID_ACTIVITY_MIN_LEAN_DEG = 15.0
+VALID_ACTIVITY_MIN_DURATION_SEC = MIN_TURN_DURATION_SEC  # mismo umbral que ya define "giro" (0.4s)
+VALID_ACTIVITY_MIN_CONSECUTIVE_TURNS = 3
 
 # Peso hacia atras (trunk_fore_aft_deg > 0), interpretado distinto segun
 # discipline_tag -- ver contexto tecnico en detect_weight_position(). Carving
@@ -317,15 +343,35 @@ def compute_frame_metrics(frames: list[PoseFrame]) -> list[FrameMetrics]:
 
         trunk_fore_aft_deg = _trunk_fore_aft_deg(mid_ankle, mid_knee, mid_hip, mid_shoulder)
 
-        # Rotacion tren superior vs inferior: se aproxima proyectando la linea
-        # de hombros y la linea de cadera sobre el plano (x, z) — z es la
-        # profundidad relativa que da MediaPipe. Es una aproximacion gruesa
-        # (no una rotacion 3D real), consistente con el objetivo de "screening
-        # visual" de la spec, no de biomecanica de precision.
+        # Rotacion tren superior vs inferior: diferencial de angulo entre la
+        # linea de hombros y la linea de cadera, en el plano (x, y) de la
+        # IMAGEN. Hasta el sprint "confiabilidad de carving" (ver
+        # ai-analysis/audit-carving-video.md y
+        # ai-analysis/rotation-metric-decision.md) esto se calculaba sobre
+        # el plano (x, z) -- z es la profundidad relativa que da MediaPipe,
+        # la coordenada menos confiable en pose 2D-monocular. La auditoria
+        # encontro un caso real donde ese calculo con Z disparaba el patron
+        # sobre un frame con landmarks de hombro/cadera visiblemente mal
+        # ubicados (confirmado a ojo comparando el esqueleto dibujado contra
+        # la foto real), mientras que en el mismo frame el calculo en (x,y)
+        # se mantenia en rango razonable.
+        #
+        # Trade-off explicito, no gratis: (x, y) deja de medir "rotacion
+        # axial" en sentido estricto -- una torsion del tronco alrededor de
+        # su eje vertical es, por definicion, invisible en 2D puro sin
+        # profundidad. Lo que mide ahora es un diferencial de INCLINACION
+        # entre la linea de hombros y la linea de cadera dentro de la
+        # imagen -- una aproximacion mas ruda pero mucho mas confiable que
+        # depender de una coordenada de profundidad ruidosa. Ver el
+        # documento de decision para la comparacion completa contra la
+        # formula anterior y contra una tercera variante (angulo relativo a
+        # la direccion de desplazamiento del centro de masa, mismo
+        # principio que ya usa analyze_snowboard_video.py) que dio
+        # resultados practicamente identicos a esta con mas complejidad.
         shoulder_vec = p["right_shoulder"] - p["left_shoulder"]
         hip_vec = p["right_hip"] - p["left_hip"]
-        shoulder_angle = np.degrees(np.arctan2(shoulder_vec[2], shoulder_vec[0]))
-        hip_angle = np.degrees(np.arctan2(hip_vec[2], hip_vec[0]))
+        shoulder_angle = np.degrees(np.arctan2(shoulder_vec[1], shoulder_vec[0]))
+        hip_angle = np.degrees(np.arctan2(hip_vec[1], hip_vec[0]))
         rotation_diff = _wrap_180(shoulder_angle - hip_angle)
 
         com = (p["left_hip"][:2] + p["right_hip"][:2] + p["left_shoulder"][:2] + p["right_shoulder"][:2]) / 4.0
@@ -487,21 +533,38 @@ def detect_asymmetry(turns: list[Turn], metrics: list[FrameMetrics]) -> Optional
 
 
 def detect_rotation_excessive(metrics: list[FrameMetrics], turns: list[Turn]) -> Optional[dict]:
-    if not metrics:
+    """Sprint "confiabilidad de carving" (ver rotation-metric-decision.md):
+    dejo de ser un promedio de todo el video (fragil -- un puñado de
+    frames con landmarks mal ubicados alcanzaba para arrastrar la media
+    por encima del umbral, ver auditoria) y paso a exigir SOSTENIDO, mismo
+    criterio que ya usa detect_weight_position: un frame individual no
+    alcanza, tiene que superar el umbral "baja" en una proporcion minima
+    de los frames validos (SUSTAINED_ROTATION_PROPORTION)."""
+    if len(metrics) < MIN_VALID_FRAMES_FOR_ROTATION:
         return None
 
-    mean_rotation = float(np.mean([abs(m.rotation_diff) for m in metrics]))
-    severity = _severity_from_thresholds(mean_rotation, ROTATION_THRESHOLDS_DEG)
+    rotation = np.array([abs(m.rotation_diff) for m in metrics])
+    flagged_idx = np.where(rotation >= ROTATION_THRESHOLDS_DEG["baja"])[0]
+    proportion = len(flagged_idx) / len(rotation)
+    if proportion < SUSTAINED_ROTATION_PROPORTION:
+        return None  # no fue sostenido, no lo marcamos
+
+    mean_flagged = float(np.mean(rotation[flagged_idx]))
+    severity = _severity_from_thresholds(mean_flagged, ROTATION_THRESHOLDS_DEG)
     if severity is None:
         return None
+
+    occurrences = [
+        {"t": format_ts(metrics[i].t), "rotation_diff_deg": round(float(rotation[i]), 1)}
+        for i in flagged_idx
+    ]
 
     return {
         "pattern": "rotacion_excesiva_tren_superior",
         "severity": severity,
-        "sample_size": len(turns) if turns else len(metrics),
-        # Es un promedio de toda la secuencia (no un chequeo por giro), pero se
-        # listan los giros como referencia temporal de donde se midio.
-        "occurrences": [_turn_occurrence(t, metrics) for t in turns],
+        "sample_size": len(metrics),
+        "proportion_frames_afectados": round(proportion, 2),
+        "occurrences": occurrences,
     }
 
 
@@ -754,6 +817,42 @@ def build_summary(detected_patterns: list[dict], confidence_score: int, n_turns:
 
 
 # ---------------------------------------------------------------------------
+# Filtro de actividad valida (sprint "confiabilidad de carving", punto 2)
+# ---------------------------------------------------------------------------
+
+def find_activity_start_idx(
+    turns: list[Turn],
+    metrics: list[FrameMetrics],
+    min_lean: float = VALID_ACTIVITY_MIN_LEAN_DEG,
+    min_duration: float = VALID_ACTIVITY_MIN_DURATION_SEC,
+    n_consecutive: int = VALID_ACTIVITY_MIN_CONSECUTIVE_TURNS,
+) -> int:
+    """Devuelve el indice (en la lista de frames validos, misma indexacion
+    que start_idx/end_idx de Turn) donde arranca la primera racha de
+    n_consecutive giros que TODOS superan min_lean de inclinacion maxima Y
+    duran al menos min_duration segundos -- ver activity-filter-decision.md
+    para por que esta señal en particular (y no las otras 4 medidas).
+
+    Si no hay ninguna racha asi (video muy corto, o ningun giro alcanza el
+    umbral), devuelve 0 -- es decir, no filtra nada, se analiza el video
+    completo como antes de este sprint. No falla ni excluye todo el video
+    por no encontrar el patron (seria peor que no filtrar en absoluto).
+    """
+    def turn_ok(t: Turn) -> bool:
+        dur = metrics[t.end_idx].t - metrics[t.start_idx].t
+        return t.max_trunk_lean_abs >= min_lean and dur >= min_duration
+
+    if len(turns) < n_consecutive:
+        return 0
+
+    for i in range(len(turns) - n_consecutive + 1):
+        window = turns[i:i + n_consecutive]
+        if all(turn_ok(t) for t in window):
+            return window[0].start_idx
+    return 0
+
+
+# ---------------------------------------------------------------------------
 # Orquestacion
 # ---------------------------------------------------------------------------
 
@@ -791,19 +890,37 @@ def analyze_video(
     metrics = compute_frame_metrics(frames)
     turns = segment_turns(metrics, effective_fps)
 
-    weight_pattern = detect_weight_position(metrics, discipline_tag)
+    # Filtro de actividad valida: necesita los giros ya segmentados (la
+    # señal elegida mide amplitud/duracion POR GIRO), asi que el orden real
+    # es "segmentar sobre todos los frames validos -> decidir donde arranca
+    # lo valido -> re-evaluar los patrones solo sobre esa porcion" en vez
+    # de un filtro previo a ciegas. Se documenta este orden explicitamente
+    # porque no es el diagrama literal "frames validos -> actividad ->
+    # giros" del pedido original, sino lo que la señal elegida requiere.
+    activity_start_idx = find_activity_start_idx(turns, metrics)
+    metrics_valid_activity = metrics[activity_start_idx:]
+    turns_valid_activity = [t for t in turns if t.start_idx >= activity_start_idx]
+
+    # asimetria/inconsistencia indexan turn.start_idx/end_idx contra la
+    # lista COMPLETA de metrics (no la recortada) -- se les sigue pasando
+    # `metrics` sin recortar, solo se filtra la LISTA DE GIROS que reciben.
+    # balance/rotacion/peso-atras son por-frame sin depender de indices de
+    # giro, asi que a esos se les pasa directamente la lista ya recortada.
+    weight_pattern = detect_weight_position(metrics_valid_activity, discipline_tag)
 
     detections = [
-        detect_asymmetry(turns, metrics),
-        detect_balance_loss(metrics, len(turns)),
-        detect_rotation_excessive(metrics, turns),
-        detect_inconsistency(turns, metrics),
+        detect_asymmetry(turns_valid_activity, metrics),
+        detect_balance_loss(metrics_valid_activity, len(turns_valid_activity)),
+        detect_rotation_excessive(metrics_valid_activity, turns_valid_activity),
+        detect_inconsistency(turns_valid_activity, metrics),
         weight_pattern,
     ]
     detected_patterns = [d for d in detections if d is not None]
 
-    confidence_score = compute_confidence_score(len(frames), sampled_count, len(turns))
-    summary = build_summary(detected_patterns, confidence_score, len(turns))
+    confidence_score = compute_confidence_score(
+        len(metrics_valid_activity), sampled_count, len(turns_valid_activity)
+    )
+    summary = build_summary(detected_patterns, confidence_score, len(turns_valid_activity))
     discipline_note = build_discipline_note(discipline_tag, weight_pattern)
 
     return {
@@ -820,6 +937,13 @@ def analyze_video(
             "turns_detected": len(turns),
             "turns_izquierda": sum(1 for t in turns if t.direction == "izquierda"),
             "turns_derecha": sum(1 for t in turns if t.direction == "derecha"),
+            # Sprint "confiabilidad de carving": lo que efectivamente se
+            # analizo despues de descartar actividad no relevante (ej.
+            # arranque cerca del lift) -- ver activity-filter-decision.md.
+            "activity_filter_start_t": round(metrics[activity_start_idx].t, 2) if metrics else None,
+            "activity_filter_frames_discarded": activity_start_idx,
+            "turns_valid_activity": len(turns_valid_activity),
+            "frames_valid_activity": len(metrics_valid_activity),
         },
     }
 

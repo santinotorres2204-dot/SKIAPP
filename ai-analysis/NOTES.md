@@ -126,6 +126,91 @@ más videos, la señal de `peso_hacia_atras` va a tener menos frames útiles
 de los que sugiere `frames_with_valid_pose` — vale la pena trackearlo por
 separado si se sigue calibrando esto.
 
+## Sprint "confiabilidad de carving": geometría de rotación y filtro de actividad válida
+
+Motivado por una auditoría diagnóstica previa (`audit-carving-video.md`) sobre un video
+real ("el influencer", video17) que reveló dos problemas de raíz, no de calibración:
+`rotacion_excesiva_tren_superior` dependía del eje Z de MediaPipe (mucho más ruidoso que
+X/Y en mono-cámara) y disparaba sobre un outlier de un solo frame con landmarks mal
+ubicados; y la segmentación de giros no distinguía el tramo de arranque cerca del
+telesilla (giros lentos, casi rectos) de carving real, contaminando el cálculo de
+`inconsistencia_entre_giros`. Proceso completo, decisiones y evidencia:
+`rotation-metric-decision.md`, `ground-truth-carving.md`, `activity-filter-decision.md`,
+`asymmetry-review.md`, `before-after-comparison.md`.
+
+**Rotación** (`compute_frame_metrics`, `detect_rotation_excessive`): la fórmula pasó de
+usar `arctan2` sobre componentes (Z, X) de los vectores hombro-hombro/cadera-cadera a
+usar (Y, X) — deja de medir rotación axial "real" en 3D y pasa a medir diferencial de
+inclinación lateral en el plano de la imagen, pero esa pérdida es preferible a seguir
+dependiendo de un eje que la auditoría mostró no confiable. Comparado empíricamente
+contra la fórmula Z original y una tercera candidata (ángulo respecto a la dirección de
+desplazamiento del centro de masa, reusando la técnica de
+`compute_edge_orientation_series` de `analyze_snowboard_video.py`) sobre los 4 videos del
+dataset — se descartó la candidata de dirección de desplazamiento por agregar una
+dependencia extra (velocidad del centro de masa) sin evidencia de que mejore la señal.
+Se agregó exigencia de sostenido (`SUSTAINED_ROTATION_PROPORTION=0.35`, mismo patrón que
+`peso_hacia_atras`) y se recalibraron los umbrales (`{15,25,35}`, antes `{20,30,40}`) para
+la nueva escala por-frame (antes eran sobre un promedio). **Limitación honesta**: no hay
+ningún video de referencia con rotación excesiva real conocida en el dataset — se validó
+que deja de dispararse por el landmark defectuoso del influencer, pero no hay caso
+positivo confirmado para validar sensibilidad de detección.
+
+**Filtro de actividad válida** (`find_activity_start_idx`): se agrega una etapa entre
+`segment_turns` y los 5 detectores de patrones que descarta el tramo inicial hasta
+encontrar `VALID_ACTIVITY_MIN_CONSECUTIVE_TURNS=3` giros seguidos que superen
+`VALID_ACTIVITY_MIN_LEAN_DEG=15.0`/`VALID_ACTIVITY_MIN_DURATION_SEC=0.4` cada uno. Elegido
+sobre otras 4 candidatas (amplitud/duración de un solo giro, alternancia de dirección,
+std móvil sostenida, amplitud por-frame sostenida) midiendo cada una contra un ground
+truth marcado a mano (t=4.0s en video17) — las otras 4 o no filtraban nada, o cortaban un
+giro real a la mitad. Si no encuentra una racha así (video corto, o ningún giro cruza el
+umbral) devuelve 0 y no filtra nada — no puede vaciar el análisis de un video por no
+encontrar el patrón. `asimetria_izq_der`/`inconsistencia_entre_giros` reciben los giros ya
+filtrados pero indexados contra la lista completa de frames; balance/rotación/peso-atrás
+reciben directamente la porción de frames recortada.
+
+**Resultado en los 4 videos del dataset** (detalle completo en
+`before-after-comparison.md`): solo video17 cambió de comportamiento (perdió los 2
+patrones contaminados por ruido de landmark y por el arranque), los otros 3 —incluido
+video2 con errores técnicos reales conocidos— mantuvieron exactamente los mismos patrones
+y severidades. Confirma que ambos fixes son quirúrgicos: corrigen el caso que los motivó
+sin alterar el comportamiento en videos donde el problema original no existía.
+
+**Importante — qué NO confirma ese resultado**: se verificó explícitamente que los otros
+3 videos no tenían el tipo de caso que cada fix ataca (ver detalle en
+`rotation-metric-decision.md` y `activity-filter-decision.md`, secciones "chequeo de
+generalización"). Ruido real de Z sí existe en video1/video16 (picos de 100.2°/71.7°),
+pero nunca fue suficiente para disparar el patrón con ninguna de las dos fórmulas, y la
+fórmula nueva no reduce ese ruido de forma pareja (en video1/video2 el pico máximo sube,
+no baja). Los 3 videos tampoco tienen una fase de arranque de baja intensidad como la del
+influencer (todos arrancan su primer giro ya por encima del umbral de actividad válida).
+Es decir: **"quedaron idénticos" confirma que los fixes no tienen efectos colaterales
+donde el problema original no existía, no que generalicen a un segundo caso real del
+mismo tipo** — ese segundo caso no existe todavía en el dataset.
+
+**`asimetria_izq_der`**: no se tocó (instrucción explícita del sprint). Se agregó
+diagnóstico extra a `instrument_video.py` (diferencia por separado de `knee_flex` vs
+`trunk_lean`, variabilidad dentro de cada lado, persistencia primera/segunda mitad de los
+giros) que reveló que la asimetría no es temporalmente estable en ninguno de los 3 videos
+con suficientes giros por lado (incluido el que hoy dispara "alta"), y que ese disparo
+descansa en apenas 2 vs 3 giros. Recomendación para un sprint aparte (no implementada):
+subir `MIN_TURNS_FOR_ASYMMETRY`, y evaluar exigir estabilidad temporal solo para
+severidades "alta"/"media" — requiere primero confirmación de dominio del founder, ver
+`asymmetry-review.md`.
+
+**Instrumentación**: `instrument_video.py` (nuevo, reusable) genera un reporte de debug
+por video con timestamp/frame/landmarks/visibility/valores geométricos raw y suavizados/
+threshold/disparo-o-no/motivo/giro/actividad-válida para los 5 detectores, más frames
+clave con overlay de pose — reportes guardados en `debug_reports/` (baseline, después de
+rotación, después de filtro de actividad) para las 3 etapas del sprint.
+
+**Condición para pasar a phase-aware (entrada/ápice/transición)**: se considera
+satisfecha con la evidencia de este sprint — los giros que entran a los detectores ya
+excluyen el arranque no relevante (punto 2), las métricas de rotación ya no dependen del
+eje Z ruidoso (punto 1), la exigencia de sostenido evita que un pico aislado dispare un
+patrón, y cada patrón de los 4 videos tiene evidencia trazable en su reporte de debug
+correspondiente. **No se avanzó a phase-aware** — queda para que el usuario lo confirme y
+dé la orden de arranque explícita del próximo sprint.
+
 ## Pendientes / limitaciones conocidas para revisar más adelante
 
 - **Park: prototipo v1 agregado (`analyze_park_video.py`), separado de
