@@ -11,3 +11,5 @@ backend/media/
 **/__pycache__/
 *.pyc
 *.db
+
+.claude/settings.local.json
