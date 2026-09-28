@@ -1,0 +1,317 @@
+{
+  "label": "video16_malo_corto",
+  "video": "C:/Users/santi/ski-app/backend/media/videos/1/1783043e34d74c4dafd21f4f81eb1dfe.mp4",
+  "discipline_tag": "carving",
+  "sample_fps": 8,
+  "min_visibility": 0.5,
+  "sampled_count": 518,
+  "valid_frames": 9,
+  "effective_fps": 7.5,
+  "n_turns": 1,
+  "official_result": {
+    "detected_patterns": [],
+    "confidence_score": 5,
+    "discipline_note": "Este video fue analizado como carving, donde se espera peso adelantado (presion sobre la lengueta de la bota) y un tronco estable y centrado, sin balanceo hacia atras. No se detecto un patron sostenido de peso hacia atras con los umbrales de esta disciplina. Esto es una aproximacion 2D a partir de pose estimada (angulo del tronco respecto a la linea tobillo-rodilla), no una medicion real de presion sobre los esquis o las botas.",
+    "asymmetry_note": "No hay suficientes giros de cada lado para evaluar la asimetria izquierda/derecha con confianza (izquierda=0, derecha=1, minimo requerido=5 por lado). Esto no significa que no haya asimetria -- significa que este video no tiene evidencia suficiente para confirmarla ni para descartarla de forma automatica.",
+    "summary": "El analisis se corrio sobre 1 giro(s) detectado(s), con un nivel de confianza bajo (5/100). No hay datos suficientes para senalar ningun patron con certeza; conviene repetir el analisis con un video mas largo o con mejor visibilidad del esquiador.",
+    "meta": {
+      "frames_sampled": 518,
+      "frames_with_valid_pose": 9,
+      "effective_fps": 7.5,
+      "turns_detected": 1,
+      "turns_izquierda": 0,
+      "turns_derecha": 1,
+      "activity_filter_start_t": 1.87,
+      "activity_filter_frames_discarded": 0,
+      "turns_valid_activity": 1,
+      "frames_valid_activity": 9
+    }
+  },
+  "pattern_report": {
+    "asimetria_izq_der": {
+      "fired": false,
+      "reason": "insuficientes giros incluso para diagnostico (izq=0, der=1)",
+      "thresholds": {
+        "baja": 0.12,
+        "media": 0.22,
+        "alta": 0.35
+      }
+    },
+    "rotacion_excesiva_tren_superior": {
+      "fired": false,
+      "severity": null,
+      "mean": 10.43,
+      "std": 8.12,
+      "proportion_over_baja": 0.333,
+      "sustained_proportion_required": 0.35,
+      "thresholds": {
+        "baja": 15.0,
+        "media": 25.0,
+        "alta": 35.0
+      }
+    },
+    "inconsistencia_entre_giros": {
+      "fired": false,
+      "reason": "insuficientes giros (1)",
+      "thresholds": {
+        "baja": 0.25,
+        "media": 0.4,
+        "alta": 0.6
+      }
+    },
+    "perdida_de_balance": {
+      "fired": false,
+      "severity": null,
+      "thresholds_proportion": {
+        "baja": 0.02,
+        "media": 0.05,
+        "alta": 0.09
+      }
+    },
+    "peso_hacia_atras": {
+      "fired": false,
+      "severity": null,
+      "applicable": true
+    }
+  },
+  "turns": [
+    {
+      "n": 1,
+      "direction": "derecha",
+      "start_idx": 3,
+      "end_idx": 8,
+      "n_frames": 6,
+      "t_start": "00:02.27",
+      "t_end": "00:15.21",
+      "max_trunk_lean_abs": 44.5
+    }
+  ],
+  "frame_rows": [
+    {
+      "frame_idx": 0,
+      "video_frame_idx": 14,
+      "t": 1.868,
+      "t_fmt": "00:01.87",
+      "turn": null,
+      "trunk_lean_raw": -28.76,
+      "trunk_lean_smoothed": -9.48,
+      "knee_flex_left": 12.1,
+      "knee_flex_right": 42.6,
+      "rotation_diff_deg_zaxis": 0.9,
+      "trunk_fore_aft_deg": 24.5,
+      "valid_activity": true,
+      "valid_activity_note": null,
+      "visibility": {
+        "left_shoulder": 0.9996,
+        "right_shoulder": 0.9992,
+        "left_hip": 0.9994,
+        "right_hip": 0.9989,
+        "left_knee": 0.8673,
+        "right_knee": 0.5046,
+        "left_ankle": 0.8194,
+        "right_ankle": 0.5184
+      }
+    },
+    {
+      "frame_idx": 1,
+      "video_frame_idx": 15,
+      "t": 2.001,
+      "t_fmt": "00:02.00",
+      "turn": null,
+      "trunk_lean_raw": -16.62,
+      "trunk_lean_smoothed": -6.24,
+      "knee_flex_left": 24.5,
+      "knee_flex_right": 25.4,
+      "rotation_diff_deg_zaxis": 10.6,
+      "trunk_fore_aft_deg": -11.5,
+      "valid_activity": true,
+      "valid_activity_note": null,
+      "visibility": {
+        "left_shoulder": 0.9997,
+        "right_shoulder": 0.9992,
+        "left_hip": 0.9995,
+        "right_hip": 0.999,
+        "left_knee": 0.8765,
+        "right_knee": 0.5506,
+        "left_ankle": 0.8332,
+        "right_ankle": 0.563
+      }
+    },
+    {
+      "frame_idx": 2,
+      "video_frame_idx": 16,
+      "t": 2.134,
+      "t_fmt": "00:02.13",
+      "turn": null,
+      "trunk_lean_raw": -2.01,
+      "trunk_lean_smoothed": -0.32,
+      "knee_flex_left": 36.9,
+      "knee_flex_right": 43.8,
+      "rotation_diff_deg_zaxis": 3.7,
+      "trunk_fore_aft_deg": 14.7,
+      "valid_activity": true,
+      "valid_activity_note": null,
+      "visibility": {
+        "left_shoulder": 0.9997,
+        "right_shoulder": 0.9993,
+        "left_hip": 0.9995,
+        "right_hip": 0.9991,
+        "left_knee": 0.8478,
+        "right_knee": 0.5758,
+        "left_ankle": 0.7847,
+        "right_ankle": 0.5707
+      }
+    },
+    {
+      "frame_idx": 3,
+      "video_frame_idx": 17,
+      "t": 2.268,
+      "t_fmt": "00:02.27",
+      "turn": 1,
+      "trunk_lean_raw": 16.21,
+      "trunk_lean_smoothed": 13.31,
+      "knee_flex_left": 40.3,
+      "knee_flex_right": 26.0,
+      "rotation_diff_deg_zaxis": 0.3,
+      "trunk_fore_aft_deg": 22.0,
+      "valid_activity": true,
+      "valid_activity_note": null,
+      "visibility": {
+        "left_shoulder": 0.9997,
+        "right_shoulder": 0.9994,
+        "left_hip": 0.9995,
+        "right_hip": 0.9992,
+        "left_knee": 0.8183,
+        "right_knee": 0.5959,
+        "left_ankle": 0.7624,
+        "right_ankle": 0.5927
+      }
+    },
+    {
+      "frame_idx": 4,
+      "video_frame_idx": 18,
+      "t": 2.401,
+      "t_fmt": "00:02.40",
+      "turn": 1,
+      "trunk_lean_raw": 29.59,
+      "trunk_lean_smoothed": 25.54,
+      "knee_flex_left": 31.0,
+      "knee_flex_right": 12.3,
+      "rotation_diff_deg_zaxis": -16.9,
+      "trunk_fore_aft_deg": -17.3,
+      "valid_activity": true,
+      "valid_activity_note": null,
+      "visibility": {
+        "left_shoulder": 0.9997,
+        "right_shoulder": 0.9994,
+        "left_hip": 0.9996,
+        "right_hip": 0.9992,
+        "left_knee": 0.7863,
+        "right_knee": 0.5728,
+        "left_ankle": 0.7275,
+        "right_ankle": 0.5757
+      }
+    },
+    {
+      "frame_idx": 5,
+      "video_frame_idx": 19,
+      "t": 2.535,
+      "t_fmt": "00:02.53",
+      "turn": 1,
+      "trunk_lean_raw": 39.37,
+      "trunk_lean_smoothed": 34.79,
+      "knee_flex_left": 26.3,
+      "knee_flex_right": 13.1,
+      "rotation_diff_deg_zaxis": 6.4,
+      "trunk_fore_aft_deg": -34.0,
+      "valid_activity": true,
+      "valid_activity_note": null,
+      "visibility": {
+        "left_shoulder": 0.9997,
+        "right_shoulder": 0.9994,
+        "left_hip": 0.9996,
+        "right_hip": 0.9993,
+        "left_knee": 0.7831,
+        "right_knee": 0.5769,
+        "left_ankle": 0.7175,
+        "right_ankle": 0.5749
+      }
+    },
+    {
+      "frame_idx": 6,
+      "video_frame_idx": 20,
+      "t": 2.668,
+      "t_fmt": "00:02.67",
+      "turn": 1,
+      "trunk_lean_raw": 44.54,
+      "trunk_lean_smoothed": 23.86,
+      "knee_flex_left": 68.2,
+      "knee_flex_right": 98.4,
+      "rotation_diff_deg_zaxis": 21.8,
+      "trunk_fore_aft_deg": -68.6,
+      "valid_activity": true,
+      "valid_activity_note": null,
+      "visibility": {
+        "left_shoulder": 0.9995,
+        "right_shoulder": 0.9991,
+        "left_hip": 0.9978,
+        "right_hip": 0.9977,
+        "left_knee": 0.766,
+        "right_knee": 0.5417,
+        "left_ankle": 0.6717,
+        "right_ankle": 0.5379
+      }
+    },
+    {
+      "frame_idx": 7,
+      "video_frame_idx": 21,
+      "t": 2.801,
+      "t_fmt": "00:02.80",
+      "turn": 1,
+      "trunk_lean_raw": 44.23,
+      "trunk_lean_smoothed": 17.94,
+      "knee_flex_left": 29.5,
+      "knee_flex_right": 70.8,
+      "rotation_diff_deg_zaxis": -10.0,
+      "trunk_fore_aft_deg": -3.9,
+      "valid_activity": true,
+      "valid_activity_note": null,
+      "visibility": {
+        "left_shoulder": 0.9928,
+        "right_shoulder": 0.9953,
+        "left_hip": 0.9011,
+        "right_hip": 0.9062,
+        "left_knee": 0.7233,
+        "right_knee": 0.5408,
+        "left_ankle": 0.6177,
+        "right_ankle": 0.5279
+      }
+    },
+    {
+      "frame_idx": 8,
+      "video_frame_idx": 114,
+      "t": 15.208,
+      "t_fmt": "00:15.21",
+      "turn": 1,
+      "trunk_lean_raw": -38.42,
+      "trunk_lean_smoothed": 10.07,
+      "knee_flex_left": 76.7,
+      "knee_flex_right": 78.4,
+      "rotation_diff_deg_zaxis": 23.3,
+      "trunk_fore_aft_deg": -5.6,
+      "valid_activity": true,
+      "valid_activity_note": null,
+      "visibility": {
+        "left_shoulder": 0.9916,
+        "right_shoulder": 0.9957,
+        "left_hip": 0.9003,
+        "right_hip": 0.911,
+        "left_knee": 0.6595,
+        "right_knee": 0.5653,
+        "left_ankle": 0.5629,
+        "right_ankle": 0.5307
+      }
+    }
+  ],
+  "saved_frames": []
+}

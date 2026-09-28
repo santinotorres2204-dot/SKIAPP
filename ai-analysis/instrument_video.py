@@ -44,9 +44,18 @@ from analyze_ski_video import (
     SAMPLE_FPS_DEFAULT, MIN_VISIBILITY_DEFAULT, SMOOTHING_WINDOW, LEAN_DEAD_ZONE_DEG,
     _severity_from_thresholds, detect_asymmetry, detect_balance_loss,
     detect_rotation_excessive, detect_inconsistency, detect_weight_position,
-    compute_confidence_score, analyze_video,
+    compute_confidence_score, analyze_video, _metric_robust_to_outlier_turn,
+    build_asymmetry_note,
 )
 from debug_turns import draw_skeleton
+
+# Umbral SOLO para decidir si el reporte de debug calcula los diagnosticos de
+# asimetria (diff, persistencia) -- deliberadamente mas bajo que el umbral de
+# produccion MIN_TURNS_FOR_ASYMMETRY (5 desde asymmetry-fix-decision.md), para
+# poder seguir viendo esos numeros en videos con pocos giros por lado (donde
+# la produccion ya no dispara por sample size) y no perder visibilidad de
+# depuracion.
+MIN_TURNS_FOR_ASYMMETRY_DIAGNOSTIC = 2
 
 
 # ---------------------------------------------------------------------------
@@ -174,58 +183,51 @@ def build_pattern_report(metrics, turns, discipline_tag, metrics_full=None):
         metrics_full = metrics
     report = {}
 
-    # asimetria_izq_der -- sprint "confiabilidad de carving", punto 3:
-    # diagnostico extra (diff exacta por metrica, variabilidad por lado,
-    # PERSISTENCIA de la diferencia en el tiempo). No cambia si el patron
-    # dispara o no (eso sigue siendo detect_asymmetry sin tocar) -- es
-    # evidencia adicional para decidir si la logica necesita cambiar, ver
-    # asymmetry-review.md.
+    # asimetria_izq_der -- sprint "confiabilidad de carving", punto 3
+    # (ver asymmetry-fix-decision.md). Reusa las funciones de produccion
+    # (_metric_robust_to_outlier_turn) en vez de reimplementar el calculo,
+    # para que el reporte de debug nunca se desincronice de la logica real
+    # de 3 condiciones: (1) diff suficiente, (2) muestra minima por lado,
+    # (3) la metrica que decide la severidad no depende de un solo giro.
     left = [t for t in turns if t.direction == "izquierda"]
     right = [t for t in turns if t.direction == "derecha"]
     asym = detect_asymmetry(turns, metrics_full)
-    if len(left) >= MIN_TURNS_FOR_ASYMMETRY and len(right) >= MIN_TURNS_FOR_ASYMMETRY:
-        def rel_diff(a, b):
-            d = (a + b) / 2.0
-            return abs(a - b) / d if d > 1e-9 else 0.0
-        knee_l, knee_r = np.mean([t.mean_knee_flex for t in left]), np.mean([t.mean_knee_flex for t in right])
-        lean_l, lean_r = np.mean([t.mean_trunk_lean_abs for t in left]), np.mean([t.mean_trunk_lean_abs for t in right])
-        diff_knee = rel_diff(knee_l, knee_r)
-        diff_lean = rel_diff(lean_l, lean_r)
-        diff = max(diff_knee, diff_lean)
+    if len(left) >= MIN_TURNS_FOR_ASYMMETRY_DIAGNOSTIC and len(right) >= MIN_TURNS_FOR_ASYMMETRY_DIAGNOSTIC:
+        knee_diff, knee_robust = _metric_robust_to_outlier_turn(turns, "mean_knee_flex")
+        lean_diff, lean_robust = _metric_robust_to_outlier_turn(turns, "mean_trunk_lean_abs")
+        robust_diffs = [d for d, robust in ((knee_diff, knee_robust), (lean_diff, lean_robust)) if robust and d is not None]
+        diff = max(robust_diffs) if robust_diffs else max(d for d in (knee_diff, lean_diff) if d is not None)
 
-        # persistencia: se parte la secuencia de giros (en orden temporal,
-        # no por lado) en 2 mitades y se mide la asimetria de lean por
-        # separado en cada una -- una diferencia "real y estable" deberia
-        # verse parecida en ambas mitades; si una mitad esta muy por
-        # encima de la otra, el agregado de todo el video puede estar
-        # escondiendo una tendencia (ej. fatiga) en vez de describir un
-        # sesgo constante.
-        half = len(turns) // 2
-        def half_asym(ts):
-            l = [t.mean_trunk_lean_abs for t in ts if t.direction == "izquierda"]
-            r = [t.mean_trunk_lean_abs for t in ts if t.direction == "derecha"]
-            if not l or not r:
-                return None
-            return round(float(rel_diff(np.mean(l), np.mean(r))), 4)
-        persistence_first_half = half_asym(turns[:half]) if half >= MIN_TURNS_FOR_ASYMMETRY else None
-        persistence_second_half = half_asym(turns[half:]) if len(turns) - half >= MIN_TURNS_FOR_ASYMMETRY else None
+        # motivo de no-disparo (instrumentacion punto 4: siempre trazar el
+        # motivo, no solo el resultado) -- evalua las 3 condiciones de
+        # detect_asymmetry en el mismo orden que la funcion de produccion.
+        if asym is not None:
+            reason = None
+        elif len(left) < MIN_TURNS_FOR_ASYMMETRY or len(right) < MIN_TURNS_FOR_ASYMMETRY:
+            reason = f"sample size insuficiente para produccion (izq={len(left)}, der={len(right)}, minimo={MIN_TURNS_FOR_ASYMMETRY})"
+        elif not robust_diffs:
+            reason = (f"ninguna metrica es robusta a sacar su giro mas influyente "
+                      f"(knee: diff={round(knee_diff,4) if knee_diff is not None else None} robusto={knee_robust}, "
+                      f"lean: diff={round(lean_diff,4) if lean_diff is not None else None} robusto={lean_robust})")
+        elif _severity_from_thresholds(diff, ASYMMETRY_THRESHOLDS) is None:
+            reason = f"diff robusto {round(diff,4)} por debajo del umbral baja ({ASYMMETRY_THRESHOLDS['baja']})"
+        else:
+            reason = None  # no deberia llegar aca si asym es None; deja rastro por las dudas
 
         report["asimetria_izq_der"] = {
             "fired": asym is not None, "severity": asym["severity"] if asym else None,
-            "value": round(float(diff), 4), "diff_knee_pct": round(diff_knee * 100, 2),
-            "diff_lean_pct": round(diff_lean * 100, 2),
+            "reason": reason,
+            "value": round(float(diff), 4) if diff is not None else None,
+            "knee_diff": round(knee_diff, 4) if knee_diff is not None else None,
+            "knee_diff_robust": knee_robust,
+            "lean_diff": round(lean_diff, 4) if lean_diff is not None else None,
+            "lean_diff_robust": lean_robust,
             "n_left": len(left), "n_right": len(right),
-            "std_lean_left": round(float(np.std([t.mean_trunk_lean_abs for t in left])), 2) if left else None,
-            "std_lean_right": round(float(np.std([t.mean_trunk_lean_abs for t in right])), 2) if right else None,
-            "cv_lean_left": round(float(np.std([t.mean_trunk_lean_abs for t in left]) / lean_l), 4) if left and lean_l > 1e-6 else None,
-            "cv_lean_right": round(float(np.std([t.mean_trunk_lean_abs for t in right]) / lean_r), 4) if right and lean_r > 1e-6 else None,
-            "persistence_first_half": persistence_first_half,
-            "persistence_second_half": persistence_second_half,
+            "min_turns_required": MIN_TURNS_FOR_ASYMMETRY,
             "thresholds": ASYMMETRY_THRESHOLDS,
-            "gap_to_baja": round(ASYMMETRY_THRESHOLDS["baja"] - diff, 4),
         }
     else:
-        report["asimetria_izq_der"] = {"fired": False, "reason": f"insuficientes giros (izq={len(left)}, der={len(right)})", "thresholds": ASYMMETRY_THRESHOLDS}
+        report["asimetria_izq_der"] = {"fired": False, "reason": f"insuficientes giros incluso para diagnostico (izq={len(left)}, der={len(right)})", "thresholds": ASYMMETRY_THRESHOLDS}
 
     # rotacion_excesiva_tren_superior (sprint "confiabilidad de carving":
     # formula (x,y) + criterio de sostenido, ver rotation-metric-decision.md)
@@ -363,6 +365,7 @@ def instrument(video_path, discipline_tag, label, out_dir, sample_fps=SAMPLE_FPS
         "detected_patterns": detected_patterns,
         "confidence_score": confidence,
         "discipline_note": build_discipline_note(discipline_tag, weight_pattern),
+        "asymmetry_note": build_asymmetry_note(turns_va),
         "summary": build_summary(detected_patterns, confidence, len(turns_va)),
         "meta": {
             "frames_sampled": sampled_count, "frames_with_valid_pose": len(frames),

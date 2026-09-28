@@ -83,7 +83,11 @@ SUSTAINED_ROTATION_PROPORTION = 0.35  # mismo criterio/valor que SUSTAINED_BACKW
 INCONSISTENCY_CV_THRESHOLDS = {"baja": 0.25, "media": 0.40, "alta": 0.60}  # coef. variacion
 BALANCE_LOSS_PROPORTION_THRESHOLDS = {"baja": 0.02, "media": 0.05, "alta": 0.09}
 
-MIN_TURNS_FOR_ASYMMETRY = 2   # por lado
+MIN_TURNS_FOR_ASYMMETRY = 5   # por lado (ver asymmetry-fix-decision.md; antes 2 --
+# leave-one-out sobre el dataset de referencia mostro que con 2-3 giros de un lado
+# un solo giro puede mover el diff mas que el rango completo de severidad, con 11
+# apenas 0.04; sin datos entre 4 y 10 para afinar mas, 5 es un piso razonado con
+# margen sobre la zona demostrada como fragil, no un valor calibrado con rigor)
 MIN_TURNS_FOR_INCONSISTENCY = 3
 MIN_VALID_FRAMES_FOR_BALANCE = 20
 MIN_VALID_FRAMES_FOR_ROTATION = 20
@@ -503,23 +507,82 @@ def _severity_from_thresholds(value: float, thresholds: dict) -> Optional[str]:
     return None
 
 
+def _rel_diff(a: float, b: float) -> float:
+    denom = (a + b) / 2.0
+    return abs(a - b) / denom if denom > 1e-9 else 0.0
+
+
+def _metric_side_means(turns: list[Turn], attr: str) -> tuple[Optional[float], Optional[float]]:
+    left = [getattr(t, attr) for t in turns if t.direction == "izquierda"]
+    right = [getattr(t, attr) for t in turns if t.direction == "derecha"]
+    if not left or not right:
+        return None, None
+    return float(np.mean(left)), float(np.mean(right))
+
+
+def _metric_robust_to_outlier_turn(turns: list[Turn], attr: str) -> tuple[Optional[float], bool]:
+    """Condicion 3 (ver asymmetry-fix-decision.md): "direccion consistente +
+    sostenida en al menos 2 giros, no 1 solo giro atipico". Se identifica,
+    dentro de esta metrica, el giro individual mas influyente (el que al
+    sacarlo mas reduce -o invierte- la diferencia) y se chequea si el lado
+    favorecido se mantiene sin el. Validado con leave-one-out real contra el
+    dataset de referencia: sobrevive con muestras grandes (video17, 11/12
+    giros) y falla con muestras chicas (video1 y video2, 3-5 giros por
+    lado) sin importar cual de las dos metricas (knee_flex o trunk_lean) se
+    mire -- confirma que la fragilidad es de tamano de muestra, no de esta
+    metrica en particular."""
+    left0, right0 = _metric_side_means(turns, attr)
+    if left0 is None:
+        return None, False
+    full_diff = _rel_diff(left0, right0)
+    full_favors_right = right0 > left0
+
+    most_influential_reduction: Optional[float] = None
+    holds_without_most_influential = False
+    for i in range(len(turns)):
+        subset = turns[:i] + turns[i + 1:]
+        l, r = _metric_side_means(subset, attr)
+        if l is None:
+            continue
+        d = _rel_diff(l, r)
+        favors_right = r > l
+        # sacar un giro que sostiene el resultado lo reduce; sacar uno que lo
+        # invierte "reduce" el diff original + lo que queda del nuevo (mismo
+        # efecto que perder toda la señal y un poco mas)
+        reduction = (full_diff - d) if favors_right == full_favors_right else (full_diff + d)
+        if most_influential_reduction is None or reduction > most_influential_reduction:
+            most_influential_reduction = reduction
+            holds_without_most_influential = favors_right == full_favors_right
+
+    if most_influential_reduction is None:
+        return full_diff, False  # no se pudo evaluar (no deberia pasar con MIN_TURNS_FOR_ASYMMETRY >= 2)
+    return full_diff, holds_without_most_influential
+
+
 def detect_asymmetry(turns: list[Turn], metrics: list[FrameMetrics]) -> Optional[dict]:
+    """Sprint "confiabilidad de carving" (ver asymmetry-fix-decision.md): exige
+    3 condiciones combinadas, no solo cruzar el umbral de diferencia --
+    (1) diferencia relativa suficiente (umbral ya existente), (2) muestra
+    minima por lado (MIN_TURNS_FOR_ASYMMETRY, subido de 2 a 5 con evidencia de
+    leave-one-out), (3) persistencia: la metrica que decide la severidad no
+    puede depender de un solo giro atipico -- ver _metric_robust_to_outlier_turn."""
     left = [t for t in turns if t.direction == "izquierda"]
     right = [t for t in turns if t.direction == "derecha"]
 
     if len(left) < MIN_TURNS_FOR_ASYMMETRY or len(right) < MIN_TURNS_FOR_ASYMMETRY:
         return None
 
-    def rel_diff(a: float, b: float) -> float:
-        denom = (a + b) / 2.0
-        return abs(a - b) / denom if denom > 1e-9 else 0.0
+    knee_diff, knee_robust = _metric_robust_to_outlier_turn(turns, "mean_knee_flex")
+    lean_diff, lean_robust = _metric_robust_to_outlier_turn(turns, "mean_trunk_lean_abs")
 
-    knee_left = np.mean([t.mean_knee_flex for t in left])
-    knee_right = np.mean([t.mean_knee_flex for t in right])
-    lean_left = np.mean([t.mean_trunk_lean_abs for t in left])
-    lean_right = np.mean([t.mean_trunk_lean_abs for t in right])
+    # Condicion 3 aplicada ANTES de severidad: una metrica que depende de un
+    # solo giro atipico no cuenta para decidir si hay asimetria, sin importar
+    # que tan grande sea su diferencia.
+    robust_diffs = [d for d, robust in ((knee_diff, knee_robust), (lean_diff, lean_robust)) if robust and d is not None]
+    if not robust_diffs:
+        return None
 
-    diff = max(rel_diff(knee_left, knee_right), rel_diff(lean_left, lean_right))
+    diff = max(robust_diffs)
     severity = _severity_from_thresholds(diff, ASYMMETRY_THRESHOLDS)
     if severity is None:
         return None
@@ -528,8 +591,31 @@ def detect_asymmetry(turns: list[Turn], metrics: list[FrameMetrics]) -> Optional
         "pattern": "asimetria_izq_der",
         "severity": severity,
         "sample_size": len(turns),
+        "knee_diff": round(knee_diff, 4) if knee_diff is not None else None,
+        "knee_diff_robust": knee_robust,
+        "lean_diff": round(lean_diff, 4) if lean_diff is not None else None,
+        "lean_diff_robust": lean_robust,
         "occurrences": [_turn_occurrence(t, metrics) for t in turns],
     }
+
+
+def build_asymmetry_note(turns: list[Turn]) -> Optional[str]:
+    """Sprint "confiabilidad de carving" (asymmetry-fix-decision.md): cuando
+    hay muy pocos giros de algun lado, detect_asymmetry devuelve None por
+    falta de evidencia -- pero silencio total se puede malinterpretar como
+    "sin asimetria" cuando en realidad es "no se pudo evaluar". Este note lo
+    deja explicito."""
+    left = sum(1 for t in turns if t.direction == "izquierda")
+    right = sum(1 for t in turns if t.direction == "derecha")
+    if left < MIN_TURNS_FOR_ASYMMETRY or right < MIN_TURNS_FOR_ASYMMETRY:
+        return (
+            f"No hay suficientes giros de cada lado para evaluar la asimetria "
+            f"izquierda/derecha con confianza (izquierda={left}, derecha={right}, "
+            f"minimo requerido={MIN_TURNS_FOR_ASYMMETRY} por lado). Esto no significa "
+            "que no haya asimetria -- significa que este video no tiene evidencia "
+            "suficiente para confirmarla ni para descartarla de forma automatica."
+        )
+    return None
 
 
 def detect_rotation_excessive(metrics: list[FrameMetrics], turns: list[Turn]) -> Optional[dict]:
@@ -922,12 +1008,14 @@ def analyze_video(
     )
     summary = build_summary(detected_patterns, confidence_score, len(turns_valid_activity))
     discipline_note = build_discipline_note(discipline_tag, weight_pattern)
+    asymmetry_note = build_asymmetry_note(turns_valid_activity)
 
     return {
         "video": video_path,
         "discipline_tag": discipline_tag,
         "detected_patterns": detected_patterns,
         "discipline_note": discipline_note,
+        "asymmetry_note": asymmetry_note,
         "confidence_score": confidence_score,
         "summary": summary,
         "meta": {

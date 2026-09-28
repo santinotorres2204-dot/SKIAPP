@@ -211,6 +211,49 @@ patrón, y cada patrón de los 4 videos tiene evidencia trazable en su reporte d
 correspondiente. **No se avanzó a phase-aware** — queda para que el usuario lo confirme y
 dé la orden de arranque explícita del próximo sprint.
 
+## Sprint de seguimiento: `asimetria_izq_der` con evidencia suficiente
+
+Implementa la recomendación que había quedado pendiente en el sprint anterior
+(`asymmetry-review.md`): el patrón ahora exige 3 condiciones combinadas, no solo cruzar el
+umbral de diferencia. Proceso completo y evidencia: `asymmetry-fix-decision.md`.
+
+**Condición 2 (sample size)**: `MIN_TURNS_FOR_ASYMMETRY` sube de 2 a **5** por lado.
+Justificado con leave-one-out sobre el dataset: con 2-3 giros de un lado, sacar un solo
+giro puede mover el diff más que el rango completo de severidad; con 11-12, el mismo
+movimiento es un orden de magnitud menor. Sin videos de referencia con 4-10 giros por lado
+para afinar el punto exacto, 5 es un piso razonado con margen, no calibrado con rigor
+estadístico completo (mismo tipo de limitación que los umbrales de rotación).
+
+**Condición 3 (persistencia)**: implementada como "la métrica que decide la severidad no
+puede depender de un solo giro atípico" — para `knee_flex` y `trunk_lean` por separado, se
+identifica el giro individual más influyente y se chequea si el lado favorecido se
+mantiene sin él; solo las métricas robustas a ese chequeo cuentan para la severidad. Un
+primer intento (exigir el umbral "baja" en las dos mitades del video) se descartó con
+evidencia: hacía desaparecer el único caso positivo confirmado del dataset (video2) sin
+distinguir que su severidad "alta" venía casi enteramente de un solo giro con un valor de
+`knee_flex` extremo (61.6° vs 9-13° en el resto), mientras que su señal de `trunk_lean` (más
+chica pero potencialmente real, creciente hacia el final del video) quedaba descartada
+junto con la anterior sin justificación.
+
+**Hallazgo importante**: al re-verificar giro por giro (no por mitades), ninguna de las
+dos métricas de video2 sobrevive ningún chequeo razonable de robustez — converge con la
+condición 2 en que **5 giros totales es insuficiente para cualquier validación
+estadística**, más allá de cómo se defina "persistente".
+
+**Consecuencia aceptada, decidida junto con el usuario**: video2 (video propio con errores
+conocidos) deja de marcar una asimetría que el usuario confirmó como real. No se relajó el
+criterio para forzar que siguiera disparando (violaría el principio de no ajustar
+thresholds para preservar un caso conocido) — se aceptó el trade-off con mitigación
+explícita: nuevo campo `asymmetry_note` (antepuesto al `summary` en
+`backend/app/analysis_job.py`, mismo mecanismo que `discipline_note`) que dice
+explícitamente "no hay suficientes giros para evaluar con confianza" en vez de dejar la
+ausencia del patrón en silencio total, que podría malinterpretarse como "sin problema".
+
+**Resultado en los 4 videos**: solo video2 pierde el patrón (antes "alta", ahora nada, con
+la nota explícita). video17, video1 y video16 no cambian de resultado — video1 y video16
+ahora también reciben la nota explícita de evidencia insuficiente (antes quedaban
+silenciosos igual, pero sin decir por qué). `confidence_score` no cambia en ningún caso.
+
 ## Pendientes / limitaciones conocidas para revisar más adelante
 
 - **Park: prototipo v1 agregado (`analyze_park_video.py`), separado de

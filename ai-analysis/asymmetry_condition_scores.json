@@ -1,0 +1,264 @@
+{
+  "video17_influencer": {
+    "n_left": 11,
+    "n_right": 12,
+    "base_diff": 0.08857604699844471,
+    "loo_max_delta": 0.0369,
+    "first_half": 0.2169,
+    "second_half": 0.3662,
+    "per_turn": [
+      {
+        "start_idx": 27,
+        "dir": "derecha",
+        "knee": 28.68,
+        "lean": 16.02
+      },
+      {
+        "start_idx": 59,
+        "dir": "izquierda",
+        "knee": 15.15,
+        "lean": 31.12
+      },
+      {
+        "start_idx": 70,
+        "dir": "derecha",
+        "knee": 27.64,
+        "lean": 22.59
+      },
+      {
+        "start_idx": 77,
+        "dir": "izquierda",
+        "knee": 26.32,
+        "lean": 25.96
+      },
+      {
+        "start_idx": 87,
+        "dir": "derecha",
+        "knee": 32.47,
+        "lean": 20.24
+      },
+      {
+        "start_idx": 92,
+        "dir": "izquierda",
+        "knee": 29.21,
+        "lean": 25.07
+      },
+      {
+        "start_idx": 101,
+        "dir": "derecha",
+        "knee": 21.99,
+        "lean": 21.63
+      },
+      {
+        "start_idx": 107,
+        "dir": "izquierda",
+        "knee": 44.47,
+        "lean": 25.76
+      },
+      {
+        "start_idx": 115,
+        "dir": "derecha",
+        "knee": 26.01,
+        "lean": 21.68
+      },
+      {
+        "start_idx": 121,
+        "dir": "izquierda",
+        "knee": 23.24,
+        "lean": 25.27
+      },
+      {
+        "start_idx": 129,
+        "dir": "derecha",
+        "knee": 38.01,
+        "lean": 26.37
+      },
+      {
+        "start_idx": 139,
+        "dir": "izquierda",
+        "knee": 38.8,
+        "lean": 15.91
+      },
+      {
+        "start_idx": 144,
+        "dir": "derecha",
+        "knee": 22.72,
+        "lean": 32.51
+      },
+      {
+        "start_idx": 158,
+        "dir": "derecha",
+        "knee": 65.31,
+        "lean": 31.06
+      },
+      {
+        "start_idx": 169,
+        "dir": "izquierda",
+        "knee": 35.91,
+        "lean": 16.33
+      },
+      {
+        "start_idx": 173,
+        "dir": "derecha",
+        "knee": 24.65,
+        "lean": 27.09
+      },
+      {
+        "start_idx": 184,
+        "dir": "izquierda",
+        "knee": 31.43,
+        "lean": 22.2
+      },
+      {
+        "start_idx": 191,
+        "dir": "derecha",
+        "knee": 42.12,
+        "lean": 19.41
+      },
+      {
+        "start_idx": 197,
+        "dir": "izquierda",
+        "knee": 31.86,
+        "lean": 21.42
+      },
+      {
+        "start_idx": 203,
+        "dir": "derecha",
+        "knee": 45.69,
+        "lean": 28.5
+      },
+      {
+        "start_idx": 214,
+        "dir": "izquierda",
+        "knee": 44.24,
+        "lean": 14.61
+      },
+      {
+        "start_idx": 219,
+        "dir": "derecha",
+        "knee": 27.69,
+        "lean": 32.14
+      },
+      {
+        "start_idx": 229,
+        "dir": "izquierda",
+        "knee": 33.24,
+        "lean": 27.39
+      }
+    ]
+  },
+  "video1_carving_bueno": {
+    "n_left": 3,
+    "n_right": 5,
+    "base_diff": 0.08893935889469176,
+    "loo_max_delta": 0.3584,
+    "first_half": 0.1877,
+    "second_half": 0.5413,
+    "per_turn": [
+      {
+        "start_idx": 2,
+        "dir": "derecha",
+        "knee": 29.56,
+        "lean": 37.14
+      },
+      {
+        "start_idx": 12,
+        "dir": "izquierda",
+        "knee": 43.48,
+        "lean": 30.05
+      },
+      {
+        "start_idx": 24,
+        "dir": "derecha",
+        "knee": 47.82,
+        "lean": 22.52
+      },
+      {
+        "start_idx": 34,
+        "dir": "izquierda",
+        "knee": 66.18,
+        "lean": 41.97
+      },
+      {
+        "start_idx": 44,
+        "dir": "derecha",
+        "knee": 66.91,
+        "lean": 49.58
+      },
+      {
+        "start_idx": 64,
+        "dir": "derecha",
+        "knee": 55.25,
+        "lean": 27.49
+      },
+      {
+        "start_idx": 77,
+        "dir": "izquierda",
+        "knee": 13.43,
+        "lean": 19.52
+      },
+      {
+        "start_idx": 86,
+        "dir": "derecha",
+        "knee": 24.7,
+        "lean": 24.93
+      }
+    ]
+  },
+  "video2_errores_conocidos": {
+    "n_left": 2,
+    "n_right": 3,
+    "base_diff": 0.7790819120287527,
+    "loo_max_delta": 0.5575,
+    "first_half": 0.0183,
+    "second_half": 0.4234,
+    "per_turn": [
+      {
+        "start_idx": 1,
+        "dir": "derecha",
+        "knee": 10.97,
+        "lean": 21.0
+      },
+      {
+        "start_idx": 7,
+        "dir": "izquierda",
+        "knee": 11.17,
+        "lean": 20.62
+      },
+      {
+        "start_idx": 17,
+        "dir": "derecha",
+        "knee": 9.58,
+        "lean": 14.99
+      },
+      {
+        "start_idx": 27,
+        "dir": "izquierda",
+        "knee": 12.88,
+        "lean": 8.19
+      },
+      {
+        "start_idx": 34,
+        "dir": "derecha",
+        "knee": 61.59,
+        "lean": 10.2
+      }
+    ]
+  },
+  "video16_malo_corto": {
+    "n_left": 0,
+    "n_right": 1,
+    "base_diff": null,
+    "loo_max_delta": null,
+    "first_half": null,
+    "second_half": null,
+    "per_turn": [
+      {
+        "start_idx": 3,
+        "dir": "derecha",
+        "knee": 47.59,
+        "lean": 35.39
+      }
+    ]
+  }
+}

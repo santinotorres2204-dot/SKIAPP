@@ -62,13 +62,20 @@ def run_analysis_job(video_id: int, video_path: Path) -> None:
             db.commit()
             raise
 
-        # discipline_note (carving/moguls/freeride/powder, ver NOTES.md) no tiene columna propia
-        # todavia -- se antepone al summary para no perderlo al persistir, en
-        # vez de agregar una migracion para este primer paso.
+        # discipline_note (carving/moguls/freeride/powder, ver NOTES.md) y
+        # asymmetry_note (sprint "confiabilidad de carving", ver
+        # asymmetry-fix-decision.md: evidencia insuficiente para evaluar
+        # asimetria izq/der no debe quedar en silencio total) no tienen
+        # columna propia todavia -- se anteponen al summary para no
+        # perderlos al persistir, en vez de agregar una migracion para este
+        # primer paso.
         summary = result.get("summary")
         discipline_note = result.get("discipline_note")
         if discipline_note:
             summary = f"{discipline_note}\n\n{summary}" if summary else discipline_note
+        asymmetry_note = result.get("asymmetry_note")
+        if asymmetry_note:
+            summary = f"{asymmetry_note}\n\n{summary}" if summary else asymmetry_note
 
         analysis = AnalysisResult(
             video_id=video_id,
