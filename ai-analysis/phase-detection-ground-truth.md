@@ -120,6 +120,14 @@ documento usan el reloj real**: cada frame del pipeline se remapea a su
 timestamp de contenedor. La versión con reloj del pipeline queda en
 `phase_detection/report_pipeline_time.json`.
 
+**Actualización (fix de fps variable)**: el bug ya está arreglado
+(`frame_time_sec` en `analyze_ski_video.py`), así que el pipeline devuelve
+directamente el tiempo real y el script ya no remapea. Las tablas de §4 se
+regeneraron con el fix. Como MediaPipe ahora también recibe el timestamp real
+en `detect_for_video` (su tracking depende de los intervalos), los landmarks
+cambian levemente. Las dos señales recomendadas quedan igual (±0,002 s) y solo
+se mueve la flexión de rodilla, que ya estaba descartada.
+
 **Alcance**: se revisaron los 17 videos del dataset y de `backend/media`. Solo el
 video 17 tiene desfase relevante (0,61 s); el resto queda en ≤0,033 s (un frame).
 
@@ -166,14 +174,14 @@ giro; fuera de eso, "no detectado").
 |---|---|---|---|---|---|---|
 | **com_x − tobillos** | **transición** | **7/8** | −0,050 | **0,054** | **0,062** | **0,112** |
 | com_x − tobillos | ápice | 6/7 | −0,145 | 0,110 | 0,156 | 0,313 |
-| com_x − tobillos | entrada | 6/7 | −0,114 | 0,034 | 0,114 | 0,148 |
-| **trunk_lean (suavizado de producción)** | transición | 7/8 | +0,123 | 0,132 | 0,123 | 0,391 |
+| com_x − tobillos | entrada | 6/7 | −0,113 | 0,033 | 0,113 | 0,148 |
+| **trunk_lean (suavizado de producción)** | transición | 7/8 | +0,124 | 0,132 | 0,124 | 0,390 |
 | **trunk_lean (suavizado de producción)** | **ápice** | **7/7** | +0,025 | 0,101 | **0,093** | **0,180** |
 | trunk_lean (suavizado de producción) | entrada | 7/7 | +0,053 | 0,101 | 0,079 | 0,265 |
 | trunk_lean (suavizado liviano) | ápice | 6/7 | +0,064 | 0,079 | 0,086 | 0,180 |
 | com_x en imagen (sin tendencia, ventana 1 s) | transición | 6/8 | −0,174 | 0,051 | 0,174 | 0,257 |
-| com_x en imagen (sin tendencia, ventana 1 s) | ápice | 5/7 | +0,012 | 0,193 | 0,143 | 0,378 |
-| flexión de rodilla | transición | 6/8 (+2 de más) | +0,095 | 0,100 | 0,105 | 0,240 |
+| com_x en imagen (sin tendencia, ventana 1 s) | ápice | 5/7 | +0,035 | 0,187 | 0,133 | 0,378 |
+| flexión de rodilla | transición | 7/8 (+1 de más) | +0,124 | 0,118 | 0,133 | 0,302 |
 | flexión de rodilla | ápice | 7/7 (+1 de más) | +0,077 | 0,146 | 0,139 | 0,275 |
 
 ### A 28 fps (referencia: cuánto del error es muestreo y cuánto es la señal)
@@ -181,7 +189,7 @@ giro; fuera de eso, "no detectado").
 | Señal | Evento | Detectados | Sesgo | Dispersión | Máx |
 |---|---|---|---|---|---|
 | trunk_lean (suavizado liviano) | ápice | 5/7 | +0,009 | **0,017** | **0,037** |
-| trunk_lean (suavizado liviano) | transición | 5/8 | +0,006 | 0,088 | 0,149 |
+| trunk_lean (suavizado liviano) | transición | 5/8 | +0,006 | 0,088 | 0,150 |
 | com_x − tobillos | transición | 4/8 | −0,053 | 0,069 | 0,142 |
 | com_x − tobillos | ápice | 5/7 | −0,185 | 0,091 | 0,297 |
 | flexión de rodilla | ápice | 6/7 (+3 de más) | +0,073 | 0,176 | 0,312 |
@@ -258,7 +266,8 @@ transiciones, con el margen documentado arriba.
   0,4 s. La regla elegida prefiere perder un evento antes que inventarlo.
 - **El bug de fps variable** no bloquea la detección de fase (que trabaja por
   frame), pero sí cualquier umbral en segundos y los timestamps que ve el
-  usuario en videos con fps variable. Decidir si se arregla antes del punto 1.
+  usuario en videos con fps variable. **Ya está arreglado**, ver §3 y NOTES.md.
+
 
 ## Archivos
 

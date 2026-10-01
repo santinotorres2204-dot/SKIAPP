@@ -34,6 +34,7 @@ from mediapipe.tasks.python.core.base_options import BaseOptions
 sys.path.insert(0, str(Path(__file__).parent))
 
 from analyze_ski_video import (
+    frame_time_sec,
     REQUIRED_LANDMARKS, PoseFrame, compute_frame_metrics, segment_turns,
     format_ts, ensure_pose_landmarker_model, _moving_average,
     ASYMMETRY_THRESHOLDS, ROTATION_THRESHOLDS_DEG, INCONSISTENCY_CV_THRESHOLDS,
@@ -81,7 +82,7 @@ def extract_with_visibility(video_path, sample_fps, min_visibility):
     )
 
     frames, all_sampled = [], []
-    frame_idx, sampled_count, last_ts = 0, 0, -1
+    frame_idx, sampled_count, last_ts, last_t = 0, 0, -1, 0.0
 
     with vision.PoseLandmarker.create_from_options(options) as landmarker:
         while True:
@@ -90,13 +91,16 @@ def extract_with_visibility(video_path, sample_fps, min_visibility):
                 break
             if frame_idx % frame_interval == 0:
                 sampled_count += 1
+                # mismo reloj que analyze_ski_video.extract_pose_sequence
+                # (tiempo real del contenedor, ver frame_time_sec)
+                t = frame_time_sec(cap, frame_idx, source_fps, last_t)
+                last_t = t
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
-                ts_ms = max(int(frame_idx / source_fps * 1000), last_ts + 1)
+                ts_ms = max(int(t * 1000), last_ts + 1)
                 last_ts = ts_ms
                 result = landmarker.detect_for_video(mp_image, ts_ms)
 
-                t = frame_idx / source_fps
                 rec = {"video_frame_idx": frame_idx, "t": t, "detected": False,
                        "visibility": {}, "valid": False}
                 if result.pose_landmarks:
@@ -111,7 +115,7 @@ def extract_with_visibility(video_path, sample_fps, min_visibility):
                         points[name] = np.array([lm.x, lm.y, lm.z])
                     rec["valid"] = visible_enough
                     if visible_enough:
-                        frames.append(PoseFrame(index=sampled_count - 1, t=t, points=points))
+                        frames.append(PoseFrame(index=sampled_count - 1, t=t, points=points, video_frame_idx=frame_idx))
                 all_sampled.append(rec)
             frame_idx += 1
     cap.release()
@@ -296,7 +300,7 @@ def save_key_frames(video_path, frames, metrics, turns, out_dir):
         if idx is None or idx >= len(frames):
             return
         f = frames[idx]
-        vfi = round(f.t * source_fps)
+        vfi = f.video_frame_idx if f.video_frame_idx >= 0 else round(f.t * source_fps)
         raw = grab(vfi)
         if raw is None:
             return

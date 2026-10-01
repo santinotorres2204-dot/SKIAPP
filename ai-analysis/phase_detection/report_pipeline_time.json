@@ -6,18 +6,18 @@
      null,
      null,
      null,
-     -0.202,
+     -0.194,
      null,
-     -0.143,
+     -0.145,
      null,
-     -0.162
+     -0.161
     ],
     "detectados": "3/8",
     "extra": 3,
-    "sesgo": -0.169,
-    "dispersion": 0.025,
-    "max_abs": 0.202,
-    "mae": 0.169
+    "sesgo": -0.167,
+    "dispersion": 0.021,
+    "max_abs": 0.194,
+    "mae": 0.167
    },
    "apice": {
     "errores": [
@@ -39,19 +39,19 @@
    "entrada": {
     "errores": [
      0.365,
+     0.399,
      null,
+     -0.296,
      null,
-     -0.303,
-     null,
-     -0.162,
+     -0.177,
      null
     ],
-    "detectados": "3/7",
-    "extra": 3,
-    "sesgo": -0.033,
-    "dispersion": 0.288,
-    "max_abs": 0.365,
-    "mae": 0.277
+    "detectados": "4/7",
+    "extra": 2,
+    "sesgo": 0.073,
+    "dispersion": 0.312,
+    "max_abs": 0.399,
+    "mae": 0.309
    }
   },
   "trunk_lean prod (MA 5 frames)": {
@@ -60,18 +60,18 @@
      null,
      null,
      null,
-     -0.203,
+     -0.198,
      null,
-     -0.105,
+     -0.106,
      null,
-     -0.135
+     -0.133
     ],
     "detectados": "3/8",
     "extra": 4,
-    "sesgo": -0.148,
-    "dispersion": 0.041,
-    "max_abs": 0.203,
-    "mae": 0.148
+    "sesgo": -0.146,
+    "dispersion": 0.038,
+    "max_abs": 0.198,
+    "mae": 0.146
    },
    "apice": {
     "errores": [
@@ -95,36 +95,36 @@
      0.363,
      null,
      null,
-     -0.315,
+     -0.31,
      null,
      -0.233,
      null
     ],
     "detectados": "3/7",
     "extra": 4,
-    "sesgo": -0.062,
-    "dispersion": 0.302,
+    "sesgo": -0.06,
+    "dispersion": 0.301,
     "max_abs": 0.363,
-    "mae": 0.304
+    "mae": 0.302
    }
   },
   "com_x imagen (detrend 1 s)": {
    "transicion": {
     "errores": [
-     0.171,
+     0.172,
      0.176,
-     0.398,
-     0.233,
+     0.396,
+     0.232,
      0.335,
      null,
-     0.103,
+     0.105,
      0.139
     ],
     "detectados": "7/8",
     "extra": 0,
     "sesgo": 0.222,
-    "dispersion": 0.1,
-    "max_abs": 0.398,
+    "dispersion": 0.099,
+    "max_abs": 0.396,
     "mae": 0.222
    },
    "apice": {
@@ -147,19 +147,19 @@
    "entrada": {
     "errores": [
      0.07,
-     0.078,
-     0.392,
-     0.125,
-     0.288,
+     0.077,
+     0.388,
+     0.124,
+     0.289,
      null,
-     0.255
+     0.254
     ],
     "detectados": "6/7",
     "extra": 0,
-    "sesgo": 0.201,
-    "dispersion": 0.119,
-    "max_abs": 0.392,
-    "mae": 0.201
+    "sesgo": 0.2,
+    "dispersion": 0.118,
+    "max_abs": 0.388,
+    "mae": 0.2
    }
   },
   "com_x - tobillos (/torso)": {
@@ -177,7 +177,7 @@
     "detectados": "3/8",
     "extra": 3,
     "sesgo": 0.109,
-    "dispersion": 0.36,
+    "dispersion": 0.359,
     "max_abs": 0.4,
     "mae": 0.375
    },
@@ -220,7 +220,7 @@
    "transicion": {
     "errores": [
      0.001,
-     -0.126,
+     -0.251,
      null,
      -0.278,
      -0.205,
@@ -230,10 +230,10 @@
     ],
     "detectados": "6/8",
     "extra": 2,
-    "sesgo": -0.158,
-    "dispersion": 0.115,
+    "sesgo": -0.179,
+    "dispersion": 0.119,
     "max_abs": 0.306,
-    "mae": 0.158
+    "mae": 0.179
    },
    "apice": {
     "errores": [
@@ -265,14 +265,14 @@
      null,
      null,
      null,
-     0.142
+     0.141
     ],
     "detectados": "3/8",
     "extra": 3,
     "sesgo": 0.074,
     "dispersion": 0.269,
     "max_abs": 0.364,
-    "mae": 0.264
+    "mae": 0.263
    },
    "apice": {
     "errores": [
@@ -298,15 +298,15 @@
      null,
      0.327,
      null,
-     -0.342,
+     -0.343,
      null
     ],
     "detectados": "3/7",
     "extra": 2,
     "sesgo": 0.103,
     "dispersion": 0.315,
-    "max_abs": 0.342,
-    "mae": 0.331
+    "max_abs": 0.343,
+    "mae": 0.332
    }
   },
   "trunk_lean prod (MA 5 frames)": {
@@ -315,18 +315,18 @@
      0.377,
      null,
      null,
-     -0.296,
+     -0.293,
      null,
      null,
      null,
-     0.016
+     0.014
     ],
     "detectados": "3/8",
     "extra": 3,
-    "sesgo": 0.032,
-    "dispersion": 0.275,
+    "sesgo": 0.033,
+    "dispersion": 0.274,
     "max_abs": 0.377,
-    "mae": 0.23
+    "mae": 0.228
    },
    "apice": {
     "errores": [
@@ -350,37 +350,37 @@
      0.33,
      null,
      null,
-     0.319,
+     0.318,
      null,
      0.382,
      null
     ],
     "detectados": "3/7",
     "extra": 2,
-    "sesgo": 0.344,
-    "dispersion": 0.028,
+    "sesgo": 0.343,
+    "dispersion": 0.027,
     "max_abs": 0.382,
-    "mae": 0.344
+    "mae": 0.343
    }
   },
   "com_x imagen (detrend 1 s)": {
    "transicion": {
     "errores": [
      0.181,
-     0.327,
-     0.212,
-     0.218,
-     0.201,
+     0.333,
+     0.166,
+     0.217,
+     0.2,
      null,
      -0.14,
      null
     ],
     "detectados": "6/8",
     "extra": 3,
-    "sesgo": 0.166,
-    "dispersion": 0.145,
-    "max_abs": 0.327,
-    "mae": 0.213
+    "sesgo": 0.16,
+    "dispersion": 0.144,
+    "max_abs": 0.333,
+    "mae": 0.206
    },
    "apice": {
     "errores": [
@@ -402,19 +402,19 @@
    "entrada": {
     "errores": [
      0.077,
-     0.226,
-     0.065,
+     0.234,
+     0.03,
      0.107,
-     0.154,
+     0.153,
      null,
-     -0.243
+     -0.242
     ],
     "detectados": "6/7",
     "extra": 3,
-    "sesgo": 0.064,
-    "dispersion": 0.148,
-    "max_abs": 0.243,
-    "mae": 0.145
+    "sesgo": 0.06,
+    "dispersion": 0.149,
+    "max_abs": 0.242,
+    "mae": 0.14
    }
   },
   "com_x - tobillos (/torso)": {
@@ -475,7 +475,7 @@
    "transicion": {
     "errores": [
      -0.089,
-     0.302,
+     0.373,
      null,
      -0.243,
      0.027,
@@ -485,10 +485,10 @@
     ],
     "detectados": "7/8",
     "extra": 1,
-    "sesgo": -0.088,
-    "dispersion": 0.185,
-    "max_abs": 0.302,
-    "mae": 0.182
+    "sesgo": -0.078,
+    "dispersion": 0.207,
+    "max_abs": 0.373,
+    "mae": 0.192
    },
    "apice": {
     "errores": [

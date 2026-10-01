@@ -164,8 +164,26 @@ def ensure_pose_landmarker_model() -> Path:
 @dataclass
 class PoseFrame:
     index: int
-    t: float
+    t: float      # segundos, tiempo real del contenedor (ver frame_time_sec)
     points: dict  # nombre -> np.array([x, y, z]) en coords normalizadas de MediaPipe
+    video_frame_idx: int = -1  # posicion del frame en el video original (para buscarlo con CAP_PROP_POS_FRAMES)
+
+
+def frame_time_sec(cap, frame_idx: int, source_fps: float, last_t: float) -> float:
+    """Tiempo real (segundos) del frame recien leido con cap.read().
+
+    No se puede usar frame_idx / CAP_PROP_FPS: en videos con fps variable
+    (tipico de celulares, ej. video_id=17) CAP_PROP_FPS es un promedio y ese
+    reloj se atrasa hasta ~0,6 s respecto del tiempo real -- los timestamps
+    que ve el usuario (y donde salta el video en el Passport) quedaban
+    corridos. Se usa el timestamp del contenedor; si el backend no lo
+    informa (devuelve 0 o retrocede) se cae al calculo por fps, y nunca se
+    devuelve un tiempo menor al anterior.
+    """
+    t = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+    if frame_idx > 0 and t <= 0:
+        t = frame_idx / source_fps
+    return max(t, last_t)
 
 
 def extract_pose_sequence(
@@ -207,6 +225,7 @@ def extract_pose_sequence(
     sampled_count = 0
     frame_idx = 0
     last_timestamp_ms = -1
+    last_t = 0.0
 
     with vision.PoseLandmarker.create_from_options(options) as landmarker:
         while True:
@@ -216,11 +235,13 @@ def extract_pose_sequence(
 
             if frame_idx % frame_interval == 0:
                 sampled_count += 1
+                t = frame_time_sec(cap, frame_idx, source_fps, last_t)
+                last_t = t
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
 
                 # detect_for_video exige timestamps estrictamente crecientes.
-                timestamp_ms = max(int(frame_idx / source_fps * 1000), last_timestamp_ms + 1)
+                timestamp_ms = max(int(t * 1000), last_timestamp_ms + 1)
                 last_timestamp_ms = timestamp_ms
 
                 result = landmarker.detect_for_video(mp_image, timestamp_ms)
@@ -237,8 +258,7 @@ def extract_pose_sequence(
                         points[name] = np.array([lm.x, lm.y, lm.z])
 
                     if visible_enough:
-                        t = frame_idx / source_fps
-                        frames.append(PoseFrame(index=sampled_count - 1, t=t, points=points))
+                        frames.append(PoseFrame(index=sampled_count - 1, t=t, points=points, video_frame_idx=frame_idx))
 
             frame_idx += 1
 

@@ -104,7 +104,11 @@ def main() -> None:
               f"{turn.mean_rotation_diff_abs:<12.1f}")
 
         for label, idx in [("inicio", turn.start_idx), ("pico", peak_idx), ("fin", turn.end_idx)]:
-            video_frame_idx = round(frames[idx].t * source_fps)
+            # t es tiempo real (no frame_idx / fps): con fps variable
+            # round(t * source_fps) apuntaria a otro frame.
+            video_frame_idx = frames[idx].video_frame_idx
+            if video_frame_idx < 0:
+                video_frame_idx = round(frames[idx].t * source_fps)
             raw_frame = grab_frame(video_frame_idx)
             if raw_frame is None:
                 continue

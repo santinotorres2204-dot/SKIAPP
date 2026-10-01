@@ -6,7 +6,11 @@ importa extract_pose_sequence / compute_frame_metrics tal cual.
 
 Uso (desde ai-analysis/, con su venv):
   python phase_detection/measure_phase_signals.py                 # tiempo real del contenedor
-  python phase_detection/measure_phase_signals.py --pipeline-time # reloj del pipeline (frame_idx / fps)
+  python phase_detection/measure_phase_signals.py --pipeline-time # reloj viejo del pipeline (frame_idx / fps)
+
+Desde el fix de fps variable, extract_pose_sequence ya devuelve t en tiempo
+real del contenedor; --pipeline-time reconstruye el reloj de antes del fix
+(frame_idx / CAP_PROP_FPS) para poder reproducir report_pipeline_time.json.
 """
 import json
 import pickle
@@ -58,13 +62,14 @@ def time_mean(t, x, half):
 
 def signals(frames, eff, container_ts, source_fps):
     m = A.compute_frame_metrics(frames)
-    # El video es VFR: el pipeline usa t = frame_idx / fps_promedio, que en este
-    # tramo atrasa 0.4-0.6 s respecto del tiempo real. El ground truth esta en
-    # tiempo real del contenedor, asi que se remapea cada frame a ese reloj.
+    # El video es VFR. El ground truth esta en tiempo real del contenedor, que
+    # es lo que el pipeline devuelve en t desde el fix. El reloj viejo
+    # (frame_idx / fps promedio) atrasaba hasta 0,6 s en este video.
     if REAL_TIME:
-        t = np.array([container_ts[round(x.t * source_fps)] for x in m])
-    else:
         t = np.array([x.t for x in m])
+        assert np.allclose(t, [container_ts[f.video_frame_idx] for f in frames]), "t no es tiempo real"
+    else:
+        t = np.array([f.video_frame_idx / source_fps for f in frames])
     lean = np.array([x.trunk_lean for x in m])
     knee = np.array([(x.knee_flex_left + x.knee_flex_right) / 2 for x in m])
     com_x = np.array([x.com[0] for x in m])

@@ -1,5 +1,32 @@
 # Auditoría diagnóstica profunda — video de carving
 
+> **Nota (2026-09-30): los timestamps de esta auditoría pueden estar
+> desfasados hasta 0,6 s.** El video auditado (`video_id=17`, `.mov`) tiene
+> fps variable, y cuando se escribió esta auditoría el pipeline calculaba
+> `t = frame_idx / CAP_PROP_FPS`, que asume fps constante. Todos los
+> timestamps de abajo están en ese reloj viejo, que va **atrasado** respecto
+> del tiempo real del video. Para ubicar un momento en el video real hay que
+> sumarle aproximadamente:
+>
+> | t en esta auditoría | 0–4 s | 6–10 s | 12 s | 14 s | 16 s | 18–22 s | 24 s | 26–28 s | 30–32 s |
+> |---|---|---|---|---|---|---|---|---|---|
+> | sumar | +0,0–0,2 | +0,1–0,2 | +0,27 | +0,41 | **+0,59** | +0,44–0,49 | +0,37 | +0,18–0,24 | +0,0–0,1 |
+>
+> **Qué sigue siendo válido**: los valores de las métricas, los umbrales,
+> qué frame dispara cada patrón y las conclusiones por patrón. El fix no
+> cambia qué frames se analizan: el pipeline actual da los mismos patrones y
+> la misma confianza sobre este video con el fix y sin él. Ojo: eso no
+> significa que coincidan con los de esta auditoría, porque los sprints
+> posteriores (rotación en XY, filtro de actividad, asimetría) ya los
+> cambiaron.
+>
+> **Qué puede estar mal**: las correspondencias "tal timestamp cae en tal
+> fase del giro" (sección 10 de cada patrón) y cualquier frame que se haya
+> buscado en el video por tiempo. En el tramo 14–24 s el corrimiento
+> (0,4–0,6 s) es cerca de medio giro, así que una "entrada" o "transición"
+> inferida ahí puede ser en realidad la otra fase. No se re-verificaron una
+> por una. Ver `phase-detection-ground-truth.md` §3 y NOTES.md.
+
 **Sprint de solo diagnóstico — no se modificó `analyze_ski_video.py`.** Este documento
 audita, patrón por patrón (dispare o no), la geometría, los umbrales y la evidencia
 visual detrás de cada evaluación que hace el pipeline sobre un video real.

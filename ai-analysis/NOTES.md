@@ -585,15 +585,42 @@ deploy real conviene limitar también el tamaño del request en el reverse proxy
 - **terrain_tag**: falta un campo para el tipo de terreno/pista (pista
   groomed vs fuera de pista, por ejemplo). Pendiente definir si aporta algo
   a las reglas heurísticas o si es solo metadata informativa.
-- **Videos con fps variable: timestamps del pipeline corridos** (encontrado
-  en el punto 0 del sprint phase-aware, ver
-  `phase-detection-ground-truth.md` §3). `extract_pose_sequence` asigna
+- **~~Videos con fps variable: timestamps del pipeline corridos~~ — ARREGLADO
+  (2026-09-30).** Se encontró en el punto 0 del sprint phase-aware (ver
+  `phase-detection-ground-truth.md` §3). `extract_pose_sequence` asignaba
   `t = frame_idx / CAP_PROP_FPS`, que asume fps constante. En el video 17
-  (`.mov`, fps variable) ese reloj atrasa hasta 0,61 s respecto del tiempo
-  real. Afecta los timestamps de `occurrences` (lo que ve el usuario y donde
-  salta el video en el Passport), los umbrales en segundos y la regularidad
-  del muestreo. No afecta qué frame se analiza. De los 17 videos revisados,
-  solo el 17 tiene desfase relevante (el resto ≤0,033 s). Arreglo probable:
-  usar `CAP_PROP_POS_MSEC` del frame leído. Sin arreglar todavía. Puede haber
-  corrido también las correspondencias timestamp→fase de
-  `audit-carving-video.md` (mismo video).
+  (`.mov`, fps variable) ese reloj atrasaba hasta 0,61 s respecto del tiempo
+  real, y así quedaban corridos los timestamps de `occurrences` (lo que ve el
+  usuario y donde salta el video en el Passport).
+
+  **Fix**: `frame_time_sec()` en `analyze_ski_video.py` toma el timestamp del
+  contenedor (`CAP_PROP_POS_MSEC` del frame leído). Si el backend no lo
+  informa, cae al cálculo por fps, y nunca devuelve un tiempo menor al
+  anterior. Ese tiempo real se usa para `PoseFrame.t` y para el timestamp que
+  recibe MediaPipe. `PoseFrame` ganó `video_frame_idx` (posición real del
+  frame), que ahora usan `debug_turns.py` e `instrument_video.py` para buscar
+  el frame, en vez de `round(t * fps)`, que con fps variable apunta a otro.
+  Park y snowboard heredan el fix porque importan la misma función.
+
+  **Validación** (11 corridas: los 7 videos de la base con su disciplina, más
+  prueba1-4): patrones, severidades y confianza idénticos antes y después en
+  todos. En los videos de fps constante los timestamps se mueven 0,03 s o
+  menos. En el video 17 el pipeline actual no detecta patrones (con y sin el
+  fix), así que su efecto se validó con la medición de fases del punto 0:
+  ahora `t` coincide con el tiempo real (lo verifica un `assert`) y las
+  métricas de las señales recomendadas no cambian (±0,002 s).
+
+  **Base**: se corrigieron los 162 timestamps del `AnalysisResult` del video
+  17, sin reprocesar (cada timestamp viejo identifica exactamente un frame y
+  se reemplazó por el tiempo real de ese frame; solo cambió
+  `detected_patterns`, y dentro de él solo los timestamps). Corrimientos de 0
+  a +0,62 s. Ejemplo: el pico de un giro pasó de 16,35 a 16,93 s, que coincide
+  con el ápice marcado a mano en el ground truth (16,90). Ojo: ese resultado
+  guardado (confianza 97, rotación e inconsistencia bajas) es del 14/09, de
+  antes de los sprints de carving; el pipeline actual no detecta patrones en
+  este video (confianza 93).
+
+  **Queda**: el muestreo sigue tomando 1 de cada N frames, que con fps
+  variable no son intervalos de tiempo exactamente iguales. No afecta los
+  timestamps, solo la regularidad del muestreo. `audit-carving-video.md` tiene
+  una nota con la tabla de corrimiento para leer sus timestamps.
