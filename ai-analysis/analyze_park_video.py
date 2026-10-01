@@ -9,7 +9,7 @@ Un salto de park no genera esa secuencia, asi que necesita sus propios
 patrones de screening. Reutiliza de analyze_ski_video.py solo lo que es
 geometria generica y no especifica de giros: extraccion de pose (MediaPipe),
 metricas por frame (centro de masa, escala de torso, inclinacion de tronco)
-y utilidades (_moving_average, format_ts, _severity_from_thresholds).
+y utilidades (format_ts, _severity_from_thresholds).
 
 Patrones que intenta detectar (todos como screening visual, no biomecanica
 de precision — igual disclaimer que analyze_ski_video.py):
@@ -40,6 +40,13 @@ modo tiene un tope duro bajo (ver PARK_PROTOTYPE_MAX_CONFIDENCE) sea cual sea
 la cantidad de datos, precisamente porque el prototipo en si no esta
 calibrado — mas frames no arreglan umbrales adivinados.
 
+*** NO CONECTADO AL FLUJO REAL ***
+backend/app/analysis_job.py sigue mandando los videos de park a
+analyze_ski_video.py a proposito: con pose a distancia + paneo de camara
+este modulo da falsos positivos de posible_caida y aterrizaje_inestable
+(caso park4). Requiere mas videos reales de park antes de conectarlo — ver
+NOTES.md "Enrutamiento de park".
+
 Uso:
   python analyze_park_video.py park1.mp4
   python analyze_park_video.py park1.mp4 -o resultado_park1.json --pretty
@@ -61,7 +68,6 @@ from analyze_ski_video import (
     SAMPLE_FPS_DEFAULT,
     FrameMetrics,
     PoseFrame,
-    _moving_average,
     _severity_from_thresholds,
     compute_frame_metrics,
     extract_pose_sequence,
@@ -99,8 +105,16 @@ FALL_ANGLE_SEVERITY_DEG = {"baja": 55.0, "media": 65.0, "alta": 75.0}
 
 # Perdida de tracking vs caida real: si en la ventana de analisis post-salto
 # falto mas de esta proporcion de los frames muestreados esperados (gap entre
-# frames validos), se reporta como dato insuficiente, no como caida.
+# frames validos), se reporta como dato insuficiente, no como caida. La
+# ventana arranca en el ultimo frame valido ANTES del aterrizaje, para que
+# un hueco largo sin pose justo antes de "aterrizar" cuente como perdida de
+# tracking (ver evaluate_landing).
 FALL_GAP_RATIO_THRESHOLD = 0.35
+
+# Todas las ventanas *_SEC de arriba se miden en tiempo real (FrameMetrics.t),
+# no en posicion dentro de la lista de frames validos: con huecos de tracking,
+# "N frames validos despues" puede ser varios segundos despues (ver NOTES.md,
+# caso video id=18).
 
 TARGET_JUMPS_FOR_PROTOTYPE = 5  # a partir de esta cantidad de saltos, "cobertura" maxima por ese factor
 
@@ -117,10 +131,20 @@ class JumpEvent:
     fall_torsos: float   # cuanto bajo desde el pico hasta el aterrizaje, en alturas de torso
 
 
-def find_jumps(metrics: list[FrameMetrics], effective_fps: float) -> tuple[list[JumpEvent], float]:
+def _in_time_window(times: np.ndarray, lo_t: float, hi_t: float) -> np.ndarray:
+    """Indices (en la lista de frames validos) cuyo timestamp cae en [lo_t, hi_t]."""
+    return np.nonzero((times >= lo_t - 1e-9) & (times <= hi_t + 1e-9))[0]
+
+
+def find_jumps(metrics: list[FrameMetrics]) -> tuple[list[JumpEvent], float]:
     """Busca picos bruscos de elevacion (com_y invertido) que suben y vuelven
     a bajar dentro de una ventana corta — a diferencia del vaivén gradual y
     mayormente lateral de un giro, que no genera este patron de elevacion.
+
+    Las ventanas (baseline, maximo local, busqueda de aterrizaje, separacion
+    entre saltos) se miden en segundos sobre los timestamps reales de cada
+    frame valido, no en cantidad de frames: un aterrizaje tiene que estar
+    cerca en el tiempo del pico, aunque en el medio haya frames sin pose.
 
     Devuelve (saltos_confirmados, escala_de_torso_de_referencia).
     """
@@ -128,49 +152,49 @@ def find_jumps(metrics: list[FrameMetrics], effective_fps: float) -> tuple[list[
     if n < 3:
         return [], 0.0
 
+    times = np.array([m.t for m in metrics])
     elevation = np.array([-m.com[1] for m in metrics])  # y de MediaPipe crece hacia abajo
     torso_scale = np.array([m.torso_scale for m in metrics])
     ref_scale = float(np.median(torso_scale))
     if ref_scale < 1e-6:
         return [], ref_scale
 
-    baseline_window = max(3, round(effective_fps * JUMP_BASELINE_WINDOW_SEC))
-    baseline = _moving_average(elevation, baseline_window)
+    half_baseline = JUMP_BASELINE_WINDOW_SEC / 2
+    baseline = np.array([
+        float(np.mean(elevation[_in_time_window(times, t - half_baseline, t + half_baseline)]))
+        for t in times
+    ])
     deviation = (elevation - baseline) / ref_scale
-
-    half_window = max(1, round(effective_fps * JUMP_PEAK_HALF_WINDOW_SEC))
-    fall_search_frames = max(1, round(effective_fps * LANDING_SEARCH_SEC))
 
     candidates: list[JumpEvent] = []
     for i in range(n):
         if deviation[i] < JUMP_MIN_RISE_TORSOS:
             continue
-        lo, hi = max(0, i - half_window), min(n, i + half_window + 1)
-        if deviation[i] < np.max(deviation[lo:hi]) - 1e-9:
+        neighborhood = _in_time_window(times, times[i] - JUMP_PEAK_HALF_WINDOW_SEC, times[i] + JUMP_PEAK_HALF_WINDOW_SEC)
+        if deviation[i] < np.max(deviation[neighborhood]) - 1e-9:
             continue  # no es maximo local dentro de su ventana
 
-        hi_fall = min(n, i + 1 + fall_search_frames)
-        if hi_fall <= i + 1:
-            continue  # pico pegado al final del clip, no hay forma de confirmar el arco
-        future = deviation[i + 1:hi_fall]
-        min_future_offset = int(np.argmin(future))
-        fall_amount = float(deviation[i] - future[min_future_offset])
+        future_idx = _in_time_window(times, times[i], times[i] + LANDING_SEARCH_SEC)
+        future_idx = future_idx[future_idx > i]
+        if len(future_idx) == 0:
+            continue  # sin frames validos poco despues del pico: no hay forma de confirmar el arco
+        landing_idx = int(future_idx[np.argmin(deviation[future_idx])])
+        fall_amount = float(deviation[i] - deviation[landing_idx])
         if fall_amount < JUMP_MIN_FALL_TORSOS:
             continue  # no vuelve a bajar lo suficiente: probablemente deriva de camara, no salto
 
         candidates.append(JumpEvent(
             peak_idx=i,
-            landing_idx=i + 1 + min_future_offset,
+            landing_idx=landing_idx,
             rise_torsos=float(deviation[i]),
             fall_torsos=fall_amount,
         ))
 
     # de-duplicar picos muy cercanos entre si, quedandose con el mas alto
     candidates.sort(key=lambda j: j.peak_idx)
-    min_sep_frames = max(1, round(effective_fps * JUMP_MIN_SEPARATION_SEC))
     deduped: list[JumpEvent] = []
     for c in candidates:
-        if deduped and c.peak_idx - deduped[-1].peak_idx < min_sep_frames:
+        if deduped and times[c.peak_idx] - times[deduped[-1].peak_idx] < JUMP_MIN_SEPARATION_SEC:
             if c.rise_torsos > deduped[-1].rise_torsos:
                 deduped[-1] = c
             continue
@@ -200,14 +224,15 @@ def evaluate_landing(
     frames: list[PoseFrame],
     ref_scale: float,
     effective_fps: float,
+    sampled_count: int,
 ) -> LandingEvaluation:
-    n = len(metrics)
     landing_idx = jump.landing_idx
+    times = np.array([m.t for m in metrics])
+    t_landing = times[landing_idx]
 
     # --- estabilidad del aterrizaje: desplazamiento de COM frame a frame ---
-    instability_frames = max(1, round(effective_fps * LANDING_INSTABILITY_WINDOW_SEC))
-    stab_end = min(n, landing_idx + 1 + instability_frames)
-    coms = np.array([m.com for m in metrics[landing_idx:stab_end]])
+    stab_idx = _in_time_window(times, t_landing, t_landing + LANDING_INSTABILITY_WINDOW_SEC)
+    coms = np.array([metrics[k].com for k in stab_idx])
     max_com_delta = 0.0
     if len(coms) >= 2 and ref_scale > 1e-6:
         deltas = np.linalg.norm(np.diff(coms, axis=0), axis=1) / ref_scale
@@ -215,28 +240,25 @@ def evaluate_landing(
     unstable = max_com_delta >= LANDING_INSTABILITY_SEVERITY["baja"]
 
     # --- posible caida vs perdida de tracking ---
-    fall_context_frames = max(1, round(effective_fps * FALL_CONTEXT_WINDOW_SEC))
-    fall_end = min(n, landing_idx + 1 + fall_context_frames)
-    fall_metrics_segment = metrics[landing_idx:fall_end]
-    fall_frames_segment = frames[landing_idx:fall_end]
-
-    max_trunk_angle = 0.0
-    if fall_metrics_segment:
-        max_trunk_angle = float(max(abs(m.trunk_lean) for m in fall_metrics_segment))
+    fall_idx = _in_time_window(times, t_landing, t_landing + FALL_CONTEXT_WINDOW_SEC)
+    max_trunk_angle = float(max(abs(metrics[k].trunk_lean) for k in fall_idx))
     near_horizontal = max_trunk_angle >= FALL_ANGLE_SEVERITY_DEG["baja"]
 
     # gap_ratio: proporcion de frames muestreados que MediaPipe NO pudo trackear
-    # dentro de esta ventana (frames.index es la posicion en el stream muestreado
-    # completo; un salto entre indices consecutivos > 1 significa frames perdidos).
-    gap_ratio = 0.0
-    if len(fall_frames_segment) >= 2:
-        idx_span = fall_frames_segment[-1].index - fall_frames_segment[0].index
-        expected = idx_span + 1
-        if expected > 0:
-            gap_ratio = 1.0 - (len(fall_frames_segment) / expected)
-    elif len(fall_frames_segment) <= 1 and fall_end > landing_idx + 1:
-        # se esperaban varios frames en la ventana y no quedo casi ninguno valido
-        gap_ratio = 1.0
+    # (frames[k].index es la posicion en el stream muestreado completo). El
+    # tramo evaluado va desde el ultimo frame valido ANTES del aterrizaje hasta
+    # el final de la ventana de caida (recortada al final del clip). Arrancar
+    # antes del aterrizaje es a proposito: un frame valido aislado despues de
+    # un hueco largo sin pose no puede contar como "0% de perdida de tracking"
+    # solo porque es el unico frame de su ventana.
+    span_start = frames[landing_idx - 1].index if landing_idx > 0 else frames[landing_idx].index
+    span_end = min(
+        sampled_count - 1,
+        frames[landing_idx].index + max(1, round(effective_fps * FALL_CONTEXT_WINDOW_SEC)),
+    )
+    expected = span_end - span_start + 1
+    valid_in_span = sum(1 for f in frames if span_start <= f.index <= span_end)
+    gap_ratio = 1.0 - (valid_in_span / expected)
 
     tracking_insufficient = gap_ratio >= FALL_GAP_RATIO_THRESHOLD
     possible_fall = near_horizontal and not tracking_insufficient
@@ -411,8 +433,10 @@ def analyze_park_video(
         }
 
     metrics = compute_frame_metrics(frames)
-    jumps, ref_scale = find_jumps(metrics, effective_fps)
-    evaluations = [evaluate_landing(j, metrics, frames, ref_scale, effective_fps) for j in jumps]
+    jumps, ref_scale = find_jumps(metrics)
+    evaluations = [
+        evaluate_landing(j, metrics, frames, ref_scale, effective_fps, sampled_count) for j in jumps
+    ]
 
     detected_patterns = build_detected_patterns(evaluations, metrics)
     insufficient_events = build_insufficient_data_events(evaluations, metrics)

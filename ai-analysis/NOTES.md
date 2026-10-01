@@ -41,7 +41,8 @@ del caso de park, no mejor detección real.
 **powder**, interpreta una nueva métrica (`trunk_fore_aft_deg`) con umbrales
 distintos por disciplina. **all_mountain** (y **park**) siguen con el
 análisis genérico sin este agregado — no se tocó nada de lo existente para
-ellas. all_mountain queda afuera a propósito: al mezclar terrenos no tiene
+ellas (que park siga pasando por este script es a propósito, ver
+"Enrutamiento de park" más abajo). all_mountain queda afuera a propósito: al mezclar terrenos no tiene
 una postura ideal única contra la cual evaluar peso adelante/atrás.
 
 **La métrica** (`_trunk_fore_aft_deg` en el código): ángulo del tronco
@@ -254,6 +255,125 @@ la nota explícita). video17, video1 y video16 no cambian de resultado — video
 ahora también reciben la nota explícita de evidencia insuficiente (antes quedaban
 silenciosos igual, pero sin decir por qué). `confidence_score` no cambia en ningún caso.
 
+## Enrutamiento de park: se intentó conectar `analyze_park_video.py` y se revirtió
+
+**Estado final (2026-09-30)**: `backend/app/analysis_job.py` sigue
+mandando **todos** los videos, park incluido, a `analyze_ski_video.py`.
+Para park eso da un resultado sin sentido semántico ("giros" en un salto),
+pero no hace afirmaciones específicas falsas como "posible caída", y eso es
+lo que hoy haría el prototipo de park. `analyze_park_video.py` queda como
+**prototipo no conectado a producción**, igual que snowboard: necesita más
+videos reales de park para validarse, en particular contra el problema de
+pose a distancia + paneo de cámara, que genera falsos positivos tanto de
+`posible_caida` como de `aterrizaje_inestable` (detalle abajo). Las
+mejoras de los puntos 1 y 2 sí quedan en el script, sin activar.
+
+**Cómo se llegó a esto.** `analysis_job.py` nunca miraba `discipline_tag`
+para elegir el script, así que `analyze_park_video.py` no se ejecutaba en
+el flujo real. Se vio con el video id=18 (park, ski): el 15/100 guardado
+parecía el tope de snowboard, pero era cobertura real de la fórmula de ski,
+40·(19/109) + 60·(2/15) = 14,97. Se probó enrutar `discipline_tag ==
+"park"` al script de park (snowboard sin tocar) y se re-corrió el id=18.
+
+**Re-corrida del video id=18 con el script de park** (antes del fix):
+
+| | Antes (ski) | Ahora (park) |
+|---|---|---|
+| Frames válidos | 19/109 | 19/109 (misma extracción) |
+| Unidad analizada | 2 giros | 1 salto |
+| Patrones | `rotacion_excesiva_tren_superior` baja (guardado 24/09; re-corrido hoy con ski ya no sale, porque `MIN_VALID_FRAMES_FOR_ROTATION=20`) | `salto_detectado` + `posible_caida` **alta** (tronco 93,8°) |
+| Confianza | 15 | 19 = 50·(19/109) + 50·(1/5). No llega al tope de 25 |
+
+**`posible_caida` alta es un falso positivo, confirmado mirando los
+frames**: el esquiador salta (~7–8,8 s), cae limpio y se aleja esquiando de
+pie (9,6 s y 10,1 s). Lo que lo produce:
+
+1. El "aterrizaje" (`t_landing` 12,00 s) es el **último** frame válido del
+   clip y llega después de un hueco de 14 frames muestreados (~1,9 s) sin
+   pose. Las ventanas de `find_jumps` y `evaluate_landing` cuentan posición
+   en la lista de frames válidos, no tiempo real, así que un frame a 3,2 s
+   del pico termina tratado como el aterrizaje (`LANDING_SEARCH_SEC` = 1,5).
+   Es la misma limitación ya anotada en el caso park1.
+2. El chequeo de tracking insuficiente **no lo atrapa**: la ventana de caída
+   tiene un solo frame (es el último del clip), y la rama
+   `len(fall_frames_segment) <= 1` exige `fall_end > landing_idx + 1`, cosa
+   que no pasa al final de la lista. Resultado: `gap_ratio = 0`. Además, el
+   hueco que importa es el de *antes* del aterrizaje, y ese no se mide.
+3. El esquiador es muy chico en el frame (escala de torso de referencia
+   0,015, con valores por frame que van de 0,0016 a 0,166). A esa escala
+   `trunk_lean` no tiene sentido: da ~90° en la aproximación y ±150° en el
+   aire con el esquiador derecho. Es el mismo problema de encuadre
+   documentado al principio de este archivo.
+
+### Fix de los puntos 1 y 2 en `analyze_park_video.py` (incluido, sin conectar)
+
+- **Punto 1**: todas las ventanas de `find_jumps` y `evaluate_landing` se
+  miden en segundos sobre `FrameMetrics.t`: baseline, máximo local,
+  búsqueda de aterrizaje, separación entre saltos, estabilidad y caída. El
+  baseline pasó de `_moving_average` (que rellena con ceros en los bordes)
+  a una media de los frames válidos que caen dentro de ±1 s.
+- **Punto 2**: el `gap_ratio` se calcula desde el último frame válido
+  *antes* del aterrizaje hasta el final de la ventana de caída. Un frame
+  aislado después de un hueco largo ya no da 0% de pérdida de tracking.
+
+**Hallazgo de la validación: park4 y el video id=18 son el mismo clip**
+(mismo salto y esquiador, 109 frames muestreados en los dos; el id=18 es
+una versión `.mov`). park1/2/3 dan 0 frames con pose a 8 fps. El set de
+regresión real es, entonces, un solo salto más park1 a 15 fps.
+
+| Video | Antes | Después |
+|---|---|---|
+| park1/2/3 (8 fps) | 0 frames, nada | igual |
+| park1 (15 fps) | 21/81, 0 saltos | 1 salto + `aterrizaje_inestable` alta + evento de tracking insuficiente (`gap_ratio` 0,72). El video tiene una caída real; no se afirma por falta de datos, que es lo correcto |
+| v18 | salto + `posible_caida` alta (falsa) | salto + evento de tracking insuficiente (`gap_ratio` 0,80). **La falsa caída desaparece** |
+| park4 | salto, sin caída (correcto por casualidad: aterrizaje evaluado a 13,6 s, 4,4 s después del pico) | salto + `aterrizaje_inestable` alta + `posible_caida` alta, **ambas falsas** (frames revisados: a los 10,0 s está de pie carveando) |
+
+La regresión de park4 no la causa el fix: el fix la deja a la vista. Al
+evaluar el aterrizaje en el momento correcto (10,0 s), la pose de ese
+momento es inutilizable. `trunk_lean` da entre −130° y −169° (hombros
+*debajo* de las caderas) con el esquiador derecho, y el centro de masa
+salta 1,75 torsos entre dos frames porque la cámara sigue al esquiador.
+Antes, el bug del punto 1 evaluaba un frame 4,4 s más tarde que, por
+casualidad, tenía una pose razonable.
+
+**Por qué se revirtió el enrutamiento en vez de parchear.** Un filtro que
+descarte el tronco invertido arreglaría `posible_caida` en park4, pero no
+`aterrizaje_inestable` (que sale del paneo de cámara, no del ángulo), y
+además ya es meterse en el problema de encuadre/distancia, que es de todo
+el pipeline y no de este fix puntual. Con un solo salto real para validar,
+no hay forma de saber si un parche así generaliza.
+
+**Resultado guardado en la base para el id=18: no se actualizó** (sigue el
+del 24/09, `rotacion_excesiva_tren_superior` baja, con la lógica de ski de
+antes del sprint de carving). Decisión explícita: se deja como está.
+
+**Para reconectar park** hace falta, como mínimo: más videos reales de park
+con encuadre cercano (park4/id=18 es hoy el único salto con pose usable),
+y resolver o acotar los falsos positivos de pose a distancia + paneo de
+cámara en `posible_caida` y `aterrizaje_inestable`. Al reconectar, recordar
+que `insufficient_data_events` no tiene columna propia y hay que
+persistirlo (por ejemplo dentro de `raw_pose_data`), o se pierde.
+
+### Hallazgo aparte: la confianza no refleja que la pose está al límite de lo utilizable
+
+`compute_confidence_score_park` (igual que la de ski) solo mira *cuántos*
+frames tienen pose y cuántos saltos o giros hay, no *qué tan usable* es
+esa pose. En este clip:
+
+- Escala de torso de referencia: 0,015 del alto del frame en el id=18
+  (~29 px de 1920) y 0,027 en park4. Dentro del mismo clip la escala varía
+  ~100× (0,0016 a 0,166), señal de keypoints inestables.
+- Lecturas geométricamente imposibles para la situación: tronco invertido
+  (|lean| > 120°) con el esquiador de pie, y ~90° durante la aproximación
+  al salto en el id=18.
+
+Con eso, el 19/100 del id=18 transmite "pocos datos", pero no "los datos
+que hay no son confiables". Ideas para cuando se aborde el problema de
+encuadre (no implementadas): ponderar la confianza por escala de torso
+mediana y por su estabilidad dentro del clip, o descartar como inválidos
+los frames con geometría implausible (por ejemplo tronco invertido fuera de
+la fase aérea) antes de evaluar patrones.
+
 ## Pendientes / limitaciones conocidas para revisar más adelante
 
 - **Park: prototipo v1 agregado (`analyze_park_video.py`), separado de
@@ -291,6 +411,11 @@ silenciosos igual, pero sin decir por qué). `confidence_score` no cambia en nin
   ahí la lógica funcionó end-to-end: detectó el único salto del clip sin
   falsos positivos de inestabilidad/caída. Los otros tres fallan por el
   mismo motivo ya documentado arriba (sujeto chico en el frame).
+  **Corrección (2026-09-30)**: ese "sin falsos positivos" era casualidad.
+  El aterrizaje se evaluaba 4,4 s después del pico por un bug de ventanas.
+  Con el bug arreglado, park4 da caída e inestabilidad falsas, y por eso el
+  prototipo sigue **sin conectar a producción**. Ver "Enrutamiento de park"
+  más arriba.
 
   **Caso especial — park1 (revisado manualmente frame a frame):** el video
   sí contiene un salto con una caída real y visible (aterrizaje con el

@@ -27,7 +27,11 @@ def _run_mediapipe(video_path: Path, discipline_tag: str | None) -> dict:
         # Interpretacion especifica por disciplina (por ahora carving, moguls,
         # freeride y powder la usan; park y all_mountain ignoran el flag y
         # siguen con el analisis generico -- ver NOTES.md "Interpretacion por
-        # disciplina").
+        # disciplina"). park sigue pasando por este script A PROPOSITO:
+        # analyze_park_video.py da falsos positivos de caida/inestabilidad
+        # con pose a distancia + paneo de camara, y queda desconectado
+        # (igual que snowboard) hasta validarlo con mas videos reales -- ver
+        # NOTES.md "Enrutamiento de park".
         cmd += ["--discipline", discipline_tag]
     proc = subprocess.run(
         cmd,
