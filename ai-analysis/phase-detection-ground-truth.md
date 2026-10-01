@@ -6,7 +6,14 @@ medición y los reportes. Importa las funciones del pipeline tal cual.
 
 ## Resumen
 
-- **Recomendación**: detectar la fase **combinando dos señales que el pipeline ya
+> **Actualización (2026-09-30), ver §7**: la validación en un segundo set
+> (prueba4 desde atrás, prueba2 de frente) **no confirmó** la ventaja del
+> centro de masa − tobillos para la transición, y mostró un margen bastante
+> más ancho que el del video 17: peor caso de 0,33–0,39 s a 8 fps. La
+> recomendación revisada está en §7. Lo que sigue en este resumen es el
+> resultado original del punto 0, solo con el video 17.
+
+- **Recomendación (original, revisada en §7)**: detectar la fase **combinando dos señales que el pipeline ya
   calcula**, cada una para el evento en el que es mejor:
   - **Transición** = cruce por cero del centro de masa lateral **relativo a los
     tobillos** (`com_x − tobillos_x`, normalizado por torso). Error a 8 fps:
@@ -268,6 +275,108 @@ transiciones, con el margen documentado arriba.
   frame), pero sí cualquier umbral en segundos y los timestamps que ve el
   usuario en videos con fps variable. **Ya está arreglado**, ver §3 y NOTES.md.
 
+## 7. Validación en un segundo set de videos
+
+**Elección del video.** Se revisaron prueba1-4 mirando solo imágenes:
+
+- **prueba1, prueba2 y prueba3**: cámara fija **de frente** (el ángulo opuesto
+  al video 17). Pero ninguno tiene 5 giros de carving claros. prueba1 y
+  prueba3 muestran al esquiador chico casi todo el clip y con poca
+  inclinación (prueba3 parece un principiante). prueba2 es esquí de nieve
+  polvo derrapado: tiene **2 giros completos con inclinación clara**, y el
+  resto del tiempo el esquiador gira los esquís casi sin inclinarse. Además
+  tiene un corte de edición a los ~8,35 s. En la base figura como `carving`
+  (es el video_id=2), pero visualmente no lo es.
+- **prueba4**: cámara de seguimiento **desde atrás** (mismo ángulo que el 17,
+  pero otro esquiador, otra cámara, fps constante y pista pisada). Tiene
+  giros sostenidos, pero la cámara pierde al esquiador dos veces (9,0–10,1 y
+  11,9–12,9 s).
+
+En el dataset **no existe un video de frente con 5 giros de carving
+claros**. Por eso se usaron los dos: prueba4 para tener giros y prueba2 para
+tener el otro ángulo.
+
+**Método**: igual que en §2. Grillas cada 0,1 s, ground truth guardado en
+`phase_detection/ground_truth_video2.json` **antes** de calcular señales. En
+prueba2 el recorte sigue al esquiador por el **color** de la campera, no por
+pose, para no usar ninguna señal candidata. Cada evento lleva confianza
+`alta` o `baja` (giro derrapado, poca inclinación o rango ancho); los números
+de abajo usan solo los de confianza alta.
+
+| Video | Ángulo | Giros completos (confianza alta) | Transiciones (alta) | Ápices (alta) |
+|---|---|---|---|---|
+| prueba4 | detrás | 2 (+1 con el ápice fuera de cuadro, +1 derrapado) | 4 | 2 |
+| prueba2 | frente | 2 | 2 | 2 |
+
+**Resultados a 8 fps (producción)**, misma regla de eventos que §4:
+
+| Señal → evento | video 17 | set 2 (prueba4 + prueba2) | Total |
+|---|---|---|---|
+| com_x − tobillos → transición | 7/8, error medio 0,06, máx 0,11 | 5/6, error medio 0,15, **máx 0,36**, dispersión 0,16 | 12/14, error medio 0,10, máx 0,36 |
+| trunk_lean → transición | 7/8, error medio 0,12, máx 0,39 | 5/6, error medio 0,12, máx 0,16, dispersión 0,09 | 12/14, error medio 0,12, máx 0,39 |
+| trunk_lean → ápice | 7/7, error medio 0,09, máx 0,18 | 3/4, error medio 0,15, **máx 0,33** | 10/11, error medio 0,11, máx 0,33 |
+| com_x − tobillos → ápice | 6/7, error medio 0,16, máx 0,31 | 3/4, error medio 0,09, máx 0,20 | 9/11, error medio 0,13, máx 0,31 |
+
+**A 28 fps** (referencia):
+
+| Señal → evento | Total 3 videos |
+|---|---|
+| trunk_lean → transición | 10/14, error medio 0,08, máx 0,12 |
+| trunk_lean → ápice | 8/11, error medio 0,055, máx 0,19 |
+| com_x − tobillos → transición | 9/14, error medio 0,12, máx 0,32 |
+
+Detalle giro por giro en `phase_detection/report_video2.json`.
+
+### Qué cambia respecto del punto 0
+
+1. **La detección generaliza en cobertura**: encuentra 12 de 14 transiciones
+   y 10 de 11 ápices en los tres videos, **incluida la cámara de frente**. El
+   cambio de signo con la cámara de frente no importa, como se esperaba,
+   porque se usan cruces por cero y extremos de |señal|.
+2. **La ventaja de com_x − tobillos para la transición no se replica.** En el
+   set 2 es peor que `trunk_lean` y su sesgo cambia de signo (−0,05 en el
+   video 17, +0,10 en el set 2). Con los tres videos quedan **empatadas**
+   (error medio 0,10 contra 0,12), cada una con un caso malo de ~0,36–0,39 s.
+   Con 14 eventos no hay base para preferir una.
+3. **El margen real es más ancho**: a 8 fps el error típico sigue siendo
+   ~0,1 s (≈1 muestra), pero **uno de cada diez eventos aproximadamente** se
+   va a 0,3–0,4 s, cerca de un tercio de giro.
+4. **A 28 fps, `trunk_lean` sola es consistentemente buena** para los dos
+   eventos en los tres videos (máx 0,12 s en transición), pero pierde
+   detecciones por huecos de tracking: 10/14 contra 12/14 a 8 fps.
+
+### Recomendación revisada
+
+- **Usar `trunk_lean` sola para los dos eventos**: transición = cruce por cero,
+  ápice = extremo entre cruces. Rinde igual que la combinación y es más
+  simple. Además es la señal con la que **`segment_turns` ya arma los
+  giros**, así que la transición prácticamente coincide con el borde de giro
+  existente (salvo la zona muerta `LEAN_DEAD_ZONE_DEG`) y no hay que
+  conciliar dos segmentaciones. Su sesgo de transición es
+  consistente (+0,08 a +0,12 s a 8 fps) y se puede descontar.
+- **Margen con el que planificar el punto 1, a 8 fps**: ~±0,12 s típico y
+  hasta ~0,4 s en el peor caso (≈1 de cada 10 eventos). Alcanza para evaluar
+  patrones **en una ventana alrededor del ápice** (±1 muestra) y sacar
+  conclusiones **agregadas sobre muchos giros**, donde un evento corrido pesa
+  poco. **No alcanza para conclusiones giro a giro** ni para evaluar en el
+  frame exacto.
+- **Si se quiere más precisión**: subir el muestreo de carving lleva el peor
+  caso a ~0,12–0,19 s, a cambio de ~3,5× de cómputo y algo menos de
+  cobertura.
+
+### Limitaciones de esta validación
+
+- **Pocos eventos nuevos**: 6 transiciones y 4 ápices de confianza alta.
+  Alcanza para ver que el margen del video 17 era optimista, no para fijar
+  uno nuevo con precisión.
+- **El ground truth del set 2 es menos preciso** que el del 17: giros
+  derrapados con poca inclinación, esquiador más chico y huecos de cámara.
+  Parte del error puede ser del marcado y no de la señal.
+- **La cámara de frente solo se probó con 2 giros** de esquí derrapado, no de
+  carving. **La cámara lateral sigue sin probarse.**
+- **Cobertura de pose**: en prueba2 a 8 fps hay solo 23 frames válidos en
+  4,3 s, con un hueco de 1,5 s. Sin pose no hay fase. Eso ya lo refleja la
+  confianza general, pero afecta a cualquier patrón por fase.
 
 ## Archivos
 
@@ -277,3 +386,5 @@ transiciones, con el margen documentado arriba.
 - `phase_detection/report.json` / `report_pipeline_time.json`: resultados
   completos, giro por giro.
 - `phase_detection/signals_realtime.png`: señales contra el ground truth.
+- `phase_detection/ground_truth_video2.json`, `measure_phase_video2.py`,
+  `report_video2.json`: segundo set de validación (§7).

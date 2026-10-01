@@ -1,0 +1,39 @@
+{
+  "_comment": "Segundo set de ground truth (validacion de la deteccion de fase en videos distintos al 17). Marcado a mano sobre grillas cada 0.1 s ANTES de calcular cualquier senal. Tiempos en segundos reales del contenedor. confianza: alta = evento claro en la imagen; baja = evento visible pero poco marcado (giro derrapado / poca inclinacion) o rango ancho. Los eventos con confianza baja se reportan aparte.",
+  "videos": {
+    "prueba4": {
+      "file": "prueba4.mp4",
+      "camera": "detras, camara en mano siguiendo al esquiador (mismo angulo que video 17, otro esquiador y otra camara)",
+      "tramo": [10.2, 15.6],
+      "notas": "9.0-10.1 la camara gira y el esquiador sale de cuadro. 11.9-12.9 la camara vuelve a perderlo: el apice del giro 2 no es visible y queda sin marcar.",
+      "crossings": [
+        {"t": 10.25, "range": [10.20, 10.30], "confianza": "alta"},
+        {"t": 11.25, "range": [11.20, 11.30], "confianza": "alta"},
+        {"t": 13.20, "range": [13.15, 13.25], "confianza": "alta"},
+        {"t": 14.25, "range": [14.20, 14.30], "confianza": "alta"},
+        {"t": 15.45, "range": [15.40, 15.50], "confianza": "baja"}
+      ],
+      "turns": [
+        {"n": 1, "lean_side": "izquierda", "entrada": 10.40, "apice": 10.75, "apice_range": [10.70, 10.80], "confianza": "alta"},
+        {"n": 2, "lean_side": "derecha", "entrada": 11.50, "apice": null, "apice_range": null, "confianza": "baja", "nota": "apice fuera de cuadro"},
+        {"n": 3, "lean_side": "izquierda", "entrada": 13.30, "apice": 13.65, "apice_range": [13.60, 13.70], "confianza": "alta"},
+        {"n": 4, "lean_side": "derecha", "entrada": 14.50, "apice": 14.80, "apice_range": [14.60, 15.00], "confianza": "baja", "nota": "giro derrapado con poca inclinacion"}
+      ]
+    },
+    "prueba2": {
+      "file": "prueba2.mp4",
+      "camera": "fija, DE FRENTE al esquiador (angulo opuesto al video 17)",
+      "tramo": [4.0, 8.3],
+      "notas": "Antes de 4.0 el esquiador es demasiado chico para marcar. Corte de edicion en ~8.35. Esqui de nieve polvo/crud derrapado: entre 4.9 y 5.4 y despues de 7.3 el esquiador queda practicamente derecho, girando los esquis sin inclinarse. lean_side es el lado de la IMAGEN (camara de frente: invertido respecto del esquiador).",
+      "crossings": [
+        {"t": 5.15, "range": [4.90, 5.40], "confianza": "baja", "nota": "tramo plano largo, sin un instante de cruce definido"},
+        {"t": 6.15, "range": [6.10, 6.20], "confianza": "alta"},
+        {"t": 7.30, "range": [7.25, 7.35], "confianza": "alta"}
+      ],
+      "turns": [
+        {"n": 1, "lean_side": "derecha", "entrada": 5.50, "apice": 5.65, "apice_range": [5.60, 5.70], "confianza": "alta"},
+        {"n": 2, "lean_side": "izquierda", "entrada": 6.30, "apice": 6.60, "apice_range": [6.50, 6.70], "confianza": "alta"}
+      ]
+    }
+  }
+}

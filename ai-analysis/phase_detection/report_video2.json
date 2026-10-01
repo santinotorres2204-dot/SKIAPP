@@ -1,0 +1,1238 @@
+{
+ "prueba4": {
+  "8": {
+   "frames_validos_tramo": 39,
+   "com_x - tobillos (/torso)": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       null,
+       0.196,
+       -0.07,
+       0.085
+      ],
+      "detectados": "3/4",
+      "extra": 0,
+      "sesgo": 0.071,
+      "dispersion": 0.109,
+      "max_abs": 0.196,
+      "mae": 0.117
+     },
+     "apice": {
+      "errores": [
+       0.2,
+       -0.025
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": 0.088,
+      "dispersion": 0.113,
+      "max_abs": 0.2,
+      "mae": 0.113
+     },
+     "entrada": {
+      "errores": [
+       -0.221,
+       -0.078
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": -0.149,
+      "dispersion": 0.072,
+      "max_abs": 0.221,
+      "mae": 0.149
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       null,
+       0.196,
+       -0.07,
+       0.085,
+       null
+      ],
+      "detectados": "3/5",
+      "extra": 0,
+      "sesgo": 0.071,
+      "dispersion": 0.109,
+      "max_abs": 0.196,
+      "mae": 0.117
+     },
+     "apice": {
+      "errores": [
+       0.2,
+       -0.025,
+       null
+      ],
+      "detectados": "2/3",
+      "extra": 1,
+      "sesgo": 0.088,
+      "dispersion": 0.113,
+      "max_abs": 0.2,
+      "mae": 0.113
+     },
+     "entrada": {
+      "errores": [
+       -0.221,
+       0.089,
+       -0.078,
+       null
+      ],
+      "detectados": "3/4",
+      "extra": 0,
+      "sesgo": -0.07,
+      "dispersion": 0.127,
+      "max_abs": 0.221,
+      "mae": 0.129
+     }
+    }
+   },
+   "trunk_lean prod (MA 5 frames)": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       null,
+       0.126,
+       0.076,
+       0.145
+      ],
+      "detectados": "3/4",
+      "extra": 1,
+      "sesgo": 0.116,
+      "dispersion": 0.029,
+      "max_abs": 0.145,
+      "mae": 0.116
+     },
+     "apice": {
+      "errores": [
+       0.325,
+       0.1
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": 0.213,
+      "dispersion": 0.113,
+      "max_abs": 0.325,
+      "mae": 0.213
+     },
+     "entrada": {
+      "errores": [
+       null,
+       0.054
+      ],
+      "detectados": "1/2",
+      "extra": 2,
+      "sesgo": 0.054,
+      "dispersion": 0.0,
+      "max_abs": 0.054,
+      "mae": 0.054
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       null,
+       0.126,
+       0.076,
+       0.145,
+       null
+      ],
+      "detectados": "3/5",
+      "extra": 1,
+      "sesgo": 0.116,
+      "dispersion": 0.029,
+      "max_abs": 0.145,
+      "mae": 0.116
+     },
+     "apice": {
+      "errores": [
+       0.325,
+       0.1,
+       null
+      ],
+      "detectados": "2/3",
+      "extra": 1,
+      "sesgo": 0.213,
+      "dispersion": 0.113,
+      "max_abs": 0.325,
+      "mae": 0.213
+     },
+     "entrada": {
+      "errores": [
+       null,
+       0.004,
+       0.054,
+       null
+      ],
+      "detectados": "2/4",
+      "extra": 1,
+      "sesgo": 0.029,
+      "dispersion": 0.025,
+      "max_abs": 0.054,
+      "mae": 0.029
+     }
+    }
+   },
+   "trunk_lean (actual)": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       null,
+       0.057,
+       0.098,
+       0.132
+      ],
+      "detectados": "3/4",
+      "extra": 1,
+      "sesgo": 0.096,
+      "dispersion": 0.031,
+      "max_abs": 0.132,
+      "mae": 0.096
+     },
+     "apice": {
+      "errores": [
+       0.325,
+       0.1
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": 0.213,
+      "dispersion": 0.113,
+      "max_abs": 0.325,
+      "mae": 0.213
+     },
+     "entrada": {
+      "errores": [
+       null,
+       0.064
+      ],
+      "detectados": "1/2",
+      "extra": 2,
+      "sesgo": 0.064,
+      "dispersion": 0.0,
+      "max_abs": 0.064,
+      "mae": 0.064
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       null,
+       0.057,
+       0.098,
+       0.132,
+       null
+      ],
+      "detectados": "3/5",
+      "extra": 1,
+      "sesgo": 0.096,
+      "dispersion": 0.031,
+      "max_abs": 0.132,
+      "mae": 0.096
+     },
+     "apice": {
+      "errores": [
+       0.325,
+       0.1,
+       null
+      ],
+      "detectados": "2/3",
+      "extra": 1,
+      "sesgo": 0.213,
+      "dispersion": 0.113,
+      "max_abs": 0.325,
+      "mae": 0.213
+     },
+     "entrada": {
+      "errores": [
+       null,
+       0.173,
+       0.064,
+       null
+      ],
+      "detectados": "2/4",
+      "extra": 1,
+      "sesgo": 0.118,
+      "dispersion": 0.054,
+      "max_abs": 0.173,
+      "mae": 0.118
+     }
+    }
+   },
+   "flexion rodilla": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       null,
+       null,
+       null,
+       0.175
+      ],
+      "detectados": "1/4",
+      "extra": 3,
+      "sesgo": 0.175,
+      "dispersion": 0.0,
+      "max_abs": 0.175,
+      "mae": 0.175
+     },
+     "apice": {
+      "errores": [
+       0.05,
+       null
+      ],
+      "detectados": "1/2",
+      "extra": 3,
+      "sesgo": 0.05,
+      "dispersion": 0.0,
+      "max_abs": 0.05,
+      "mae": 0.05
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       null,
+       null,
+       null,
+       0.175,
+       -0.225
+      ],
+      "detectados": "2/5",
+      "extra": 2,
+      "sesgo": -0.025,
+      "dispersion": 0.2,
+      "max_abs": 0.225,
+      "mae": 0.2
+     },
+     "apice": {
+      "errores": [
+       0.05,
+       null,
+       0.025
+      ],
+      "detectados": "2/3",
+      "extra": 2,
+      "sesgo": 0.038,
+      "dispersion": 0.013,
+      "max_abs": 0.05,
+      "mae": 0.038
+     }
+    }
+   }
+  },
+  "28": {
+   "frames_validos_tramo": 154,
+   "com_x - tobillos (/torso)": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       null,
+       0.204,
+       -0.077,
+       0.118
+      ],
+      "detectados": "3/4",
+      "extra": 0,
+      "sesgo": 0.081,
+      "dispersion": 0.118,
+      "max_abs": 0.204,
+      "mae": 0.133
+     },
+     "apice": {
+      "errores": [
+       null,
+       -0.1
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": -0.1,
+      "dispersion": 0.0,
+      "max_abs": 0.1,
+      "mae": 0.1
+     },
+     "entrada": {
+      "errores": [
+       null,
+       -0.126
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": -0.126,
+      "dispersion": 0.0,
+      "max_abs": 0.126,
+      "mae": 0.126
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       null,
+       0.204,
+       -0.077,
+       0.118,
+       null
+      ],
+      "detectados": "3/5",
+      "extra": 0,
+      "sesgo": 0.081,
+      "dispersion": 0.118,
+      "max_abs": 0.204,
+      "mae": 0.133
+     },
+     "apice": {
+      "errores": [
+       null,
+       -0.1,
+       null
+      ],
+      "detectados": "1/3",
+      "extra": 1,
+      "sesgo": -0.1,
+      "dispersion": 0.0,
+      "max_abs": 0.1,
+      "mae": 0.1
+     },
+     "entrada": {
+      "errores": [
+       null,
+       0.038,
+       -0.126,
+       null
+      ],
+      "detectados": "2/4",
+      "extra": 0,
+      "sesgo": -0.044,
+      "dispersion": 0.082,
+      "max_abs": 0.126,
+      "mae": 0.082
+     }
+    }
+   },
+   "trunk_lean prod (MA 5 frames)": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       null,
+       0.036,
+       -0.117,
+       0.106
+      ],
+      "detectados": "3/4",
+      "extra": 0,
+      "sesgo": 0.008,
+      "dispersion": 0.093,
+      "max_abs": 0.117,
+      "mae": 0.086
+     },
+     "apice": {
+      "errores": [
+       null,
+       0.0
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": 0.0,
+      "dispersion": 0.0,
+      "max_abs": 0.0,
+      "mae": 0.0
+     },
+     "entrada": {
+      "errores": [
+       null,
+       -0.129
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": -0.129,
+      "dispersion": 0.0,
+      "max_abs": 0.129,
+      "mae": 0.129
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       null,
+       0.036,
+       -0.117,
+       0.106,
+       null
+      ],
+      "detectados": "3/5",
+      "extra": 0,
+      "sesgo": 0.008,
+      "dispersion": 0.093,
+      "max_abs": 0.117,
+      "mae": 0.086
+     },
+     "apice": {
+      "errores": [
+       null,
+       0.0,
+       null
+      ],
+      "detectados": "1/3",
+      "extra": 1,
+      "sesgo": 0.0,
+      "dispersion": 0.0,
+      "max_abs": 0.0,
+      "mae": 0.0
+     },
+     "entrada": {
+      "errores": [
+       null,
+       -0.087,
+       -0.129,
+       null
+      ],
+      "detectados": "2/4",
+      "extra": 0,
+      "sesgo": -0.108,
+      "dispersion": 0.021,
+      "max_abs": 0.129,
+      "mae": 0.108
+     }
+    }
+   },
+   "trunk_lean (actual)": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       null,
+       0.032,
+       -0.106,
+       0.095
+      ],
+      "detectados": "3/4",
+      "extra": 0,
+      "sesgo": 0.007,
+      "dispersion": 0.084,
+      "max_abs": 0.106,
+      "mae": 0.078
+     },
+     "apice": {
+      "errores": [
+       null,
+       0.025
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": 0.025,
+      "dispersion": 0.0,
+      "max_abs": 0.025,
+      "mae": 0.025
+     },
+     "entrada": {
+      "errores": [
+       null,
+       -0.128
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": -0.128,
+      "dispersion": 0.0,
+      "max_abs": 0.128,
+      "mae": 0.128
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       null,
+       0.032,
+       -0.106,
+       0.095,
+       null
+      ],
+      "detectados": "3/5",
+      "extra": 0,
+      "sesgo": 0.007,
+      "dispersion": 0.084,
+      "max_abs": 0.106,
+      "mae": 0.078
+     },
+     "apice": {
+      "errores": [
+       null,
+       0.025,
+       null
+      ],
+      "detectados": "1/3",
+      "extra": 1,
+      "sesgo": 0.025,
+      "dispersion": 0.0,
+      "max_abs": 0.025,
+      "mae": 0.025
+     },
+     "entrada": {
+      "errores": [
+       null,
+       -0.093,
+       -0.128,
+       null
+      ],
+      "detectados": "2/4",
+      "extra": 0,
+      "sesgo": -0.111,
+      "dispersion": 0.018,
+      "max_abs": 0.128,
+      "mae": 0.111
+     }
+    }
+   },
+   "flexion rodilla": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       0.1,
+       0.2,
+       0.375,
+       -0.125
+      ],
+      "detectados": "4/4",
+      "extra": 1,
+      "sesgo": 0.138,
+      "dispersion": 0.181,
+      "max_abs": 0.375,
+      "mae": 0.2
+     },
+     "apice": {
+      "errores": [
+       0.0,
+       0.3
+      ],
+      "detectados": "2/2",
+      "extra": 3,
+      "sesgo": 0.15,
+      "dispersion": 0.15,
+      "max_abs": 0.3,
+      "mae": 0.15
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       0.1,
+       0.2,
+       0.375,
+       -0.125,
+       -0.175
+      ],
+      "detectados": "5/5",
+      "extra": 0,
+      "sesgo": 0.075,
+      "dispersion": 0.204,
+      "max_abs": 0.375,
+      "mae": 0.195
+     },
+     "apice": {
+      "errores": [
+       0.0,
+       0.3,
+       0.025
+      ],
+      "detectados": "3/3",
+      "extra": 2,
+      "sesgo": 0.108,
+      "dispersion": 0.136,
+      "max_abs": 0.3,
+      "mae": 0.108
+     }
+    }
+   }
+  }
+ },
+ "prueba2": {
+  "8": {
+   "frames_validos_tramo": 23,
+   "com_x - tobillos (/torso)": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       -0.056,
+       0.355
+      ],
+      "detectados": "2/2",
+      "extra": 0,
+      "sesgo": 0.149,
+      "dispersion": 0.206,
+      "max_abs": 0.355,
+      "mae": 0.206
+     },
+     "apice": {
+      "errores": [
+       null,
+       0.038
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": 0.038,
+      "dispersion": 0.0,
+      "max_abs": 0.038,
+      "mae": 0.038
+     },
+     "entrada": {
+      "errores": [
+       null,
+       -0.095
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": -0.095,
+      "dispersion": 0.0,
+      "max_abs": 0.095,
+      "mae": 0.095
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       null,
+       -0.056,
+       0.355
+      ],
+      "detectados": "2/3",
+      "extra": 0,
+      "sesgo": 0.149,
+      "dispersion": 0.206,
+      "max_abs": 0.355,
+      "mae": 0.206
+     },
+     "apice": {
+      "errores": [
+       null,
+       0.038
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": 0.038,
+      "dispersion": 0.0,
+      "max_abs": 0.038,
+      "mae": 0.038
+     },
+     "entrada": {
+      "errores": [
+       null,
+       -0.095
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": -0.095,
+      "dispersion": 0.0,
+      "max_abs": 0.095,
+      "mae": 0.095
+     }
+    }
+   },
+   "trunk_lean prod (MA 5 frames)": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       -0.085,
+       0.156
+      ],
+      "detectados": "2/2",
+      "extra": 0,
+      "sesgo": 0.036,
+      "dispersion": 0.121,
+      "max_abs": 0.156,
+      "mae": 0.121
+     },
+     "apice": {
+      "errores": [
+       null,
+       0.038
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": 0.038,
+      "dispersion": 0.0,
+      "max_abs": 0.038,
+      "mae": 0.038
+     },
+     "entrada": {
+      "errores": [
+       null,
+       -0.143
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": -0.143,
+      "dispersion": 0.0,
+      "max_abs": 0.143,
+      "mae": 0.143
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       null,
+       -0.085,
+       0.156
+      ],
+      "detectados": "2/3",
+      "extra": 0,
+      "sesgo": 0.036,
+      "dispersion": 0.121,
+      "max_abs": 0.156,
+      "mae": 0.121
+     },
+     "apice": {
+      "errores": [
+       null,
+       0.038
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": 0.038,
+      "dispersion": 0.0,
+      "max_abs": 0.038,
+      "mae": 0.038
+     },
+     "entrada": {
+      "errores": [
+       null,
+       -0.143
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": -0.143,
+      "dispersion": 0.0,
+      "max_abs": 0.143,
+      "mae": 0.143
+     }
+    }
+   },
+   "trunk_lean (actual)": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       -0.095,
+       0.148
+      ],
+      "detectados": "2/2",
+      "extra": 0,
+      "sesgo": 0.026,
+      "dispersion": 0.121,
+      "max_abs": 0.148,
+      "mae": 0.121
+     },
+     "apice": {
+      "errores": [
+       null,
+       0.038
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": 0.038,
+      "dispersion": 0.0,
+      "max_abs": 0.038,
+      "mae": 0.038
+     },
+     "entrada": {
+      "errores": [
+       null,
+       -0.161
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": -0.161,
+      "dispersion": 0.0,
+      "max_abs": 0.161,
+      "mae": 0.161
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       null,
+       -0.095,
+       0.148
+      ],
+      "detectados": "2/3",
+      "extra": 0,
+      "sesgo": 0.026,
+      "dispersion": 0.121,
+      "max_abs": 0.148,
+      "mae": 0.121
+     },
+     "apice": {
+      "errores": [
+       null,
+       0.038
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": 0.038,
+      "dispersion": 0.0,
+      "max_abs": 0.038,
+      "mae": 0.038
+     },
+     "entrada": {
+      "errores": [
+       null,
+       -0.161
+      ],
+      "detectados": "1/2",
+      "extra": 1,
+      "sesgo": -0.161,
+      "dispersion": 0.0,
+      "max_abs": 0.161,
+      "mae": 0.161
+     }
+    }
+   },
+   "flexion rodilla": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       0.355,
+       0.272
+      ],
+      "detectados": "2/2",
+      "extra": 2,
+      "sesgo": 0.313,
+      "dispersion": 0.042,
+      "max_abs": 0.355,
+      "mae": 0.313
+     },
+     "apice": {
+      "errores": [
+       null,
+       0.172
+      ],
+      "detectados": "1/2",
+      "extra": 2,
+      "sesgo": 0.172,
+      "dispersion": 0.0,
+      "max_abs": 0.172,
+      "mae": 0.172
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       0.288,
+       0.355,
+       0.272
+      ],
+      "detectados": "3/3",
+      "extra": 1,
+      "sesgo": 0.305,
+      "dispersion": 0.036,
+      "max_abs": 0.355,
+      "mae": 0.305
+     },
+     "apice": {
+      "errores": [
+       null,
+       0.172
+      ],
+      "detectados": "1/2",
+      "extra": 2,
+      "sesgo": 0.172,
+      "dispersion": 0.0,
+      "max_abs": 0.172,
+      "mae": 0.172
+     }
+    }
+   }
+  },
+  "28": {
+   "frames_validos_tramo": 110,
+   "com_x - tobillos (/torso)": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       -0.039,
+       0.322
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": 0.142,
+      "dispersion": 0.18,
+      "max_abs": 0.322,
+      "mae": 0.18
+     },
+     "apice": {
+      "errores": [
+       0.022,
+       -0.028
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": -0.003,
+      "dispersion": 0.025,
+      "max_abs": 0.028,
+      "mae": 0.025
+     },
+     "entrada": {
+      "errores": [
+       -0.212,
+       -0.095
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": -0.153,
+      "dispersion": 0.059,
+      "max_abs": 0.212,
+      "mae": 0.153
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       0.058,
+       -0.039,
+       0.322
+      ],
+      "detectados": "3/3",
+      "extra": 0,
+      "sesgo": 0.114,
+      "dispersion": 0.152,
+      "max_abs": 0.322,
+      "mae": 0.14
+     },
+     "apice": {
+      "errores": [
+       0.022,
+       -0.028
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": -0.003,
+      "dispersion": 0.025,
+      "max_abs": 0.028,
+      "mae": 0.025
+     },
+     "entrada": {
+      "errores": [
+       -0.212,
+       -0.095
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": -0.153,
+      "dispersion": 0.059,
+      "max_abs": 0.212,
+      "mae": 0.153
+     }
+    }
+   },
+   "trunk_lean prod (MA 5 frames)": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       -0.066,
+       0.092
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": 0.013,
+      "dispersion": 0.079,
+      "max_abs": 0.092,
+      "mae": 0.079
+     },
+     "apice": {
+      "errores": [
+       -0.012,
+       0.105
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": 0.047,
+      "dispersion": 0.058,
+      "max_abs": 0.105,
+      "mae": 0.058
+     },
+     "entrada": {
+      "errores": [
+       -0.317,
+       -0.128
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": -0.223,
+      "dispersion": 0.095,
+      "max_abs": 0.317,
+      "mae": 0.223
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       -0.07,
+       -0.066,
+       0.092
+      ],
+      "detectados": "3/3",
+      "extra": 0,
+      "sesgo": -0.015,
+      "dispersion": 0.076,
+      "max_abs": 0.092,
+      "mae": 0.076
+     },
+     "apice": {
+      "errores": [
+       -0.012,
+       0.105
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": 0.047,
+      "dispersion": 0.058,
+      "max_abs": 0.105,
+      "mae": 0.058
+     },
+     "entrada": {
+      "errores": [
+       -0.317,
+       -0.128
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": -0.223,
+      "dispersion": 0.095,
+      "max_abs": 0.317,
+      "mae": 0.223
+     }
+    }
+   },
+   "trunk_lean (actual)": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       -0.077,
+       0.064
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": -0.007,
+      "dispersion": 0.07,
+      "max_abs": 0.077,
+      "mae": 0.07
+     },
+     "apice": {
+      "errores": [
+       -0.012,
+       0.072
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": 0.03,
+      "dispersion": 0.042,
+      "max_abs": 0.072,
+      "mae": 0.042
+     },
+     "entrada": {
+      "errores": [
+       -0.305,
+       -0.152
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": -0.229,
+      "dispersion": 0.076,
+      "max_abs": 0.305,
+      "mae": 0.229
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       -0.061,
+       -0.077,
+       0.064
+      ],
+      "detectados": "3/3",
+      "extra": 0,
+      "sesgo": -0.025,
+      "dispersion": 0.063,
+      "max_abs": 0.077,
+      "mae": 0.067
+     },
+     "apice": {
+      "errores": [
+       -0.012,
+       0.072
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": 0.03,
+      "dispersion": 0.042,
+      "max_abs": 0.072,
+      "mae": 0.042
+     },
+     "entrada": {
+      "errores": [
+       -0.305,
+       -0.152
+      ],
+      "detectados": "2/2",
+      "extra": 1,
+      "sesgo": -0.229,
+      "dispersion": 0.076,
+      "max_abs": 0.305,
+      "mae": 0.229
+     }
+    }
+   },
+   "flexion rodilla": {
+    "alta": {
+     "transicion": {
+      "errores": [
+       null,
+       -0.028
+      ],
+      "detectados": "1/2",
+      "extra": 4,
+      "sesgo": -0.028,
+      "dispersion": 0.0,
+      "max_abs": 0.028,
+      "mae": 0.028
+     },
+     "apice": {
+      "errores": [
+       null,
+       0.372
+      ],
+      "detectados": "1/2",
+      "extra": 3,
+      "sesgo": 0.372,
+      "dispersion": 0.0,
+      "max_abs": 0.372,
+      "mae": 0.372
+     }
+    },
+    "todos": {
+     "transicion": {
+      "errores": [
+       0.322,
+       null,
+       -0.028
+      ],
+      "detectados": "2/3",
+      "extra": 3,
+      "sesgo": 0.147,
+      "dispersion": 0.175,
+      "max_abs": 0.322,
+      "mae": 0.175
+     },
+     "apice": {
+      "errores": [
+       null,
+       0.372
+      ],
+      "detectados": "1/2",
+      "extra": 3,
+      "sesgo": 0.372,
+      "dispersion": 0.0,
+      "max_abs": 0.372,
+      "mae": 0.372
+     }
+    }
+   }
+  }
+ }
+}
