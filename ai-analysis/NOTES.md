@@ -585,3 +585,15 @@ deploy real conviene limitar también el tamaño del request en el reverse proxy
 - **terrain_tag**: falta un campo para el tipo de terreno/pista (pista
   groomed vs fuera de pista, por ejemplo). Pendiente definir si aporta algo
   a las reglas heurísticas o si es solo metadata informativa.
+- **Videos con fps variable: timestamps del pipeline corridos** (encontrado
+  en el punto 0 del sprint phase-aware, ver
+  `phase-detection-ground-truth.md` §3). `extract_pose_sequence` asigna
+  `t = frame_idx / CAP_PROP_FPS`, que asume fps constante. En el video 17
+  (`.mov`, fps variable) ese reloj atrasa hasta 0,61 s respecto del tiempo
+  real. Afecta los timestamps de `occurrences` (lo que ve el usuario y donde
+  salta el video en el Passport), los umbrales en segundos y la regularidad
+  del muestreo. No afecta qué frame se analiza. De los 17 videos revisados,
+  solo el 17 tiene desfase relevante (el resto ≤0,033 s). Arreglo probable:
+  usar `CAP_PROP_POS_MSEC` del frame leído. Sin arreglar todavía. Puede haber
+  corrido también las correspondencias timestamp→fase de
+  `audit-carving-video.md` (mismo video).

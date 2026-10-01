@@ -1,0 +1,24 @@
+{
+  "video_id": 17,
+  "method": "marcado visual en grillas recortadas cada 0.1 s (16.00-23.95 s), camara detras del esquiador, ANTES de calcular cualquier senal",
+  "lean_side": "lado de la imagen hacia el que se inclina el cuerpo (los esquis quedan del lado opuesto)",
+  "crossings": [
+    {"t": 16.35, "range": [16.30, 16.40]},
+    {"t": 17.35, "range": [17.30, 17.40]},
+    {"t": 18.25, "range": [18.20, 18.30]},
+    {"t": 19.25, "range": [19.20, 19.30]},
+    {"t": 20.05, "range": [20.00, 20.10]},
+    {"t": 21.15, "range": [21.10, 21.20]},
+    {"t": 22.15, "range": [22.10, 22.20]},
+    {"t": 23.25, "range": [23.20, 23.30]}
+  ],
+  "turns": [
+    {"n": 1, "lean_side": "derecha", "entrada": 16.50, "apice": 16.90, "apice_range": [16.80, 17.00], "transicion": 17.35},
+    {"n": 2, "lean_side": "izquierda", "entrada": 17.50, "apice": 17.95, "apice_range": [17.90, 18.00], "transicion": 18.25},
+    {"n": 3, "lean_side": "derecha", "entrada": 18.40, "apice": 18.90, "apice_range": [18.80, 19.00], "transicion": 19.25},
+    {"n": 4, "lean_side": "izquierda", "entrada": 19.40, "apice": 19.70, "apice_range": [19.60, 19.80], "transicion": 20.05},
+    {"n": 5, "lean_side": "derecha", "entrada": 20.20, "apice": 20.70, "apice_range": [20.60, 20.80], "transicion": 21.15},
+    {"n": 6, "lean_side": "izquierda", "entrada": 21.30, "apice": 21.80, "apice_range": [21.70, 21.90], "transicion": 22.15},
+    {"n": 7, "lean_side": "derecha", "entrada": 22.30, "apice": 22.70, "apice_range": [22.60, 22.80], "transicion": 23.25}
+  ]
+}
