@@ -374,6 +374,72 @@ mediana y por su estabilidad dentro del clip, o descartar como inválidos
 los frames con geometría implausible (por ejemplo tronco invertido fuera de
 la fase aérea) antes de evaluar patrones.
 
+## Subida de videos: validación real de contenido y límite de tamaño (2026-09-30)
+
+**Qué había**: ninguna validación. `backend/app/storage.py::_save_file` (que
+usan tanto la subida de videos de análisis como el video del Season Review
+del panel de admin) copiaba al disco cualquier archivo, conservando la
+extensión que mandaba el cliente. No miraba el content-type ni el contenido, y
+no tenía límite de tamaño. Como `/media/videos` y `/media/season_reviews` se
+sirven como estáticos (`main.py`), un `.html` subido se habría servido como
+página desde el propio dominio (XSS almacenado).
+
+**Evidencia**: dos archivos `.py` en `backend/media/videos/9/` (filas 13 y 14
+de `video_uploads`, `analysis_status=failed`). Sin abrirlos se identificó que
+son idénticos entre sí y byte a byte iguales a `backend/app/main.py` del
+commit `7a1e260` (mismo SHA-256). Los subió una sesión anterior de Claude Code
+el 2026-09-07, con `curl -F "file=@app/main.py;type=video/mp4"`, como video
+de relleno para probar los formularios de Trick Card / Freeride Run y los
+mensajes de error. El usuario 9 ("Dup", `dupcheck_<timestamp>@example.com`)
+también lo creó ese script. Inofensivos, pero muestran el problema: el
+content-type `video/mp4` del header se aceptó sin más.
+
+**Qué se corrigió** (`backend/app/storage.py`, nuevo `ai-analysis/probe_video.py`):
+
+1. **Límite de tamaño**: `max_video_upload_mb` en `config.py` (500 MB por
+   defecto; el video real más grande hasta hoy pesa 80 MB). Se corta la copia
+   apenas se supera y responde 413.
+2. **Staging fuera de lo servido**: el archivo se escribe primero en
+   `media/_incoming/` (no montado) y solo se mueve a `media/videos/` o
+   `media/season_reviews/` después de pasar todos los chequeos. Un archivo
+   rechazado o a medio subir nunca queda accesible por URL, y no deja basura.
+3. **Lista blanca de extensiones**: `.mp4 .m4v .mov .webm .mkv .avi` (sin
+   distinguir mayúsculas). La extensión con la que se guarda sale de esa lista,
+   nunca se copia tal cual la del cliente. Si no está en la lista: 415.
+4. **Firma del contenedor**: los primeros bytes tienen que coincidir con la
+   extensión (caja `ftyp`/raíz ISO-BMFF para mp4/mov/m4v, EBML para webm/mkv,
+   `RIFF…AVI` para avi). Un `.py` o un `.html` renombrado a `.mp4` se frena
+   acá, sin llegar al decoder. Si no coincide: 415.
+5. **Decodificación real**: `probe_video.py` corre en el venv de `ai-analysis`
+   (OpenCV vive ahí, mismo patrón que `analysis_job.py`). Exige que el
+   contenedor abra, que tenga dimensiones y fps válidos, y que decodifique un
+   cuadro al principio **y otro cerca del final**. Lo último hace falta porque
+   un archivo cortado (probado con los primeros 64 KB de `prueba1.mp4`) abre y
+   decodifica el primer cuadro igual. Si falla: 415. Tarda ~0,2–0,3 s por video.
+6. El content-type del header **no se usa**, a propósito: se puede falsear, y
+   los chequeos 4 y 5 ya cubren lo que validaría.
+
+Los errores son `HTTPException` con mensaje en castellano. La API los
+devuelve como `{"detail": ...}`, y el formulario del Passport
+(`/passport/{id}/videos`) ya los muestra como alerta, sin cambios en el
+template.
+
+**Validación**: los 16 videos reales del repo y de `backend/media` pasan,
+incluido el `.mov` con fps variable del video 17. Se rechazan, cada uno con su
+motivo: `.py`, `.py` renombrado a `.mp4`, HTML renombrado a `.mp4`, `.mp4`
+truncado, archivo vacío, `.avi` con firma falsa, video real renombrado a
+`.webm` y video que supera el límite. En ningún caso rechazado se crea una fila
+en `video_uploads` ni queda un archivo en disco.
+
+**Limitación que queda**: FastAPI/python-multipart recibe el cuerpo multipart
+completo (a un temporal propio) **antes** de que corra el endpoint. El límite
+de 500 MB impide guardarlo, pero no impide que el servidor lo reciba. En un
+deploy real conviene limitar también el tamaño del request en el reverse proxy
+(por ejemplo `client_max_body_size` en nginx).
+
+**Para decidir**: borrar los dos `.py` de `media/videos/9/` y sus filas 13 y
+14, y el usuario de prueba 9.
+
 ## Pendientes / limitaciones conocidas para revisar más adelante
 
 - **Park: prototipo v1 agregado (`analyze_park_video.py`), separado de
