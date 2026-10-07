@@ -1,3 +1,9 @@
-mediapipe>=0.10.9
-opencv-python>=4.9.0
-numpy>=1.26.0
+# Versiones fijas, iguales en el venv de Windows y en el contenedor. Aun asi
+# los resultados no son identicos entre plataformas (conversion de color del
+# FFmpeg de cada wheel): ver NOTES.md "Contenedor Linux vs Windows".
+mediapipe==1.0.1
+numpy==2.4.6
+# OpenCV NO se declara aca: mediapipe ya trae opencv-contrib-python, y
+# sumar opencv-python instalaba dos paquetes sobre el mismo cv2/ (gana el
+# ultimo que se instala). El Dockerfile lo reemplaza por la variante
+# headless de la misma version.

@@ -1,0 +1,12 @@
+# Lista blanca: solo entra al contexto lo que la imagen usa. Los videos de
+# prueba, los venvs, media/ y los reportes de debug quedan afuera.
+*
+!backend/
+!ai-analysis/requirements.txt
+!ai-analysis/analyze_ski_video.py
+!ai-analysis/probe_video.py
+backend/.venv
+backend/.env
+backend/media
+**/__pycache__
+**/*.pyc

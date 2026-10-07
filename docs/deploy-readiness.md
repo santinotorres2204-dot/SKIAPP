@@ -410,3 +410,31 @@ Fuentes de Railway (consultadas el 2026-10-05):
 [Pricing Plans](https://docs.railway.com/pricing/plans) ·
 [Volumes reference](https://docs.railway.com/volumes/reference) ·
 [Using Volumes](https://docs.railway.com/volumes)
+
+---
+
+## Anexo (2026-10-07): lo que corrigió la prueba en contenedor
+
+Pasos 1 y 2 implementados. Lo que cambia respecto de las estimaciones de arriba:
+
+- **Librerías de sistema**: con OpenCV headless no hace falta `libGL`, pero
+  **`libmediapipe.so` enlaza contra `libEGL.so.1` y `libGLESv2.so.2`** aunque
+  corra en CPU. `import mediapipe` no lo detecta: falla recién al crear el
+  `PoseLandmarker`, así que el build ahora crea uno como chequeo.
+- **Tamaño de imagen**: **1,27 GB**, no 0,6–0,7. `libegl1` arrastra Mesa
+  (`libllvm19`, `mesa-libgallium`), unos 280 MB. No afecta la RAM.
+- **Memoria medida en el contenedor**: ~85 MB en reposo y ~540 MB con un
+  análisis del video 17 en curso.
+- **Migraciones desde cero**: `alembic upgrade head` sobre una base vacía corre
+  0001→0012 sin errores, y el schema resultante es idéntico (`pg_dump -s`) al
+  de la base de desarrollo. Aparte, `alembic check` marca diferencias
+  **preexistentes** entre los modelos y las migraciones (unique de
+  `analysis_results.video_id`, índice de `trips.join_code`,
+  `ix_mental_sessions_id`). Pasa también en la base de desarrollo, así que no
+  bloquea el deploy, pero un `alembic revision --autogenerate` futuro las va a
+  levantar.
+- **Resultados del análisis en Linux ≠ Windows**: los tiempos y el manejo de
+  fps variable dan idéntico, pero la conversión de color de FFmpeg cambia los
+  landmarks y, con ellos, patrones en varios videos, incluido el 17. Detalle
+  y opciones en `ai-analysis/NOTES.md`, sección "Contenedor Linux vs Windows".
+  **Hay que decidirlo antes del deploy.**

@@ -440,6 +440,85 @@ deploy real conviene limitar también el tamaño del request en el reverse proxy
 **Para decidir**: borrar los dos `.py` de `media/videos/9/` y sus filas 13 y
 14, y el usuario de prueba 9.
 
+## Contenedor Linux vs Windows: mismo decoder de tiempos, distintos píxeles (2026-10-07)
+
+Contexto: imagen de deploy (`Dockerfile` en la raíz; `python:3.11-slim`,
+mediapipe 1.0.1, `opencv-contrib-python-headless` 5.0.0.93, mismo
+`pose_landmarker_lite.task`, verificado por sha256). Se corrieron los 7 videos
+de la base y prueba1-4 (11 corridas; v1 = prueba4 y v2 = prueba2 son el mismo
+archivo) en el venv de Windows y dentro del contenedor, volcando la línea de
+tiempo cruda del decoder, los frames muestreados con sus landmarks y el
+resultado completo de `analyze_video`.
+
+**Tiempos / fps variable: idénticos.** Los dos usan el backend FFMPEG de
+OpenCV. En los 11 videos (9 con fps variable, incluido el `.mov` del video
+17) coinciden fps y frame count declarados, cantidad de frames decodificados,
+`CAP_PROP_POS_MSEC` de **cada** frame (diferencia máxima 0,000 ms) y el `t`
+de cada frame muestreado. El fix de `frame_time_sec()` se comporta igual en
+Linux.
+
+**Landmarks: distintos, y cambian resultados.** Aislado con el video 17:
+
+| Prueba | Resultado |
+|---|---|
+| Misma plataforma, dos corridas | Idénticas (Windows y Linux son deterministas) |
+| Windows vs Linux, cada uno decodifica | 3 frames con detección distinta, coords hasta 0,51 |
+| Linux corriendo MediaPipe sobre los píxeles decodificados en Windows | **Idéntico a Windows** |
+| Píxeles RGB de los 258 frames muestreados | 0 de 258 iguales: dif. media 1,7 niveles/255, p99 = 11, máx 28 |
+
+La causa es la **conversión YUV→RGB del FFmpeg incluido en cada wheel**
+(avcodec 61.19 en Windows, 62.28 en Linux), no el decoder H.264, que es
+bit-exacto, ni MediaPipe: el sesgo es sistemático por canal (R −1,3, G +1,2,
+B +1,6). Una diferencia de color invisible alcanza para cambiar qué frames
+pasan el umbral de visibilidad y dónde cae el tracking, y de ahí los giros.
+
+Resultados con la `discipline_tag` de la base (W = Windows, L = Linux):
+
+| Video | Válidos W/L | Giros W/L | Inicio actividad W/L | Confianza W/L | Patrones W | Patrones L |
+|---|---|---|---|---|---|---|
+| v1 / prueba4 | 95/91 | 8/9 | 1,48/1,48 | 64/66 | balance baja, inconsistencia baja | igual |
+| v2 / prueba2 | 37/43 | 5/6 | 5,44/3,97 | 37/44 | balance **media**, inconsistencia **baja** | balance **baja**, inconsistencia **media** |
+| v6, v12 (park) | 0/0 | — | — | 0/0 | — | — |
+| v16 | 9/8 | 1/1 | 1,87/2,00 | 5/5 | — | — |
+| **v17** | 238/239 | 23/25 | **3,52/0,38** | 93/97 | — | **asimetria_izq_der baja** |
+| v18 (park) | 19/26 | 2/2 | 6,8/6,0 | 15/18 | — | balance baja, rotación media |
+| prueba1 | 14/15 | 2/2 | 3,20/3,07 | 22/23 | — | — |
+| prueba3 | 13/15 | 2/1 | 5,06/4,53 | 17/15 | — | — |
+
+Los timestamps de las ocurrencias también se corren: los giros de v2/v1
+cambian de dirección o de límites en hasta ~1,9 s, porque la segmentación
+arranca distinto.
+
+**Lo más importante: video 17.** En Linux el filtro de actividad válida
+arranca en 0,38 s en vez de 3,52 s: no descarta los giros de baja intensidad
+del arranque (ground truth: actividad desde ~4,0 s, ver
+`activity-filter-decision.md`) y aparece una `asimetria_izq_der` baja que en
+Windows no está. O sea, la decisión del filtro de actividad, validada contra
+el ground truth en Windows, **no se reproduce en el contenedor**.
+
+Lectura: esto no es un bug de Linux. Ninguna de las dos salidas es "la
+correcta". Es una medida de la **fragilidad del pipeline ante ruido
+imperceptible de entrada**: los resultados de Windows son una muestra más de
+ese ruido, no un ground truth. Afecta sobre todo a los videos con poca pose
+válida (v2, v18, prueba3) y a los umbrales que deciden por un frame o un giro
+(inicio de actividad, asimetría con pocos giros por lado).
+
+**Para decidir antes de seguir con el deploy** (no se tocó nada del análisis):
+1. Aceptar que producción (Linux) dé resultados distintos a los validados en
+   Windows, y re-validar el ground truth contra el contenedor desde ahora
+   (que el contenedor pase a ser la referencia).
+2. Unificar la conversión de color: leer YUV crudo
+   (`CAP_PROP_CONVERT_RGB=0`) y convertir con una matriz fija en el script.
+   Así Windows y Linux darían lo mismo. Queda por verificar que OpenCV
+   entregue el plano crudo de forma consistente en ambos.
+3. Atacar la fragilidad en sí (histéresis en el inicio de actividad, mínimo
+   de giros por lado para asimetría), que es trabajo de los sprints de
+   análisis.
+
+Tiempos: la extracción de pose tarda lo mismo o menos en el contenedor (v17:
+5,7 s en ambos). Con un análisis del video 17 en curso, el contenedor completo
+llegó a ~540 MB.
+
 ## Pendientes / limitaciones conocidas para revisar más adelante
 
 - **Park: prototipo v1 agregado (`analyze_park_video.py`), separado de

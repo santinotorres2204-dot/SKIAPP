@@ -1,0 +1,44 @@
+# Prueba local de la imagen de produccion (no es el entorno de desarrollo:
+# ese es backend/docker-compose.yml). Postgres propio y vacio + volumen de
+# media, sin publicar el puerto de la base para no chocar con el de dev.
+#
+#   SITE_PASSWORD=... docker compose -f docker-compose.container-test.yml up --build
+#   -> http://localhost:8001
+#
+# El "alembic upgrade head" antes de uvicorn emula el pre-deploy command de
+# Railway. Borrar todo (base incluida): ... down -v
+name: ski-app-container-test
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ski_app
+      POSTGRES_PASSWORD: ski_app
+      POSTGRES_DB: ski_app
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ski_app -d ski_app"]
+      interval: 2s
+      retries: 30
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg2://ski_app:ski_app@db:5432/ski_app
+      APP_ENV: production
+      SITE_PASSWORD: ${SITE_PASSWORD:?definir SITE_PASSWORD en el shell}
+      MAX_CONCURRENT_ANALYSES: ${MAX_CONCURRENT_ANALYSES:-1}
+    ports:
+      - "8001:8000"
+    volumes:
+      - media:/app/backend/media
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'"]
+
+volumes:
+  pgdata:
+  media:
