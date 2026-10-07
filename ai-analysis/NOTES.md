@@ -515,11 +515,30 @@ válida (v2, v18, prueba3) y a los umbrales que deciden por un frame o un giro
    de giros por lado para asimetría), que es trabajo de los sprints de
    análisis.
 
+**Decisión (2026-10-07): opción 2, diferida.** Se va a unificar la
+conversión de color (YUV crudo + matriz fija en el script), pero todavía no:
+no se tocan los scripts de análisis por ahora. Mientras tanto, producción
+(Linux) da resultados que pueden diferir de los validados en Windows, en
+particular en el video 17. Anotado como pendiente de prioridad alta en
+"Pendientes" más abajo.
+
 Tiempos: la extracción de pose tarda lo mismo o menos en el contenedor (v17:
 5,7 s en ambos). Con un análisis del video 17 en curso, el contenedor completo
 llegó a ~540 MB.
 
 ## Pendientes / limitaciones conocidas para revisar más adelante
+
+- **[PRIORIDAD ALTA] Unificar la conversión YUV→RGB entre Windows y Linux
+  (opción 2 de "Contenedor Linux vs Windows").** Hoy cada wheel de OpenCV
+  convierte con su propio FFmpeg (avcodec 61 en Windows, 62 en Linux) y los
+  píxeles difieren ~1,7 niveles/255. Eso alcanza para cambiar patrones (v2,
+  v17, v18) y el inicio del filtro de actividad del video 17 (3,52 s →
+  0,38 s). Plan: leer con `CAP_PROP_CONVERT_RGB=0` y convertir con una matriz
+  fija en `analyze_ski_video.py` (y en `probe_video.py` si hace falta).
+  Verificar primero que OpenCV entregue el plano crudo igual en las dos
+  plataformas. Después, re-correr el ground truth en ambas y confirmar
+  resultados idénticos. Diferido por decisión del 2026-10-07: no se tocaron
+  los scripts de análisis.
 
 - **Park: prototipo v1 agregado (`analyze_park_video.py`), separado de
   `segment_turns`/`detect_asymmetry`/etc. porque un salto no genera la

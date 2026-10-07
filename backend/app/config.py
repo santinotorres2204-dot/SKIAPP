@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
@@ -51,6 +52,17 @@ class Settings(BaseSettings):
     # Cada analisis es un subproceso de ~300-600 MB; el limite de memoria del
     # contenedor incluye a los subprocesos. Los que excedan esperan su turno.
     max_concurrent_analyses: int = 1
+
+    @field_validator("database_url")
+    @classmethod
+    def _use_psycopg2(cls, url: str) -> str:
+        # Railway (y Heroku) entregan postgresql:// o postgres://. SQLAlchemy
+        # 2.1 interpreta postgresql:// como psycopg 3, que no esta instalado,
+        # y postgres:// directamente no lo reconoce. El driver es psycopg2.
+        for prefix in ("postgres://", "postgresql://"):
+            if url.startswith(prefix):
+                return "postgresql+psycopg2://" + url[len(prefix):]
+        return url
 
     @property
     def is_production(self) -> bool:

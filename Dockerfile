@@ -47,9 +47,10 @@ ENV AI_ANALYSIS_PYTHON=/usr/local/bin/python \
     HOST=0.0.0.0 \
     PORT=8000
 
-# Montar aca el volumen (Railway o compose): videos/, season_reviews/ y
-# _incoming/ quedan en el mismo filesystem.
-VOLUME ["/app/backend/media"]
+# El volumen se monta en /app/backend/media (MEDIA_ROOT): videos/,
+# season_reviews/ y _incoming/ quedan en el mismo filesystem. Sin instruccion
+# VOLUME a proposito: Railway la rechaza; el volumen se configura en el
+# servicio (Railway) o en el compose.
 
 WORKDIR /app/backend
 EXPOSE 8000
