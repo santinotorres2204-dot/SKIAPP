@@ -6,18 +6,22 @@ from pathlib import Path
 
 from fastapi import HTTPException, UploadFile, status
 
-from app.analysis_job import AI_ANALYSIS_DIR, AI_ANALYSIS_PYTHON
-from app.config import settings
+from app.config import BACKEND_DIR, settings
 
-MEDIA_ROOT = (Path(__file__).resolve().parent.parent / settings.video_upload_dir).resolve()
-SEASON_REVIEWS_ROOT = (Path(__file__).resolve().parent.parent / "media" / "season_reviews").resolve()
+_MEDIA_BASE = settings.media_root if settings.media_root.is_absolute() else BACKEND_DIR / settings.media_root
+_MEDIA_BASE = _MEDIA_BASE.resolve()
+MEDIA_ROOT = _MEDIA_BASE / "videos"
+SEASON_REVIEWS_ROOT = _MEDIA_BASE / "season_reviews"
 # Los uploads se escriben aca primero y solo se mueven a MEDIA_ROOT /
 # SEASON_REVIEWS_ROOT (servidos como estaticos en main.py) despues de validar.
 # Este directorio NO esta montado: un archivo a medio subir o rechazado nunca
 # queda accesible por URL.
-INCOMING_ROOT = (Path(__file__).resolve().parent.parent / "media" / "_incoming").resolve()
+INCOMING_ROOT = _MEDIA_BASE / "_incoming"
 
-PROBE_SCRIPT = AI_ANALYSIS_DIR / "probe_video.py"
+VIDEOS_URL_PREFIX = "/media/videos"
+SEASON_REVIEWS_URL_PREFIX = "/media/season_reviews"
+
+PROBE_SCRIPT = settings.ai_analysis_dir / "probe_video.py"
 PROBE_TIMEOUT_SECONDS = 60
 MAX_UPLOAD_BYTES = settings.max_video_upload_mb * 1024 * 1024
 
@@ -94,7 +98,7 @@ def _probe_decodable(path: Path) -> str | None:
     """Devuelve None si OpenCV decodifica el video, o el motivo si no."""
     try:
         proc = subprocess.run(
-            [str(AI_ANALYSIS_PYTHON), str(PROBE_SCRIPT), str(path)],
+            [settings.ai_analysis_python, str(PROBE_SCRIPT), str(path)],
             capture_output=True,
             text=True,
             timeout=PROBE_TIMEOUT_SECONDS,
@@ -156,9 +160,34 @@ def save_video(user_id: int, upload: UploadFile) -> tuple[str, Path]:
 
     Lanza HTTPException 413/415/400 si el archivo no pasa la validacion.
     """
-    return _save_file(MEDIA_ROOT, "/media/videos", user_id, upload)
+    return _save_file(MEDIA_ROOT, VIDEOS_URL_PREFIX, user_id, upload)
 
 
 def save_season_review_video(user_id: int, upload: UploadFile) -> tuple[str, Path]:
     """Valida y guarda el video comparativo (editado a mano) de un Season Review."""
-    return _save_file(SEASON_REVIEWS_ROOT, "/media/season_reviews", user_id, upload)
+    return _save_file(SEASON_REVIEWS_ROOT, SEASON_REVIEWS_URL_PREFIX, user_id, upload)
+
+
+def video_path_from_url(file_url: str) -> Path | None:
+    """Ruta en disco de un video de analisis a partir de su file_url, o None
+    si la URL no es de MEDIA_ROOT o apunta fuera de el."""
+    prefix = VIDEOS_URL_PREFIX + "/"
+    if not file_url.startswith(prefix):
+        return None
+    path = (MEDIA_ROOT / file_url[len(prefix):]).resolve()
+    if not path.is_relative_to(MEDIA_ROOT):
+        return None
+    return path
+
+
+def clean_incoming() -> int:
+    """Borra uploads a medio escribir que quedaron de un proceso anterior
+    (corte durante la subida). Solo se llama al arrancar, cuando no puede
+    haber una subida en curso en este proceso."""
+    if not INCOMING_ROOT.exists():
+        return 0
+    removed = 0
+    for part in INCOMING_ROOT.glob("*.part"):
+        part.unlink(missing_ok=True)
+        removed += 1
+    return removed

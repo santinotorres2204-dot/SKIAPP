@@ -1,10 +1,14 @@
+import logging
+from contextlib import asynccontextmanager
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy import text
 
-from pathlib import Path
-
+from app.analysis_job import resume_pending_analyses
+from app.config import settings
 from app.database import engine
 from app.routers import (
     achievements,
@@ -24,11 +28,43 @@ from app.routers import (
     users,
     video_uploads,
 )
-from app.storage import MEDIA_ROOT, SEASON_REVIEWS_ROOT
+from app.site_auth import SiteBasicAuthMiddleware, public_paths
+from app.storage import MEDIA_ROOT, SEASON_REVIEWS_ROOT, clean_incoming
 
-app = FastAPI(title="Ski App API", version="0.1.0")
+# Uvicorn solo configura sus propios loggers; sin esto los logger.info de
+# app.* (analisis retomados, limpieza de _incoming) no se ven.
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s - %(message)s")
+logger = logging.getLogger(__name__)
+
+if settings.is_production and not settings.site_password:
+    # En desarrollo, sin SITE_PASSWORD el sitio queda abierto a proposito. En
+    # produccion eso seria exponerlo todo por un olvido: mejor no arrancar.
+    raise RuntimeError("APP_ENV=production requiere SITE_PASSWORD")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    removed = clean_incoming()
+    if removed:
+        logger.info("Borrados %d uploads incompletos de una ejecucion anterior", removed)
+    resume_pending_analyses()
+    yield
+
+
+# En produccion no se publica el mapa de la API: hay que apagar los tres, con
+# solo /docs apagado /openapi.json lo sigue exponiendo entero.
+_docs = {} if not settings.is_production else {"docs_url": None, "redoc_url": None, "openapi_url": None}
+app = FastAPI(title="Ski App API", version="0.1.0", lifespan=lifespan, **_docs)
 
 STATIC_ROOT = Path(__file__).resolve().parent.parent / "static"
+
+if settings.site_password:
+    app.add_middleware(
+        SiteBasicAuthMiddleware,
+        password=settings.site_password,
+        username=settings.site_user,
+        public=public_paths(STATIC_ROOT / "manifest.json"),
+    )
 app.mount("/static", StaticFiles(directory=STATIC_ROOT), name="static")
 
 
